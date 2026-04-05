@@ -60,15 +60,13 @@ describe('Basic pay pro-rating — EARN-001', function () {
             ->toBeLessThan(1_300_000); // always < full semi-monthly
     });
 
-    it('includes paid leave days in basic pay calculation', function () {
+    it('computes basic pay from attendance-only days when no paid leave credits exist', function () {
         $employee = PayrollTestHelper::makeEmployee(25_000.00);
         $run = PayrollTestHelper::makeRun('2025-10-16', '2025-10-31');
 
         // 10 attendance days present
         PayrollTestHelper::makeAttendance($employee, '2025-10-16', '2025-10-27');
 
-        // Simulate 3 days paid leave by having attendance + a paid leave request
-        // (leave request creation not done here — basic pay uses daysWorked + leaveDaysPaid)
         // Without leave, basic pay = (10/13) × 12,500
         $detail = $this->svc->computeForEmployee($employee, $run);
         // Oct 16-27 contains 8 Mon-Fri working days

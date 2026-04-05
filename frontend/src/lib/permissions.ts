@@ -55,7 +55,7 @@ export const PERMISSIONS = {
   // ── Leave ────────────────────────────────────────────────────────────────
   leaves: perms('leaves', [
     'view_own', 'view_team', 'file_own', 'file_on_behalf',
-    'cancel', 'head_approve', 'manager_check', 'ga_process', 'vp_note',
+    'cancel', 'head_approve', 'manager_approve', 'hr_approve', 'vp_approve',
     'approve', 'reject',
     'adjust_balance', 'configure_types', 'trigger_sil_monetization',
     // legacy aliases

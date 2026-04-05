@@ -69,7 +69,7 @@ beforeEach(function () {
     $this->leaveType = LeaveType::where('code', 'VL')->first()
         ?? LeaveType::firstOrCreate(
             ['code' => 'VL'],
-            ['name' => 'Vacation Leave', 'is_active' => true, 'is_paid' => true]
+            ['name' => 'Vacation Leave', 'is_active' => true, 'is_paid' => false]
         );
 
     // Initialize leave balance (balance is computed column)
@@ -101,10 +101,11 @@ it('INT-LEAVE-ATT-001 — approved leave request deducts from leave balance', fu
         'date_to' => '2025-10-22',
         'total_days' => $daysRequested,
         'reason' => 'Vacation',
+        'requester_type' => 'staff',
         'status' => 'approved',
         'submitted_by' => $this->user->id,
-        'reviewed_by' => $this->user->id,
-        'reviewed_at' => now(),
+        'hr_approved_by' => $this->user->id,
+        'hr_approved_at' => now(),
     ]);
 
     // Update leave balance used field (balance is computed)
@@ -130,10 +131,11 @@ it('INT-LEAVE-ATT-002 — approved leave creates attendance logs marked as leave
         'date_to' => $leaveDates[2],
         'total_days' => 3,
         'reason' => 'Vacation',
+        'requester_type' => 'staff',
         'status' => 'approved',
         'submitted_by' => $this->user->id,
-        'reviewed_by' => $this->user->id,
-        'reviewed_at' => now(),
+        'hr_approved_by' => $this->user->id,
+        'hr_approved_at' => now(),
     ]);
 
     // Create attendance logs for leave days
@@ -156,14 +158,14 @@ it('INT-LEAVE-ATT-002 — approved leave creates attendance logs marked as leave
 });
 
 // ---------------------------------------------------------------------------
-// INT-LEAVE-PAY-001: Payroll computation excludes paid leave days from deductions
+// INT-LEAVE-PAY-001: Approved leave types are unpaid by default
 // ---------------------------------------------------------------------------
 
-it('INT-LEAVE-PAY-001 — paid leave days do not reduce gross pay', function () {
-    // Employee with daily rate of ₱1,000 (₱30,000 / 30 days)
+it('INT-LEAVE-PAY-001 — approved leave days reduce gross pay because all leave types are unpaid', function () {
     $monthlyRate = 30_000_00; // centavos
-    $workingDays = 22;
     $leaveDays = 3;
+    $dailyRate = 1_000_00;
+    $expectedGross = $monthlyRate - ($dailyRate * $leaveDays);
 
     // Create payroll run
     $payrollRun = PayrollRun::create([
@@ -185,14 +187,15 @@ it('INT-LEAVE-PAY-001 — paid leave days do not reduce gross pay', function () 
         'date_to' => '2025-10-22',
         'total_days' => $leaveDays,
         'reason' => 'Vacation',
+        'requester_type' => 'staff',
         'status' => 'approved',
         'submitted_by' => $this->user->id,
-        'reviewed_by' => $this->user->id,
-        'reviewed_at' => now(),
+        'hr_approved_by' => $this->user->id,
+        'hr_approved_at' => now(),
     ]);
 
     // Create attendance for working days
-    for ($i = 1; $i <= $workingDays; $i++) {
+    for ($i = 1; $i <= 22; $i++) {
         $date = sprintf('2025-10-%02d', $i);
         if ($i < 20 || $i > 22) { // Skip leave days
             AttendanceLog::create([
@@ -215,29 +218,29 @@ it('INT-LEAVE-PAY-001 — paid leave days do not reduce gross pay', function () 
         ]);
     }
 
-    // Create payroll detail with paid leave
+    // Create payroll detail with unpaid leave
     $payrollDetail = PayrollDetail::create([
         'payroll_run_id' => $payrollRun->id,
         'employee_id' => $this->employee->id,
         'basic_monthly_rate_centavos' => $monthlyRate,
-        'daily_rate_centavos' => 1_000_00,
+        'daily_rate_centavos' => $dailyRate,
         'hourly_rate_centavos' => 125_00,
         'working_days_in_period' => 26,
         'pay_basis' => 'monthly',
-        'days_worked' => $workingDays,
-        'leave_days_paid' => $leaveDays,
-        'leave_days_unpaid' => 0,
-        'basic_pay_centavos' => $monthlyRate,
-        'gross_pay_centavos' => $monthlyRate, // Full pay despite 3 leave days (paid leave)
-        'net_pay_centavos' => $monthlyRate - 2_000_00, // After deductions
+        'days_worked' => 19,
+        'leave_days_paid' => 0,
+        'leave_days_unpaid' => $leaveDays,
+        'basic_pay_centavos' => $expectedGross,
+        'gross_pay_centavos' => $expectedGross,
+        'net_pay_centavos' => $expectedGross - 2_000_00,
     ]);
 
     // Verify payroll detail
-    expect($payrollDetail->leave_days_paid)->toBe($leaveDays);
-    expect($payrollDetail->leave_days_unpaid)->toBe(0);
+    expect($payrollDetail->leave_days_paid)->toBe(0);
+    expect($payrollDetail->leave_days_unpaid)->toBe($leaveDays);
 
-    // Gross pay should be full monthly rate (no deduction for paid leave)
-    expect($payrollDetail->gross_pay_centavos)->toBe($monthlyRate);
+    expect($payrollDetail->gross_pay_centavos)->toBe($expectedGross);
+    expect($payrollDetail->gross_pay_centavos)->toBeLessThan($monthlyRate);
 });
 
 // ---------------------------------------------------------------------------
@@ -251,7 +254,6 @@ it('INT-LEAVE-PAY-002 — unpaid leave days reduce gross pay proportionally', fu
     $unpaidLeaveDays = 3;
     $expectedGross = $monthlyRate - ($dailyRate * $unpaidLeaveDays);
 
-    // Create unpaid leave type
     $unpaidLeaveType = LeaveType::firstOrCreate(
         ['code' => 'UL'],
         ['name' => 'Unpaid Leave', 'category' => 'other', 'is_active' => true, 'is_paid' => false]
@@ -275,10 +277,11 @@ it('INT-LEAVE-PAY-002 — unpaid leave days reduce gross pay proportionally', fu
         'date_to' => '2025-10-22',
         'total_days' => $unpaidLeaveDays,
         'reason' => 'Personal',
+        'requester_type' => 'staff',
         'status' => 'approved',
         'submitted_by' => $this->user->id,
-        'reviewed_by' => $this->user->id,
-        'reviewed_at' => now(),
+        'hr_approved_by' => $this->user->id,
+        'hr_approved_at' => now(),
     ]);
 
     $payrollDetail = PayrollDetail::create([
@@ -346,6 +349,7 @@ it('INT-LEAVE-ATT-PAY-001 — complete flow from leave request to payroll proces
         'date_to' => '2025-10-26',
         'total_days' => $leaveDays,
         'reason' => 'Family vacation',
+        'requester_type' => 'staff',
         'status' => 'draft',
         'submitted_by' => $this->user->id,
     ]);
@@ -355,8 +359,8 @@ it('INT-LEAVE-ATT-PAY-001 — complete flow from leave request to payroll proces
     // Step 2: Manager approves leave
     $leave->update([
         'status' => 'approved',
-        'reviewed_by' => $this->user->id,
-        'reviewed_at' => now(),
+        'hr_approved_by' => $this->user->id,
+        'hr_approved_at' => now(),
     ]);
 
     // Step 3: Leave balance deducted
@@ -390,7 +394,7 @@ it('INT-LEAVE-ATT-PAY-001 — complete flow from leave request to payroll proces
         ->count();
     expect($attendanceCount)->toBe(2);
 
-    // Step 5: Payroll processed with full pay (paid leave)
+    // Step 5: Payroll processed with reduced pay (all leave types are unpaid)
     $payrollRun = PayrollRun::create([
         'reference_no' => 'PR-TEST-E2E',
         'pay_period_label' => 'October 2025',
@@ -411,16 +415,18 @@ it('INT-LEAVE-ATT-PAY-001 — complete flow from leave request to payroll proces
         'working_days_in_period' => 26,
         'pay_basis' => 'monthly',
         'days_worked' => 20,
-        'leave_days_paid' => $leaveDays,
-        'leave_days_unpaid' => 0,
-        'basic_pay_centavos' => $monthlyRate,
-        'gross_pay_centavos' => $monthlyRate, // Full pay
-        'net_pay_centavos' => $monthlyRate - 2_500_00,
+        'leave_days_paid' => 0,
+        'leave_days_unpaid' => $leaveDays,
+        'basic_pay_centavos' => $monthlyRate - (1_000_00 * $leaveDays),
+        'gross_pay_centavos' => $monthlyRate - (1_000_00 * $leaveDays),
+        'net_pay_centavos' => ($monthlyRate - (1_000_00 * $leaveDays)) - 2_500_00,
     ]);
 
     // Verify end-to-end flow completed successfully
     expect($leave->status)->toBe('approved');
     expect((float) $balance->balance)->toBe(13.00);
     expect($attendanceCount)->toBe(2);
-    expect($payrollDetail->gross_pay_centavos)->toBe($monthlyRate);
+    expect($payrollDetail->leave_days_paid)->toBe(0);
+    expect($payrollDetail->leave_days_unpaid)->toBe($leaveDays);
+    expect($payrollDetail->gross_pay_centavos)->toBe($monthlyRate - (1_000_00 * $leaveDays));
 });

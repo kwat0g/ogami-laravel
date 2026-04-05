@@ -10,7 +10,6 @@ use App\Domains\Leave\Models\LeaveRequest;
 use App\Domains\Leave\Models\LeaveType;
 use App\Domains\Leave\Services\LeaveRequestService;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Leave\ProcessLeaveRequestRequest;
 use App\Http\Requests\Leave\StoreLeaveRequestRequest;
 use App\Http\Resources\Leave\LeaveBalanceResource;
 use App\Http\Resources\Leave\LeaveRequestResource;
@@ -101,14 +100,13 @@ final class LeaveRequestController extends Controller
     }
 
     /**
-     * PATCH /api/v1/leave/requests/{leaveRequest}/manager-check
-     * Step 3 — Plant Manager check.
+     * PATCH /api/v1/leave/requests/{leaveRequest}/manager-approve
      */
-    public function managerCheck(Request $request, LeaveRequest $leaveRequest): LeaveRequestResource
+    public function managerApprove(Request $request, LeaveRequest $leaveRequest): LeaveRequestResource
     {
-        $this->authorize('managerCheck', $leaveRequest);
+        $this->authorize('managerApprove', $leaveRequest);
 
-        $updated = $this->service->managerCheck(
+        $updated = $this->service->managerApprove(
             $leaveRequest,
             (int) $request->user()->id,
             $request->input('remarks'),
@@ -118,17 +116,15 @@ final class LeaveRequestController extends Controller
     }
 
     /**
-     * PATCH /api/v1/leave/requests/{leaveRequest}/ga-process
-     * Step 4 — GA Officer processes (sets action_taken + balance snapshot).
+     * PATCH /api/v1/leave/requests/{leaveRequest}/hr-approve
      */
-    public function gaProcess(ProcessLeaveRequestRequest $request, LeaveRequest $leaveRequest): LeaveRequestResource
+    public function hrApprove(Request $request, LeaveRequest $leaveRequest): LeaveRequestResource
     {
-        $this->authorize('gaProcess', $leaveRequest);
+        $this->authorize('hrApprove', $leaveRequest);
 
-        $updated = $this->service->gaProcess(
+        $updated = $this->service->hrApprove(
             $leaveRequest,
             (int) $request->user()->id,
-            $request->validated('action_taken'),
             $request->input('remarks'),
         );
 
@@ -136,14 +132,13 @@ final class LeaveRequestController extends Controller
     }
 
     /**
-     * PATCH /api/v1/leave/requests/{leaveRequest}/vp-note
-     * Step 5 — Vice President notes (deducts balance for approved_with_pay).
+     * PATCH /api/v1/leave/requests/{leaveRequest}/vp-approve
      */
-    public function vpNote(Request $request, LeaveRequest $leaveRequest): LeaveRequestResource
+    public function vpApprove(Request $request, LeaveRequest $leaveRequest): LeaveRequestResource
     {
-        $this->authorize('vpNote', $leaveRequest);
+        $this->authorize('vpApprove', $leaveRequest);
 
-        $updated = $this->service->vpNote(
+        $updated = $this->service->vpApprove(
             $leaveRequest,
             (int) $request->user()->id,
             $request->input('remarks'),

@@ -640,7 +640,7 @@ const router = createBrowserRouter([
 
 
       // ── VP Approvals Dashboard ────────────────────────────────────────────
-      { path: '/approvals/pending', element: withSuspense(guard('loans.vp_approve|procurement.purchase-request.view|inventory.mrq.vp_approve|payroll.vp_approve|leaves.vp_note', <VpApprovalsDashboardPage />)) },
+      { path: '/approvals/pending', element: withSuspense(guard('loans.vp_approve|procurement.purchase-request.view|inventory.mrq.vp_approve|payroll.vp_approve|leaves.hr_approve|leaves.vp_approve', <VpApprovalsDashboardPage />)) },
       { path: '/approvals/loans',   element: <Navigate to="/approvals/pending" replace /> },
       { path: '/approvals/loans/:ulid', element: withSuspense(guard('loans.vp_approve', <LoanDetailPage />)) },
       { path: '/approvals/budget-verification', element: withSuspense(guard('procurement.purchase-request.budget-check', <PurchaseRequestListPage lockedStatus="reviewed" pageTitle="Budget Verification" />)) },

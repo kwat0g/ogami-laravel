@@ -20,11 +20,11 @@ class ApprovalWorkflowConfigSeeder extends Seeder
         $now = now();
 
         $configs = [
-            // ── Leave Request (4-step chain from AD-084-00) ────────────────
+            // ── Leave Request (simplified requester-specific chain) ────────
             ['document_type' => 'leave_request', 'step_order' => 1, 'step_name' => 'Department Head Approval', 'required_permission' => 'leaves.head_approve', 'target_status' => 'head_approved', 'sod_with_creator' => true, 'sod_with_previous_step' => false],
-            ['document_type' => 'leave_request', 'step_order' => 2, 'step_name' => 'Plant Manager Check', 'required_permission' => 'leaves.manager_check', 'target_status' => 'manager_checked', 'sod_with_creator' => true, 'sod_with_previous_step' => false],
-            ['document_type' => 'leave_request', 'step_order' => 3, 'step_name' => 'GA Officer Processing', 'required_permission' => 'leaves.ga_process', 'target_status' => 'ga_processed', 'sod_with_creator' => true, 'sod_with_previous_step' => false],
-            ['document_type' => 'leave_request', 'step_order' => 4, 'step_name' => 'VP Notation', 'required_permission' => 'leaves.vp_note', 'target_status' => 'approved', 'sod_with_creator' => true, 'sod_with_previous_step' => false],
+            ['document_type' => 'leave_request', 'step_order' => 2, 'step_name' => 'Department Manager Approval', 'required_permission' => 'leaves.manager_approve', 'target_status' => 'manager_approved', 'sod_with_creator' => true, 'sod_with_previous_step' => false],
+            ['document_type' => 'leave_request', 'step_order' => 3, 'step_name' => 'HR Approval', 'required_permission' => 'leaves.hr_approve', 'target_status' => 'hr_approved', 'sod_with_creator' => true, 'sod_with_previous_step' => false],
+            ['document_type' => 'leave_request', 'step_order' => 4, 'step_name' => 'VP Approval', 'required_permission' => 'leaves.vp_approve', 'target_status' => 'approved', 'sod_with_creator' => true, 'sod_with_previous_step' => false],
 
             // ── Loan (5-step chain) ────────────────────────────────────────
             ['document_type' => 'loan', 'step_order' => 1, 'step_name' => 'Department Head Notation', 'required_permission' => 'loans.head_note', 'target_status' => 'head_noted', 'sod_with_creator' => true, 'sod_with_previous_step' => false],

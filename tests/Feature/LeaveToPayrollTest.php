@@ -22,6 +22,9 @@ beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder'])->assertExitCode(0);
     $this->artisan('db:seed', ['--class' => 'LeaveTypeSeeder'])->assertExitCode(0);
 
+    $this->head = User::factory()->create();
+    $this->head->assignRole('head');
+
     $this->hrManager = User::factory()->create([
         'password' => Hash::make('HRpass!123'),
     ]);
@@ -95,8 +98,8 @@ describe('POST /api/v1/leave/requests — submit leave', function () {
     });
 });
 
-describe('PATCH /api/v1/leave/requests/{id}/approve — approve leave', function () {
-    it('HR manager can approve a pending leave and the balance is deducted', function () {
+describe('PATCH /api/v1/leave/requests/{id}/head-approve + hr-approve — approve leave', function () {
+    it('head then HR manager can approve a staff leave and the balance is deducted', function () {
         if ($this->leaveType === null) {
             $this->markTestSkipped('SIL leave type not found in seeder output.');
         }
@@ -110,6 +113,7 @@ describe('PATCH /api/v1/leave/requests/{id}/approve — approve leave', function
             'total_days' => 2,
             'is_half_day' => false,
             'status' => 'submitted',
+            'requester_type' => 'staff',
             'submitted_by' => $this->submitter->id,
             'reason' => 'Integration test leave.',
         ]);
@@ -119,8 +123,15 @@ describe('PATCH /api/v1/leave/requests/{id}/approve — approve leave', function
             ->where('year', now()->year)
             ->value('used');
 
+        $this->actingAs($this->head)
+            ->patchJson("/api/v1/leave/requests/{$leaveRequest->id}/head-approve", [
+                'remarks' => 'Head approved.',
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('data.status', 'head_approved');
+
         $response = $this->actingAs($this->hrManager)
-            ->patchJson("/api/v1/leave/requests/{$leaveRequest->id}/approve", [
+            ->patchJson("/api/v1/leave/requests/{$leaveRequest->id}/hr-approve", [
                 'remarks' => 'Approved for integration test.',
             ]);
 
@@ -151,6 +162,7 @@ describe('PATCH /api/v1/leave/requests/{id}/reject — reject leave', function (
             'total_days' => 2,
             'is_half_day' => false,
             'status' => 'submitted',
+            'requester_type' => 'dept_manager',
             'submitted_by' => $this->submitter->id,
             'reason' => 'Reject test.',
         ]);
@@ -184,6 +196,7 @@ describe('DELETE /api/v1/leave/requests/{id} — cancel leave', function () {
             'total_days' => 1,
             'is_half_day' => false,
             'status' => 'submitted',
+            'requester_type' => 'staff',
             'submitted_by' => $this->hrManager->id,
             'reason' => 'Cancel test.',
         ]);

@@ -12,12 +12,12 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 |--------------------------------------------------------------------------
 | Leave Domain Routes  (prefix: v1/leave, name: v1.leave.)
 |
-| 4-step approval chain (form AD-084-00):
+| Simplified requester-specific approval chain:
 |   POST   requests                 Employee submits
-|   PATCH  requests/{id}/head-approve     Step 2 — Dept Head
-|   PATCH  requests/{id}/manager-check   Step 3 — Plant Manager
-|   PATCH  requests/{id}/ga-process      Step 4 — GA Officer
-|   PATCH  requests/{id}/vp-note         Step 5 — VP
+|   PATCH  requests/{id}/head-approve    Staff -> Dept Head
+|   PATCH  requests/{id}/manager-approve Head/Officer -> Dept Manager
+|   PATCH  requests/{id}/hr-approve      Intermediate/final HR step
+|   PATCH  requests/{id}/vp-approve      Final VP step
 |   PATCH  requests/{id}/reject          Any current approver can reject
 |--------------------------------------------------------------------------
 */
@@ -36,20 +36,17 @@ Route::middleware(['auth:sanctum', 'module_access:leaves'])->group(function () {
         ->middleware(['permission:leaves.head_approve', 'sod:leave_requests,head_approve', 'throttle:api-action'])
         ->name('requests.head_approve');
 
-    // Step 3 — Plant Manager checks (SoD: checker cannot be submitter)
-    Route::patch('requests/{leaveRequest}/manager-check', [LeaveRequestController::class, 'managerCheck'])
-        ->middleware(['permission:leaves.manager_check', 'sod:leave_requests,manager_check', 'throttle:api-action'])
-        ->name('requests.manager_check');
+    Route::patch('requests/{leaveRequest}/manager-approve', [LeaveRequestController::class, 'managerApprove'])
+        ->middleware(['permission:leaves.manager_approve', 'sod:leave_requests,manager_approve', 'throttle:api-action'])
+        ->name('requests.manager_approve');
 
-    // Step 4 — GA Officer processes (SoD: processor cannot be submitter)
-    Route::patch('requests/{leaveRequest}/ga-process', [LeaveRequestController::class, 'gaProcess'])
-        ->middleware(['permission:leaves.ga_process', 'sod:leave_requests,ga_process', 'throttle:api-action'])
-        ->name('requests.ga_process');
+    Route::patch('requests/{leaveRequest}/hr-approve', [LeaveRequestController::class, 'hrApprove'])
+        ->middleware(['permission:leaves.hr_approve', 'sod:leave_requests,hr_approve', 'throttle:api-action'])
+        ->name('requests.hr_approve');
 
-    // Step 5 — VP notes (SoD: VP cannot be submitter)
-    Route::patch('requests/{leaveRequest}/vp-note', [LeaveRequestController::class, 'vpNote'])
-        ->middleware(['permission:leaves.vp_note', 'sod:leave_requests,vp_note', 'throttle:api-action'])
-        ->name('requests.vp_note');
+    Route::patch('requests/{leaveRequest}/vp-approve', [LeaveRequestController::class, 'vpApprove'])
+        ->middleware(['permission:leaves.vp_approve', 'sod:leave_requests,vp_approve', 'throttle:api-action'])
+        ->name('requests.vp_approve');
 
     // Reject (any current-step approver)
     Route::patch('requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])

@@ -96,7 +96,7 @@ function hrdManagerPerms(): array
         'employees.view_unmasked_gov_ids', 'employees.create', 'employees.update',
         'employees.update_salary', 'employees.activate', 'employees.suspend', 'employees.terminate',
         'attendance.import_csv', 'attendance.resolve_anomalies', 'attendance.view_team',
-        'leaves.manager_check', 'leaves.reject', 'leaves.adjust_balance',
+        'leaves.manager_approve', 'leaves.reject', 'leaves.adjust_balance',
         'overtime.approve', 'overtime.reject',
         'loans.hr_approve', 'loans.create', 'loans.approve',
         'payroll.initiate', 'payroll.hr_approve', 'payroll.hr_return',
@@ -195,7 +195,7 @@ describe('HRD Manager — profile permissions', function () {
         expect($user->hasPermissionTo('employees.view_salary'))->toBeTrue();
         expect($user->hasPermissionTo('payroll.initiate'))->toBeTrue();
         expect($user->hasPermissionTo('payroll.hr_approve'))->toBeTrue();
-        expect($user->hasPermissionTo('leaves.manager_check'))->toBeTrue();
+        expect($user->hasPermissionTo('leaves.manager_approve'))->toBeTrue();
         expect($user->hasPermissionTo('overtime.approve'))->toBeTrue();
         expect($user->hasPermissionTo('loans.hr_approve'))->toBeTrue();
         expect($user->hasPermissionTo('reports.bir_2316'))->toBeTrue();
@@ -238,7 +238,7 @@ describe('HRD Manager — profile permissions', function () {
         $perms = $user->getEffectivePermissions()->all();
 
         expect($perms)->toContain('payroll.initiate');
-        expect($perms)->toContain('leaves.manager_check');
+        expect($perms)->toContain('leaves.manager_approve');
         expect($perms)->toContain('employees.view_salary');
 
         expect($perms)->not->toContain('journal_entries.post');
@@ -393,7 +393,7 @@ describe('HRD Supervisor — limited HR profile', function () {
     });
 
     it('cannot approve leave, overtime, or loans', function () {
-        expect($this->user->hasPermissionTo('leaves.manager_check'))->toBeFalse();
+        expect($this->user->hasPermissionTo('leaves.manager_approve'))->toBeFalse();
         expect($this->user->hasPermissionTo('overtime.approve'))->toBeFalse();
         expect($this->user->hasPermissionTo('loans.hr_approve'))->toBeFalse();
     });
@@ -455,7 +455,7 @@ describe('ACCTG Supervisor — limited accounting profile', function () {
 
     it('cannot access HR, payroll management, or financial reports', function () {
         expect($this->user->hasPermissionTo('employees.create'))->toBeFalse();
-        expect($this->user->hasPermissionTo('leaves.manager_check'))->toBeFalse();
+        expect($this->user->hasPermissionTo('leaves.manager_approve'))->toBeFalse();
         expect($this->user->hasPermissionTo('payroll.acctg_approve'))->toBeFalse();
         expect($this->user->hasPermissionTo('reports.financial_statements'))->toBeFalse();
         expect($this->user->hasPermissionTo('reports.trial_balance'))->toBeFalse();
@@ -478,7 +478,7 @@ describe('Staff — self-service only regardless of department', function () {
         // Staff has no module permissions at all (Spatie role)
         expect($user->hasPermissionTo('employees.view'))->toBeFalse();
         expect($user->hasPermissionTo('payroll.initiate'))->toBeFalse();
-        expect($user->hasPermissionTo('leaves.manager_check'))->toBeFalse();
+        expect($user->hasPermissionTo('leaves.manager_approve'))->toBeFalse();
     });
 
     it('staff in ACCTG gets only their own access — no accounting permissions', function () {
@@ -589,7 +589,7 @@ describe('Department isolation', function () {
 
         expect($user->hasPermissionTo('payroll.initiate'))->toBeFalse();
         expect($user->hasPermissionTo('employees.view_salary'))->toBeFalse();
-        expect($user->hasPermissionTo('leaves.manager_check'))->toBeFalse();
+        expect($user->hasPermissionTo('leaves.manager_approve'))->toBeFalse();
     });
 
     it('manager in ACCTG cannot use HRD permissions', function () {
@@ -717,7 +717,7 @@ describe('DepartmentPermissionService — DB-backed resolution', function () {
         $hrd = dppDept('DPP-MULTI-HRD');
         $acctg = dppDept('DPP-MULTI-ACCTG');
 
-        dppProfile($hrd, 'manager', ['payroll.initiate', 'leaves.manager_check', 'payroll.view_own_payslip']);
+        dppProfile($hrd, 'manager', ['payroll.initiate', 'leaves.manager_approve', 'payroll.view_own_payslip']);
         dppProfile($acctg, 'manager', ['journal_entries.post', 'vendor_invoices.approve', 'payroll.view_own_payslip']);
 
         Cache::flush();
@@ -730,7 +730,7 @@ describe('DepartmentPermissionService — DB-backed resolution', function () {
         // Should contain permissions from both profiles
         expect($allowed)->toContain('payroll.initiate');
         expect($allowed)->toContain('journal_entries.post');
-        expect($allowed)->toContain('leaves.manager_check');
+        expect($allowed)->toContain('leaves.manager_approve');
         expect($allowed)->toContain('vendor_invoices.approve');
 
         // Duplicates removed
@@ -743,7 +743,7 @@ describe('DepartmentPermissionService — DB-backed resolution', function () {
 
         expect($list)->toContain('employees.update_salary');
         expect($list)->toContain('employees.terminate');
-        expect($list)->toContain('leaves.manager_check');
+        expect($list)->toContain('leaves.manager_approve');
         expect($list)->toContain('overtime.approve');
         expect($list)->toContain('loans.hr_approve');
         expect($list)->toContain('payroll.hr_approve');

@@ -67,7 +67,7 @@ class ModulePermissionSeeder extends Seeder
                 'attendance.import_csv', 'attendance.resolve_anomalies',
                 'attendance.manage_shifts', 'attendance.delete', 'attendance.lock', 'attendance.unlock',
                 'leaves.adjust_balance', 'leaves.configure_types', 'leaves.trigger_sil_monetization',
-                'leave_balances.adjust', 'leaves.manager_check', 'leaves.ga_process', 'loans.hr_approve', 'loans.view_ln007_log',
+                'leave_balances.adjust', 'leaves.manager_approve', 'leaves.hr_approve', 'leaves.vp_approve', 'loans.hr_approve', 'loans.view_ln007_log',
                 'loans.configure_types', 'loans.create', 'loans.update', 'loans.approve', 'loans.reject',
                 'loans.supervisor_review', 'loans.manager_check', 'loan_types.view',
                 'payroll.manage_pay_periods', 'payroll.initiate', 'payroll.pre_run_validate',
@@ -725,7 +725,7 @@ class ModulePermissionSeeder extends Seeder
                 'procurement.purchase-request.view',
                 'inventory.mrq.vp_approve',
                 'payroll.vp_approve',
-                'leaves.vp_note',
+                'leaves.vp_approve',
                 'overtime.executive_approve',
                 // Recruitment Approval & Final Offers
                 'recruitment.requisitions.view', 'recruitment.requisitions.approve', 'recruitment.requisitions.reject',

@@ -14,17 +14,19 @@ use OwenIt\Auditing\Auditable as AuditableTrait;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
- * Leave request — 4-step approval chain matching physical form AD-084-00.
+ * Leave request — requester-specific simplified approval chain.
  *
  * State machine:
- *   draft → submitted → head_approved → manager_checked → ga_processed → approved
- *                                                      ↘ rejected  (GA disapproves)
+ *   staff:        submitted → head_approved    → approved
+ *   head_officer: submitted → manager_approved → approved
+ *   dept_manager: submitted → hr_approved      → approved
+ *   hr_manager:   submitted                     → approved
  *   Any pending state → cancelled (by submitter)
  *
  * Step 2 — Department Head     (Approved By)  → head_approved
- * Step 3 — Plant Manager       (Checked By)   → manager_checked
- * Step 4 — GA Officer          (Received By)  → ga_processed | rejected
- * Step 5 — Vice President      (Noted By)     → approved (balance deducted here)
+ * Step 3 — Department Manager  (Approved By)  → manager_approved
+ * Step 4 — HR Manager          (Approved By)  → hr_approved
+ * Final — HR Manager / VP final approval      → approved
  *
  * LV-004: each approver <> submitted_by enforced at service layer.
  *
@@ -38,21 +40,18 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property bool $is_half_day
  * @property string|null $half_day_period AM|PM
  * @property string $reason
- * @property string $status draft|submitted|head_approved|manager_checked|ga_processed|approved|rejected|cancelled
+ * @property string $requester_type staff|head_officer|dept_manager|hr_manager
+ * @property string $status draft|submitted|head_approved|manager_approved|hr_approved|approved|rejected|cancelled
  * @property int|null $head_id FK users.id — dept head who approved (step 2)
  * @property string|null $head_remarks
  * @property Carbon|null $head_approved_at
- * @property int|null $manager_checked_by FK users.id — plant manager who checked (step 3)
- * @property string|null $manager_check_remarks
- * @property Carbon|null $manager_checked_at
- * @property int|null $ga_processed_by FK users.id — GA officer who received (step 4)
- * @property string|null $ga_remarks
- * @property Carbon|null $ga_processed_at
- * @property string|null $action_taken approved_with_pay|approved_without_pay|disapproved
- * @property float|null $beginning_balance balance snapshot at ga_process time
- * @property float|null $applied_days days to deduct (= total_days for full, 0 for without_pay)
- * @property float|null $ending_balance beginning_balance − applied_days
- * @property int|null $vp_id FK users.id — VP who noted (step 5)
+ * @property int|null $manager_approved_by FK users.id — dept manager who approved
+ * @property string|null $manager_approved_remarks
+ * @property Carbon|null $manager_approved_at
+ * @property int|null $hr_approved_by FK users.id — HR manager who approved
+ * @property string|null $hr_remarks
+ * @property Carbon|null $hr_approved_at
+ * @property int|null $vp_id FK users.id — VP who approved final step
  * @property string|null $vp_remarks
  * @property Carbon|null $vp_noted_at
  * @property Carbon $created_at
@@ -61,13 +60,13 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property-read LeaveType $leaveType
  * @property-read User      $submitter
  * @property-read User|null $head
- * @property-read User|null $managerChecker
- * @property-read User|null $gaProcessor
+ * @property-read User|null $managerApprover
+ * @property-read User|null $hrApprover
  * @property-read User|null $vp
  */
 final class LeaveRequest extends Model implements Auditable
 {
-    use AuditableTrait, SoftDeletes, SoftDeletes;
+    use AuditableTrait, SoftDeletes;
 
     protected $table = 'leave_requests';
 
@@ -76,6 +75,7 @@ final class LeaveRequest extends Model implements Auditable
         'employee_id',
         'leave_type_id',
         'submitted_by',
+        'requester_type',
         'date_from',
         'date_to',
         'total_days',
@@ -88,18 +88,14 @@ final class LeaveRequest extends Model implements Auditable
         'head_remarks',
         'head_approved_at',
         // Step 3 — Manager
-        'manager_checked_by',
-        'manager_check_remarks',
-        'manager_checked_at',
-        // Step 4 — GA Officer
-        'ga_processed_by',
-        'ga_remarks',
-        'ga_processed_at',
-        'action_taken',
-        'beginning_balance',
-        'applied_days',
-        'ending_balance',
-        // Step 5 — VP
+        'manager_approved_by',
+        'manager_approved_remarks',
+        'manager_approved_at',
+        // Step 4 — HR
+        'hr_approved_by',
+        'hr_remarks',
+        'hr_approved_at',
+        // Final — VP
         'vp_id',
         'vp_remarks',
         'vp_noted_at',
@@ -114,12 +110,9 @@ final class LeaveRequest extends Model implements Auditable
             'total_days' => 'float',
             'is_half_day' => 'boolean',
             'head_approved_at' => 'datetime',
-            'manager_checked_at' => 'datetime',
-            'ga_processed_at' => 'datetime',
+            'manager_approved_at' => 'datetime',
+            'hr_approved_at' => 'datetime',
             'vp_noted_at' => 'datetime',
-            'beginning_balance' => 'float',
-            'applied_days' => 'float',
-            'ending_balance' => 'float',
         ];
     }
 
@@ -132,8 +125,8 @@ final class LeaveRequest extends Model implements Auditable
             'draft',
             'submitted',
             'head_approved',
-            'manager_checked',
-            'ga_processed',
+            'manager_approved',
+            'hr_approved',
         ], true);
     }
 
@@ -142,14 +135,14 @@ final class LeaveRequest extends Model implements Auditable
         return $this->status === 'head_approved';
     }
 
-    public function isManagerChecked(): bool
+    public function isManagerApproved(): bool
     {
-        return $this->status === 'manager_checked';
+        return $this->status === 'manager_approved';
     }
 
-    public function isGaProcessed(): bool
+    public function isHrApproved(): bool
     {
-        return $this->status === 'ga_processed';
+        return $this->status === 'hr_approved';
     }
 
     public function isApproved(): bool
@@ -192,15 +185,15 @@ final class LeaveRequest extends Model implements Auditable
     }
 
     /** Step 3 — Plant Manager. */
-    public function managerChecker(): BelongsTo
+    public function managerApprover(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'manager_checked_by');
+        return $this->belongsTo(User::class, 'manager_approved_by');
     }
 
-    /** Step 4 — GA Officer. */
-    public function gaProcessor(): BelongsTo
+    /** Step 4 — HR Manager. */
+    public function hrApprover(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'ga_processed_by');
+        return $this->belongsTo(User::class, 'hr_approved_by');
     }
 
     /** Step 5 — Vice President. */

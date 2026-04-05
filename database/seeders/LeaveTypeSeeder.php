@@ -21,7 +21,7 @@ class LeaveTypeSeeder extends Seeder
                 'code' => 'VL',
                 'name' => 'Vacation Leave',
                 'category' => 'vacation',
-                'is_paid' => true,
+                'is_paid' => false,
                 'max_days_per_year' => 5,
                 'requires_approval' => true,
                 'requires_documentation' => false,
@@ -35,7 +35,7 @@ class LeaveTypeSeeder extends Seeder
                 'code' => 'ML',
                 'name' => 'Maternity Leave',
                 'category' => 'maternity',
-                'is_paid' => true,
+                'is_paid' => false,
                 'max_days_per_year' => 105,    // RA 11210
                 'requires_approval' => true,
                 'requires_documentation' => true,
@@ -49,7 +49,7 @@ class LeaveTypeSeeder extends Seeder
                 'code' => 'BDAY',
                 'name' => 'Birthday Leave',
                 'category' => 'other',
-                'is_paid' => true,
+                'is_paid' => false,
                 'max_days_per_year' => 1,
                 'requires_approval' => true,
                 'requires_documentation' => false,
@@ -63,7 +63,7 @@ class LeaveTypeSeeder extends Seeder
                 'code' => 'BL',
                 'name' => 'Bereavement Leave',
                 'category' => 'bereavement',
-                'is_paid' => true,
+                'is_paid' => false,
                 'max_days_per_year' => 3,
                 'requires_approval' => true,
                 'requires_documentation' => true,
@@ -77,7 +77,7 @@ class LeaveTypeSeeder extends Seeder
                 'code' => 'PL',
                 'name' => 'Paternity Leave',
                 'category' => 'paternity',
-                'is_paid' => true,
+                'is_paid' => false,
                 'max_days_per_year' => 7,
                 'requires_approval' => true,
                 'requires_documentation' => true,
@@ -91,7 +91,7 @@ class LeaveTypeSeeder extends Seeder
                 'code' => 'OTH',
                 'name' => 'Others',
                 'category' => 'other',
-                'is_paid' => false,   // GA Officer decides pay status (with/without pay)
+                'is_paid' => false,
                 'max_days_per_year' => 0,   // discretionary — no fixed entitlement
                 'requires_approval' => true,
                 'requires_documentation' => false,
@@ -110,6 +110,23 @@ class LeaveTypeSeeder extends Seeder
         }
         unset($row);
 
-        DB::table('leave_types')->insertOrIgnore($types);
+        DB::table('leave_types')->upsert(
+            $types,
+            ['code'],
+            [
+                'name',
+                'category',
+                'is_paid',
+                'max_days_per_year',
+                'requires_approval',
+                'requires_documentation',
+                'monthly_accrual_days',
+                'max_carry_over_days',
+                'can_be_monetized',
+                'deducts_absent_on_lwop',
+                'is_active',
+                'updated_at',
+            ],
+        );
     }
 }

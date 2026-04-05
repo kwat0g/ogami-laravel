@@ -66,7 +66,7 @@ describe('Response Schemas', () => {
           code: 'VL',
           name: 'Vacation Leave',
           category: 'earned',
-          is_paid: true,
+          is_paid: false,
         },
       })
       expect(result.success).toBe(true)

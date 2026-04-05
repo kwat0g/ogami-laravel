@@ -5,7 +5,9 @@ import { PERMISSIONS } from '@/lib/permissions'
 import {
   useTeamLeaveRequests,
   useHeadApproveLeaveRequest,
-  useManagerCheckLeaveRequest,
+  useManagerApproveLeaveRequest,
+  useHrApproveLeaveRequest,
+  useVpApproveLeaveRequest,
   useRejectLeaveRequest,
 } from '@/hooks/useLeave'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -21,17 +23,23 @@ const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 export default function TeamLeavePage() {
   const { hasPermission } = useAuthStore()
   const canHeadApprove = hasPermission(PERMISSIONS.leaves.head_approve)
-  const canManagerCheck = hasPermission(PERMISSIONS.leaves.manager_check)
+  const canManagerApprove = hasPermission(PERMISSIONS.leaves.manager_approve)
+  const canHrApprove = hasPermission(PERMISSIONS.leaves.hr_approve)
+  const canVpApprove = hasPermission(PERMISSIONS.leaves.vp_approve)
 
   const [filters, setFilters] = useState<LeaveFilters>({ per_page: 25 })
   const [rejectId, setRejectId] = useState<number | null>(null)
   const [approveId, setApproveId] = useState<number | null>(null)
-  const [checkId, setCheckId] = useState<number | null>(null)
+  const [managerApproveId, setManagerApproveId] = useState<number | null>(null)
+  const [hrApproveId, setHrApproveId] = useState<number | null>(null)
+  const [vpApproveId, setVpApproveId] = useState<number | null>(null)
   const [remarks, setRemarks] = useState('')
 
   const { data, isLoading, isError } = useTeamLeaveRequests(filters)
   const headApprove = useHeadApproveLeaveRequest()
-  const managerCheck = useManagerCheckLeaveRequest()
+  const managerApprove = useManagerApproveLeaveRequest()
+  const hrApprove = useHrApproveLeaveRequest()
+  const vpApprove = useVpApproveLeaveRequest()
   const reject = useRejectLeaveRequest()
 
   if (isLoading) return <SkeletonLoader rows={10} />
@@ -67,15 +75,14 @@ export default function TeamLeavePage() {
       )
     }
 
-    // Step 3: Plant Manager checks head-approved requests (with SoD)
-    if (canManagerCheck && row.status === 'head_approved') {
+    if (canManagerApprove && row.requester_type === 'head_officer' && row.status === 'submitted') {
       buttons.push(
         <SodActionButton
-          key="manager-check"
+          key="manager-approve"
           initiatedById={row.submitted_by}
-          label="Check"
-          onClick={() => setCheckId(row.id)}
-          isLoading={managerCheck.isPending}
+          label="Manager Approve"
+          onClick={() => setManagerApproveId(row.id)}
+          isLoading={managerApprove.isPending}
           variant="primary"
         />
       )
@@ -85,8 +92,34 @@ export default function TeamLeavePage() {
           initiatedById={row.submitted_by}
           label="Reject"
           onClick={() => setRejectId(row.id)}
-          isLoading={managerCheck.isPending || reject.isPending}
+          isLoading={managerApprove.isPending || reject.isPending}
           variant="danger"
+        />
+      )
+    }
+
+    if (canHrApprove && ((row.requester_type === 'staff' && row.status === 'head_approved') || (row.requester_type === 'head_officer' && row.status === 'manager_approved') || (row.requester_type === 'dept_manager' && row.status === 'submitted'))) {
+      buttons.push(
+        <SodActionButton
+          key="hr-approve"
+          initiatedById={row.submitted_by}
+          label="HR Approve"
+          onClick={() => setHrApproveId(row.id)}
+          isLoading={hrApprove.isPending}
+          variant="success"
+        />
+      )
+    }
+
+    if (canVpApprove && ((row.requester_type === 'dept_manager' && row.status === 'hr_approved') || (row.requester_type === 'hr_manager' && row.status === 'submitted'))) {
+      buttons.push(
+        <SodActionButton
+          key="vp-approve"
+          initiatedById={row.submitted_by}
+          label="VP Approve"
+          onClick={() => setVpApproveId(row.id)}
+          isLoading={vpApprove.isPending}
+          variant="success"
         />
       )
     }
@@ -112,7 +145,7 @@ export default function TeamLeavePage() {
           className="border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none focus:border-neutral-400"
         >
           <option value="">All Statuses</option>
-          {['submitted', 'head_approved', 'manager_checked', 'ga_processed', 'approved', 'rejected', 'cancelled'].map((s) => (
+          {['submitted', 'head_approved', 'manager_approved', 'hr_approved', 'approved', 'rejected', 'cancelled'].map((s) => (
             <option key={s} value={s}>{s.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}</option>
           ))}
         </select>
@@ -202,20 +235,50 @@ export default function TeamLeavePage() {
         loading={headApprove.isPending}
       />
 
-      {/* Check Confirmation */}
+      {/* Manager Approval Confirmation */}
       <ConfirmDialog
-        open={checkId !== null}
-        onClose={() => setCheckId(null)}
+        open={managerApproveId !== null}
+        onClose={() => setManagerApproveId(null)}
         onConfirm={() => {
-          if (!checkId) return
-          managerCheck.mutate({ id: checkId }, {
-            onSuccess: () => { toast.success('Request checked by plant manager.'); setCheckId(null) },
+          if (!managerApproveId) return
+          managerApprove.mutate({ id: managerApproveId }, {
+            onSuccess: () => { toast.success('Request approved by department manager.'); setManagerApproveId(null) },
           })
         }}
-        title="Check Leave Request"
-        description="Are you sure you want to mark this leave request as checked?"
-        confirmLabel="Check"
-        loading={managerCheck.isPending}
+        title="Manager Approve Leave Request"
+        description="Are you sure you want to approve this leave request as department manager?"
+        confirmLabel="Approve"
+        loading={managerApprove.isPending}
+      />
+
+      <ConfirmDialog
+        open={hrApproveId !== null}
+        onClose={() => setHrApproveId(null)}
+        onConfirm={() => {
+          if (!hrApproveId) return
+          hrApprove.mutate({ id: hrApproveId }, {
+            onSuccess: () => { toast.success('Leave request approved by HR.'); setHrApproveId(null) },
+          })
+        }}
+        title="HR Approve Leave Request"
+        description="Approve this leave request at the HR step."
+        confirmLabel="Approve"
+        loading={hrApprove.isPending}
+      />
+
+      <ConfirmDialog
+        open={vpApproveId !== null}
+        onClose={() => setVpApproveId(null)}
+        onConfirm={() => {
+          if (!vpApproveId) return
+          vpApprove.mutate({ id: vpApproveId }, {
+            onSuccess: () => { toast.success('Leave request approved by VP.'); setVpApproveId(null) },
+          })
+        }}
+        title="VP Approve Leave Request"
+        description="Approve this leave request at the final VP step."
+        confirmLabel="Approve"
+        loading={vpApprove.isPending}
       />
 
       {/* Reject Modal */}

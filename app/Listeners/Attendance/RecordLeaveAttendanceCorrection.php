@@ -11,10 +11,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 /**
  * Creates or updates AttendanceLog records for each day covered by an approved
- * leave request, so the payroll pipeline does not count those days as absences.
+ * leave request, so downstream attendance views can see approved leave days
+ * without treating them as worked time.
  *
- * LVE-ATT-001: Approved leave days must appear in the attendance ledger with
- *              480 worked minutes so payroll treats them as paid leave days.
+ * LVE-ATT-001: Leave correction rows must not add payable worked minutes.
  *
  * Idempotent: Uses updateOrCreate keyed on (employee_id, work_date) to avoid
  * overwriting biometric records that already exist.
@@ -55,9 +55,9 @@ final class RecordLeaveAttendanceCorrection implements ShouldQueue
                 ['employee_id' => $employeeId, 'work_date' => $date->toDateString()],
                 [
                     'source' => 'leave_correction',
-                    'is_present' => true,
+                    'is_present' => false,
                     'is_absent' => false,
-                    'worked_minutes' => 480,
+                    'worked_minutes' => 0,
                     'late_minutes' => 0,
                     'undertime_minutes' => 0,
                     'remarks' => "On approved leave: {$leaveTypeName}",

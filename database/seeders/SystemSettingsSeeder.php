@@ -195,10 +195,10 @@ class SystemSettingsSeeder extends Seeder
                     // Note: uses leaves.file_own permission (not leaves.apply)
                     'leave_requests' => [
                         'head_approve' => ['file_own'],
-                        'manager_check' => ['file_own'],
-                        'ga_process' => ['file_own'],
-                        'vp_note' => ['file_own'],
-                        'file_own' => ['head_approve', 'manager_check', 'ga_process', 'vp_note'],
+                        'manager_approve' => ['file_own'],
+                        'hr_approve' => ['file_own'],
+                        'vp_approve' => ['file_own'],
+                        'file_own' => ['head_approve', 'manager_approve', 'hr_approve', 'vp_approve'],
                     ],
 
                     // ── SOD-003 ── Overtime: approver cannot be submitter ─────

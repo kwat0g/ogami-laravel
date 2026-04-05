@@ -195,11 +195,13 @@ export type LeaveStatus =
   | 'draft'
   | 'submitted'
   | 'head_approved'
-  | 'manager_checked'
-  | 'ga_processed'
+  | 'manager_approved'
+  | 'hr_approved'
   | 'approved'
   | 'rejected'
   | 'cancelled'
+
+export type LeaveRequesterType = 'staff' | 'head_officer' | 'dept_manager' | 'hr_manager'
 
 export interface LeaveTypeSummary {
   id:   number
@@ -214,6 +216,7 @@ export interface LeaveRequest {
   leave_type_id:    number
   leave_type:       LeaveTypeSummary | null
   submitted_by:     number  // user who filed — SoD-002 initiator
+  requester_type:   LeaveRequesterType
   date_from:        string
   date_to:          string
   total_days:       number
@@ -225,29 +228,18 @@ export interface LeaveRequest {
   head_id:              number | null
   head_remarks:         string | null
   head_approved_at:     string | null
-  // Step 3 — Plant Manager
-  manager_checked_by:      number | null
-  manager_check_remarks:   string | null
-  manager_checked_at:      string | null
-  // Step 4 — GA Officer
-  ga_processed_by:     number | null
-  ga_remarks:          string | null
-  ga_processed_at:     string | null
-  action_taken:        'approved_with_pay' | 'approved_without_pay' | 'disapproved' | null
-  beginning_balance:   number | null
-  applied_days:        number | null
-  ending_balance:      number | null
+  // Step 3 — Department Manager
+  manager_approved_by:      number | null
+  manager_approved_remarks: string | null
+  manager_approved_at:      string | null
+  // Step 4 — HR Manager
+  hr_approved_by:       number | null
+  hr_remarks:           string | null
+  hr_approved_at:       string | null
   // Step 5 — Vice President
   vp_id:               number | null
   vp_remarks:          string | null
   vp_noted_at:         string | null
-  // Reviewer / generic approval fields (returned by some API responses)
-  reviewed_by:         number | null
-  reviewed_at:         string | null
-  reviewer_remarks:    string | null
-  rejected_by:         number | null
-  rejected_at:         string | null
-  rejection_reason:    string | null
   created_at:          string
   updated_at:          string
 }
@@ -568,5 +560,4 @@ export interface LoanType {
   min_amount_centavos: number
   subject_to_min_wage_protection: boolean
 }
-
 

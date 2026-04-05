@@ -29,6 +29,7 @@ final class LeaveRequestResource extends JsonResource
                 'name' => $lr->leaveType->name,
             ]),
             'submitted_by' => $lr->submitted_by,
+            'requester_type' => $lr->requester_type,
             'date_from' => $lr->date_from->toDateString(),
             'date_to' => $lr->date_to->toDateString(),
             'total_days' => $lr->total_days,
@@ -46,18 +47,14 @@ final class LeaveRequestResource extends JsonResource
             'head_remarks' => $lr->head_remarks,
             'head_approved_at' => $lr->head_approved_at?->toIso8601String(),
             // Step 3 — Plant Manager
-            'manager_checked_by' => $lr->manager_checked_by,
-            'manager_check_remarks' => $lr->manager_check_remarks,
-            'manager_checked_at' => $lr->manager_checked_at?->toIso8601String(),
-            // Step 4 — GA Officer
-            'ga_processed_by' => $lr->ga_processed_by,
-            'ga_remarks' => $lr->ga_remarks,
-            'ga_processed_at' => $lr->ga_processed_at?->toIso8601String(),
-            'action_taken' => $lr->action_taken,
-            'beginning_balance' => $lr->beginning_balance,
-            'applied_days' => $lr->applied_days,
-            'ending_balance' => $lr->ending_balance,
-            // Step 5 — Vice President
+            'manager_approved_by' => $lr->manager_approved_by,
+            'manager_approved_remarks' => $lr->manager_approved_remarks,
+            'manager_approved_at' => $lr->manager_approved_at?->toIso8601String(),
+            // Step 4 — HR Manager
+            'hr_approved_by' => $lr->hr_approved_by,
+            'hr_remarks' => $lr->hr_remarks,
+            'hr_approved_at' => $lr->hr_approved_at?->toIso8601String(),
+            // Final — Vice President
             'vp_id' => $lr->vp_id,
             'vp_remarks' => $lr->vp_remarks,
             'vp_noted_at' => $lr->vp_noted_at?->toIso8601String(),

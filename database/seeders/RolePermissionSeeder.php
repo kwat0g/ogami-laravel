@@ -118,9 +118,9 @@ class RolePermissionSeeder extends Seeder
         'leaves.file_on_behalf',
         'leaves.cancel',
         'leaves.head_approve',
-        'leaves.manager_check',
-        'leaves.ga_process',
-        'leaves.vp_note',
+        'leaves.manager_approve',
+        'leaves.hr_approve',
+        'leaves.vp_approve',
         'leaves.reject',
         'leaves.adjust_balance',
         'leaves.configure_types',
@@ -581,7 +581,7 @@ class RolePermissionSeeder extends Seeder
             'overtime.view', 'overtime.submit', 'overtime.approve', 'overtime.reject', 'overtime.supervise',
             // Leave
             'leaves.view_own', 'leaves.view_team', 'leaves.file_own', 'leaves.file_on_behalf',
-            'leaves.cancel', 'leaves.head_approve', 'leaves.manager_check', 'leaves.ga_process', 'leaves.vp_note',
+            'leaves.cancel', 'leaves.head_approve', 'leaves.manager_approve', 'leaves.hr_approve', 'leaves.reject',
             'leaves.reject', 'leaves.adjust_balance', 'leaves.configure_types', 'leaves.trigger_sil_monetization',
             'leave_balances.view', 'leave_balances.adjust', 'leave_balances.manage',
             // Loans (v1 + v2 Step 2 checker)

@@ -54,8 +54,15 @@ Route::middleware(['auth:sanctum', 'module_access:approvals'])->group(function (
                 ->join('employees', 'leave_requests.employee_id', '=', 'employees.id')
                 ->join('leave_types', 'leave_requests.leave_type_id', '=', 'leave_types.id')
                 ->when(! $isGlobal, fn ($q) => $q->whereIn('leave_requests.employee_id', $empIds ?? []))
-                ->where('leave_requests.status', 'approved')
-                ->whereNull('leave_requests.vp_noted_at')
+                ->where(function ($q): void {
+                    $q->where(function ($sub): void {
+                        $sub->where('leave_requests.requester_type', 'dept_manager')
+                            ->where('leave_requests.status', 'hr_approved');
+                    })->orWhere(function ($sub): void {
+                        $sub->where('leave_requests.requester_type', 'hr_manager')
+                            ->where('leave_requests.status', 'submitted');
+                    });
+                })
                 ->select(
                     'leave_requests.id',
                     DB::raw("concat(employees.first_name, ' ', employees.last_name) as requestor"),
@@ -63,6 +70,8 @@ Route::middleware(['auth:sanctum', 'module_access:approvals'])->group(function (
                     'leave_requests.date_from',
                     'leave_requests.date_to',
                     'leave_requests.total_days',
+                    'leave_requests.status',
+                    'leave_requests.requester_type',
                     'leave_requests.reason',
                     'leave_requests.created_at'
                 )

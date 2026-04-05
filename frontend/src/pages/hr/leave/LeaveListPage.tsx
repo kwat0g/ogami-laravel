@@ -16,6 +16,15 @@ import { ApprovalTimeline, type ApprovalStep } from '@/components/ui/ApprovalTim
 import { Scale, X, ChevronDown, ChevronUp, Search, CheckSquare, XSquare } from 'lucide-react'
 
 const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
+const LEAVE_STATUS_OPTIONS: LeaveFilters['status'][] = [
+  'submitted',
+  'head_approved',
+  'manager_approved',
+  'hr_approved',
+  'approved',
+  'rejected',
+  'cancelled',
+]
 
 export default function LeaveListPage() {
   const { hasPermission } = useAuthStore()
@@ -67,9 +76,84 @@ export default function LeaveListPage() {
   const rows = data?.data ?? []
   const meta = data?.meta
   
-  // Only pending rows are selectable for batch operations
-  const pendingRows = rows.filter((r) => r.status === 'pending')
+  // Only submitted staff-chain rows are selectable for batch head approval.
+  const pendingRows = rows.filter((r) => r.status === 'submitted' && r.requester_type === 'staff')
   const allPendingSelected = pendingRows.length > 0 && pendingRows.every((r) => selectedIds.has(r.id))
+  const getStatusLabel = useCallback((status: string) => status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), [])
+  const getLatestActor = useCallback((row: (typeof rows)[number]) => {
+    if (row.vp_id) return `User #${row.vp_id}`
+    if (row.hr_approved_by) return `User #${row.hr_approved_by}`
+    if (row.manager_approved_by) return `User #${row.manager_approved_by}`
+    if (row.head_id) return `User #${row.head_id}`
+    return null
+  }, [])
+  const buildApprovalSteps = useCallback((row: (typeof rows)[number]): ApprovalStep[] => {
+    const steps: ApprovalStep[] = [
+      {
+        label: 'Submitted',
+        state: 'completed',
+        actor: `User #${row.submitted_by}`,
+        timestamp: row.created_at,
+      },
+    ]
+
+    if (row.requester_type === 'staff') {
+      steps.push({
+        label: 'Department Head Approval',
+        state: row.head_approved_at ? 'completed' : row.status === 'submitted' ? 'current' : row.status === 'rejected' ? 'rejected' : 'pending',
+        actor: row.head_id ? `User #${row.head_id}` : undefined,
+        timestamp: row.head_approved_at,
+        remarks: row.head_remarks,
+      })
+      steps.push({
+        label: 'HR Manager Final Approval',
+        state: row.status === 'approved' ? 'completed' : row.status === 'head_approved' ? 'current' : row.status === 'rejected' && !!row.head_approved_at ? 'rejected' : 'pending',
+        actor: row.hr_approved_by ? `User #${row.hr_approved_by}` : undefined,
+        timestamp: row.hr_approved_at,
+        remarks: row.hr_remarks,
+      })
+    } else if (row.requester_type === 'head_officer') {
+      steps.push({
+        label: 'Department Manager Approval',
+        state: row.manager_approved_at ? 'completed' : row.status === 'submitted' ? 'current' : row.status === 'rejected' ? 'rejected' : 'pending',
+        actor: row.manager_approved_by ? `User #${row.manager_approved_by}` : undefined,
+        timestamp: row.manager_approved_at,
+        remarks: row.manager_approved_remarks,
+      })
+      steps.push({
+        label: 'HR Manager Final Approval',
+        state: row.status === 'approved' ? 'completed' : row.status === 'manager_approved' ? 'current' : row.status === 'rejected' && !!row.manager_approved_at ? 'rejected' : 'pending',
+        actor: row.hr_approved_by ? `User #${row.hr_approved_by}` : undefined,
+        timestamp: row.hr_approved_at,
+        remarks: row.hr_remarks,
+      })
+    } else if (row.requester_type === 'dept_manager') {
+      steps.push({
+        label: 'HR Manager Approval',
+        state: row.hr_approved_at ? 'completed' : row.status === 'submitted' ? 'current' : row.status === 'rejected' ? 'rejected' : 'pending',
+        actor: row.hr_approved_by ? `User #${row.hr_approved_by}` : undefined,
+        timestamp: row.hr_approved_at,
+        remarks: row.hr_remarks,
+      })
+      steps.push({
+        label: 'VP Final Approval',
+        state: row.status === 'approved' ? 'completed' : row.status === 'hr_approved' ? 'current' : row.status === 'rejected' && !!row.hr_approved_at ? 'rejected' : 'pending',
+        actor: row.vp_id ? `User #${row.vp_id}` : undefined,
+        timestamp: row.vp_noted_at,
+        remarks: row.vp_remarks,
+      })
+    } else {
+      steps.push({
+        label: 'VP Final Approval',
+        state: row.status === 'approved' ? 'completed' : row.status === 'submitted' ? 'current' : row.status === 'rejected' ? 'rejected' : 'pending',
+        actor: row.vp_id ? `User #${row.vp_id}` : undefined,
+        timestamp: row.vp_noted_at,
+        remarks: row.vp_remarks,
+      })
+    }
+
+    return steps
+  }, [])
   
   const toggleSelect = useCallback((id: number) => {
     setSelectedIds((prev) => {
@@ -262,8 +346,8 @@ export default function LeaveListPage() {
           className="border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:ring-1 focus:ring-neutral-400 outline-none"
         >
           <option value="">All Statuses</option>
-          {['pending', 'approved', 'rejected', 'cancelled'].map((s) => (
-            <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+          {LEAVE_STATUS_OPTIONS.map((status) => (
+            <option key={status} value={status}>{getStatusLabel(status)}</option>
           ))}
         </select>
 
@@ -447,7 +531,7 @@ export default function LeaveListPage() {
                 >
                   {canHeadApprove && (
                     <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                      {row.status === 'pending' ? (
+                      {row.status === 'submitted' && row.requester_type === 'staff' ? (
                         <input
                           type="checkbox"
                           checked={selectedIds.has(row.id)}
@@ -470,10 +554,10 @@ export default function LeaveListPage() {
                     {row.date_from} to {row.date_to}
                   </td>
                   <td className="px-3 py-2 text-neutral-600">{row.total_days}</td>
-                  <td className="px-3 py-2"><StatusBadge status={row.status}>{row.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</StatusBadge></td>
+                  <td className="px-3 py-2"><StatusBadge status={row.status}>{getStatusLabel(row.status)}</StatusBadge></td>
                   <td className="px-3 py-2 text-neutral-600">
-                    {row.reviewed_by ? (
-                      <span className="text-green-700 font-medium">User #{row.reviewed_by}</span>
+                    {getLatestActor(row) ? (
+                      <span className="text-green-700 font-medium">{getLatestActor(row)}</span>
                     ) : (
                       <span className="text-neutral-400">Pending</span>
                     )}
@@ -502,6 +586,10 @@ export default function LeaveListPage() {
                               <span className="text-neutral-500">Filed By:</span>
                               <span className="text-neutral-900">User #{row.submitted_by}</span>
                             </div>
+                            <div className="flex justify-between">
+                              <span className="text-neutral-500">Workflow:</span>
+                              <span className="text-neutral-900">{getStatusLabel(row.requester_type)}</span>
+                            </div>
                           </div>
                         </div>
 
@@ -509,24 +597,7 @@ export default function LeaveListPage() {
                         <div className="bg-white dark:bg-neutral-900 rounded p-4 border border-neutral-200 dark:border-neutral-700">
                           <h4 className="font-medium text-neutral-900 dark:text-neutral-100 mb-3">Approval Timeline</h4>
                           <ApprovalTimeline
-                            steps={[
-                              {
-                                label: 'Submitted',
-                                state: 'completed' as const,
-                                actor: row.submitted_by ? `User #${row.submitted_by}` : undefined,
-                                timestamp: row.created_at,
-                              },
-                              ...(row.reviewed_at ? [{
-                                label: row.status === 'approved' ? 'Approved' : row.status === 'rejected' ? 'Rejected' : 'Reviewed',
-                                state: (row.status === 'rejected' ? 'rejected' : 'completed') as ApprovalStep['state'],
-                                actor: row.reviewed_by ? `User #${row.reviewed_by}` : undefined,
-                                timestamp: row.reviewed_at,
-                                remarks: row.reviewer_remarks,
-                              }] : [{
-                                label: 'Pending Approval',
-                                state: 'current' as const,
-                              }]),
-                            ]}
+                            steps={buildApprovalSteps(row)}
                           />
                         </div>
                       </div>

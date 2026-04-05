@@ -17,7 +17,8 @@ use Closure;
  * aggregates: days worked/absent, tardiness/undertime minutes, overtime minutes
  * by type, night-differential minutes, and holiday day counts.
  *
- * Also loads approved paid/unpaid leave requests for the period.
+ * Also loads approved leave requests for the period, split by paid/unpaid
+ * classification for payroll.
  */
 final class Step03AttendanceSummaryStep
 {
@@ -33,6 +34,10 @@ final class Step03AttendanceSummaryStep
         $logOtByDate = [];
 
         foreach ($logs as $log) {
+            if ($log->source === 'leave_correction') {
+                continue;
+            }
+
             if ($log->is_present) {
                 $ctx->daysWorked++;
                 $ctx->daysLateMinutes += $log->tardiness_minutes ?? 0;

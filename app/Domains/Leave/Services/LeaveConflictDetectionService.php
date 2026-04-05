@@ -89,7 +89,7 @@ final class LeaveConflictDetectionService implements ServiceContract
             ->join('employees', 'leave_requests.employee_id', '=', 'employees.id')
             ->where('employees.department_id', $departmentId)
             ->where('leave_requests.id', '!=', $excludeRequestId)
-            ->whereIn('leave_requests.status', ['approved', 'ga_processed', 'head_approved', 'manager_checked'])
+            ->whereIn('leave_requests.status', ['approved', 'head_approved', 'manager_approved', 'hr_approved'])
             ->where('leave_requests.start_date', '<=', $endDate)
             ->where('leave_requests.end_date', '>=', $startDate)
             ->count();
@@ -132,7 +132,7 @@ final class LeaveConflictDetectionService implements ServiceContract
             ->where('employees.department_id', $employee->department_id)
             ->where('employees.id', '!=', $employee->id)
             ->where('leave_requests.id', '!=', $excludeRequestId)
-            ->whereIn('leave_requests.status', ['approved', 'ga_processed', 'head_approved', 'manager_checked'])
+            ->whereIn('leave_requests.status', ['approved', 'head_approved', 'manager_approved', 'hr_approved'])
             ->where('leave_requests.start_date', '<=', $endDate)
             ->where('leave_requests.end_date', '>=', $startDate)
             ->count();
@@ -182,7 +182,7 @@ final class LeaveConflictDetectionService implements ServiceContract
             ->join('employees', 'leave_requests.employee_id', '=', 'employees.id')
             ->where('employees.department_id', $departmentId)
             ->where('leave_requests.id', '!=', $excludeRequestId)
-            ->whereIn('leave_requests.status', ['approved', 'ga_processed', 'head_approved', 'manager_checked'])
+            ->whereIn('leave_requests.status', ['approved', 'head_approved', 'manager_approved', 'hr_approved'])
             ->where('leave_requests.start_date', '<=', $endDate)
             ->where('leave_requests.end_date', '>=', $startDate)
             ->count();

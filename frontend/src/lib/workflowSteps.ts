@@ -39,18 +39,18 @@ export function getLeaveRequestSteps(leave: {
   status: string
   head_approved_by_name?: string | null
   head_approved_at?: string | null
-  manager_checked_by_name?: string | null
-  manager_checked_at?: string | null
-  ga_processed_by_name?: string | null
-  ga_processed_at?: string | null
+  manager_approved_by_name?: string | null
+  manager_approved_at?: string | null
+  hr_approved_by_name?: string | null
+  hr_approved_at?: string | null
   vp_noted_by_name?: string | null
   vp_noted_at?: string | null
 }): TimelineStep[] {
   return [
     { label: 'Filed', status: 'submitted' },
     { label: 'Head Approved', status: 'head_approved', actor: leave.head_approved_by_name, timestamp: leave.head_approved_at },
-    { label: 'Manager Checked', status: 'manager_checked', actor: leave.manager_checked_by_name, timestamp: leave.manager_checked_at },
-    { label: 'GA Processed', status: 'ga_processed', actor: leave.ga_processed_by_name, timestamp: leave.ga_processed_at },
+    { label: 'Manager Approved', status: 'manager_approved', actor: leave.manager_approved_by_name, timestamp: leave.manager_approved_at },
+    { label: 'HR Approved', status: 'hr_approved', actor: leave.hr_approved_by_name, timestamp: leave.hr_approved_at },
     { label: 'Approved', status: 'approved', actor: leave.vp_noted_by_name, timestamp: leave.vp_noted_at },
   ]
 }

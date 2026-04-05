@@ -10,15 +10,15 @@ use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 /**
- * Leave Request Policy — 4-step approval chain (form AD-084-00).
+ * Leave Request Policy — requester-specific simplified approval chain.
  *
  * SOD-002: each approver must not be the employee whose leave it is.
  *
  * Step permissions:
- *   Step 2 — leaves.head_approve    (head role)
- *   Step 3 — leaves.manager_check   (plant_manager, manager)
- *   Step 4 — leaves.ga_process      (ga_officer)
- *   Step 5 — leaves.vp_note         (vice_president)
+ *   leaves.head_approve
+ *   leaves.manager_approve
+ *   leaves.hr_approve
+ *   leaves.vp_approve
  */
 final class LeaveRequestPolicy
 {
@@ -67,86 +67,35 @@ final class LeaveRequestPolicy
     // ── Step 2 — Department Head approves ────────────────────────────────────
 
     /**
-     * Department Head first-level approval.
-     * Requires: leaves.head_approve, status = submitted, not own leave.
+     * Staff chain first-level approval.
      */
     public function headApprove(User $user, LeaveRequest $leaveRequest): bool
     {
-        if (! $user->hasPermissionTo('leaves.head_approve')) {
-            return false;
-        }
-
-        if ($leaveRequest->status !== 'submitted') {
-            return false;
-        }
-
-        // SOD-002
-        $employeeUserId = $leaveRequest->employee?->user_id;
-
-        return $employeeUserId === null || (int) $user->id !== (int) $employeeUserId;
+        return $this->canActAtCurrentStep($user, $leaveRequest, 'leaves.head_approve', ['staff'], ['submitted']);
     }
 
-    // ── Step 3 — Plant Manager checks ────────────────────────────────────────
-
-    /**
-     * Plant Manager check.
-     * Requires: leaves.manager_check, status = head_approved, not own leave.
-     */
-    public function managerCheck(User $user, LeaveRequest $leaveRequest): bool
+    public function managerApprove(User $user, LeaveRequest $leaveRequest): bool
     {
-        if (! $user->hasPermissionTo('leaves.manager_check')) {
-            return false;
-        }
-
-        if ($leaveRequest->status !== 'head_approved') {
-            return false;
-        }
-
-        $employeeUserId = $leaveRequest->employee?->user_id;
-
-        return $employeeUserId === null || (int) $user->id !== (int) $employeeUserId;
+        return $this->canActAtCurrentStep($user, $leaveRequest, 'leaves.manager_approve', ['head_officer'], ['submitted']);
     }
 
-    // ── Step 4 — GA Officer processes ────────────────────────────────────────
-
-    /**
-     * GA Officer processing.
-     * Requires: leaves.ga_process, status = manager_checked, not own leave.
-     */
-    public function gaProcess(User $user, LeaveRequest $leaveRequest): bool
+    public function hrApprove(User $user, LeaveRequest $leaveRequest): bool
     {
-        if (! $user->hasPermissionTo('leaves.ga_process')) {
-            return false;
-        }
-
-        if ($leaveRequest->status !== 'manager_checked') {
-            return false;
-        }
-
-        $employeeUserId = $leaveRequest->employee?->user_id;
-
-        return $employeeUserId === null || (int) $user->id !== (int) $employeeUserId;
+        return match ($leaveRequest->requester_type) {
+            'staff' => $this->canActAtCurrentStep($user, $leaveRequest, 'leaves.hr_approve', ['staff'], ['head_approved']),
+            'head_officer' => $this->canActAtCurrentStep($user, $leaveRequest, 'leaves.hr_approve', ['head_officer'], ['manager_approved']),
+            'dept_manager' => $this->canActAtCurrentStep($user, $leaveRequest, 'leaves.hr_approve', ['dept_manager'], ['submitted']),
+            default => false,
+        };
     }
 
-    // ── Step 5 — VP notes ────────────────────────────────────────────────────
-
-    /**
-     * Vice President final note.
-     * Requires: leaves.vp_note, status = ga_processed, not own leave.
-     */
-    public function vpNote(User $user, LeaveRequest $leaveRequest): bool
+    public function vpApprove(User $user, LeaveRequest $leaveRequest): bool
     {
-        if (! $user->hasPermissionTo('leaves.vp_note')) {
-            return false;
-        }
-
-        if ($leaveRequest->status !== 'ga_processed') {
-            return false;
-        }
-
-        $employeeUserId = $leaveRequest->employee?->user_id;
-
-        return $employeeUserId === null || (int) $user->id !== (int) $employeeUserId;
+        return match ($leaveRequest->requester_type) {
+            'dept_manager' => $this->canActAtCurrentStep($user, $leaveRequest, 'leaves.vp_approve', ['dept_manager'], ['hr_approved']),
+            'hr_manager' => $this->canActAtCurrentStep($user, $leaveRequest, 'leaves.vp_approve', ['hr_manager'], ['submitted']),
+            default => false,
+        };
     }
 
     // ── Reject (any approver at their step) ──────────────────────────────────
@@ -158,10 +107,16 @@ final class LeaveRequestPolicy
     public function review(User $user, LeaveRequest $leaveRequest): bool
     {
         return match ($leaveRequest->status) {
-            'submitted' => $this->headApprove($user, $leaveRequest),
-            'head_approved' => $this->managerCheck($user, $leaveRequest),
-            'manager_checked' => $this->gaProcess($user, $leaveRequest),
-            'ga_processed' => $this->vpNote($user, $leaveRequest),
+            'submitted' => match ($leaveRequest->requester_type) {
+                'staff' => $this->headApprove($user, $leaveRequest),
+                'head_officer' => $this->managerApprove($user, $leaveRequest),
+                'dept_manager' => $this->hrApprove($user, $leaveRequest),
+                'hr_manager' => $this->vpApprove($user, $leaveRequest),
+                default => false,
+            },
+            'head_approved' => $this->hrApprove($user, $leaveRequest),
+            'manager_approved' => $this->hrApprove($user, $leaveRequest),
+            'hr_approved' => $this->vpApprove($user, $leaveRequest),
             default => false,
         };
     }
@@ -190,6 +145,33 @@ final class LeaveRequestPolicy
         $employeeId = Employee::where('user_id', $user->id)->value('id');
 
         return $employeeId !== null && (int) $leaveRequest->employee_id === (int) $employeeId;
+    }
+
+    /**
+     * @param  list<string>  $requesterTypes
+     * @param  list<string>  $statuses
+     */
+    private function canActAtCurrentStep(User $user, LeaveRequest $leaveRequest, string $permission, array $requesterTypes, array $statuses): bool
+    {
+        if (! $user->hasPermissionTo($permission)) {
+            return false;
+        }
+
+        if (! in_array($leaveRequest->requester_type, $requesterTypes, true)) {
+            return false;
+        }
+
+        if (! in_array($leaveRequest->status, $statuses, true)) {
+            return false;
+        }
+
+        if ($leaveRequest->submitted_by === $user->id) {
+            return false;
+        }
+
+        $employeeUserId = $leaveRequest->employee?->user_id;
+
+        return $employeeUserId === null || (int) $user->id !== (int) $employeeUserId;
     }
 
     /**

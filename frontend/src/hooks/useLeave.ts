@@ -194,49 +194,39 @@ export function useHeadApproveLeaveRequest() {
   })
 }
 
-// ── Step 3 — Plant Manager Check ─────────────────────────────────────────────
+// ── Step 3 — Department Manager Approval ────────────────────────────────────
 
-export function useManagerCheckLeaveRequest() {
+export function useManagerApproveLeaveRequest() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, remarks }: { id: number; remarks?: string }) => {
-      const res = await api.patch<{ data: LeaveRequest }>(`/leave/requests/${id}/manager-check`, { remarks })
+      const res = await api.patch<{ data: LeaveRequest }>(`/leave/requests/${id}/manager-approve`, { remarks })
       return res.data.data
     },
     onSuccess: (_, { id }) => {
       queryClient.setQueryData(['leave-requests', id], (old: LeaveRequest | undefined) =>
-        old ? { ...old, status: 'manager_checked' as const } : old,
+        old ? { ...old, status: 'manager_approved' as const } : old,
       )
       void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['leave-calendar'] })
-      // H12 FIX: Invalidate leave balances so team calendar shows correct availability
       void queryClient.invalidateQueries({ queryKey: ['leave-balances'] })
     },
   })
 }
 
-// ── Step 4 — GA Officer Process ───────────────────────────────────────────────
+// ── Step 4 — HR Approval ─────────────────────────────────────────────────────
 
-export interface GaProcessPayload {
-  id: number
-  action_taken: 'approved_with_pay' | 'approved_without_pay' | 'disapproved'
-  remarks?: string
-}
-
-export function useGaProcessLeaveRequest() {
+export function useHrApproveLeaveRequest() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, action_taken, remarks }: GaProcessPayload) => {
-      const res = await api.patch<{ data: LeaveRequest }>(`/leave/requests/${id}/ga-process`, {
-        action_taken,
-        remarks,
-      })
+    mutationFn: async ({ id, remarks }: { id: number; remarks?: string }) => {
+      const res = await api.patch<{ data: LeaveRequest }>(`/leave/requests/${id}/hr-approve`, { remarks })
       return res.data.data
     },
     onSuccess: (data, { id }) => {
       queryClient.setQueryData(['leave-requests', id], (old: LeaveRequest | undefined) =>
-        old ? { ...old, status: data.status, action_taken: data.action_taken } : old,
+        old ? { ...old, status: data.status, hr_approved_at: data.hr_approved_at, hr_approved_by: data.hr_approved_by } : old,
       )
       void queryClient.invalidateQueries({ queryKey: ['leave-requests'] })
       void queryClient.invalidateQueries({ queryKey: ['team-leave-requests'] })
@@ -246,13 +236,13 @@ export function useGaProcessLeaveRequest() {
   })
 }
 
-// ── Step 5 — VP Note ──────────────────────────────────────────────────────────
+// ── Step 5 — VP Approval ─────────────────────────────────────────────────────
 
-export function useVpNoteLeaveRequest() {
+export function useVpApproveLeaveRequest() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, remarks }: { id: number; remarks?: string }) => {
-      const res = await api.patch<{ data: LeaveRequest }>(`/leave/requests/${id}/vp-note`, { remarks })
+      const res = await api.patch<{ data: LeaveRequest }>(`/leave/requests/${id}/vp-approve`, { remarks })
       return res.data.data
     },
     onSuccess: (_, { id }) => {

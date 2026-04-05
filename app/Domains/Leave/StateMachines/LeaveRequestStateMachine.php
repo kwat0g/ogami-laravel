@@ -8,14 +8,14 @@ use App\Domains\Leave\Models\LeaveRequest;
 use App\Shared\Exceptions\InvalidStateTransitionException;
 
 /**
- * Leave Request state machine — multi-step approval workflow.
+ * Leave Request state machine — simplified requester-type approval workflow.
  *
  * States:
  *   draft            → Created but not yet submitted
  *   submitted        → Submitted for approval
  *   head_approved    → Department head approved
- *   manager_checked  → Manager checked
- *   ga_processed     → GA/Admin processed
+ *   manager_approved → Department manager approved
+ *   hr_approved      → HR manager approved
  *   approved         → Final approval — leave granted
  *   rejected         → Rejected at any step — terminal
  *   cancelled        → Cancelled by employee — terminal
@@ -25,10 +25,10 @@ final class LeaveRequestStateMachine
     /** @var array<string, list<string>> */
     private const TRANSITIONS = [
         'draft' => ['submitted', 'cancelled'],
-        'submitted' => ['head_approved', 'rejected', 'cancelled'],
-        'head_approved' => ['manager_checked', 'rejected'],
-        'manager_checked' => ['ga_processed', 'rejected'],
-        'ga_processed' => ['approved', 'rejected'],
+        'submitted' => ['head_approved', 'manager_approved', 'hr_approved', 'approved', 'rejected', 'cancelled'],
+        'head_approved' => ['approved', 'rejected'],
+        'manager_approved' => ['approved', 'rejected'],
+        'hr_approved' => ['approved', 'rejected'],
         'approved' => ['cancelled'],
         'rejected' => [],   // terminal
         'cancelled' => [],  // terminal

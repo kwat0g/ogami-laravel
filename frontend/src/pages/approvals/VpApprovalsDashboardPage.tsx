@@ -9,11 +9,10 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { useVpPurchaseRequests, useVpLoans, useVpMrqs, useVpPayrollRuns, useVpPendingCounts } from '@/hooks/useVpApprovals'
 import {
   useTeamLeaveRequests,
-  useGaProcessLeaveRequest,
-  useVpNoteLeaveRequest,
+  useHrApproveLeaveRequest,
+  useVpApproveLeaveRequest,
   useRejectLeaveRequest,
 } from '@/hooks/useLeave'
-import type { GaProcessPayload } from '@/hooks/useLeave'
 import {
   usePendingExecutiveOvertimeRequests,
   useExecutiveApproveOvertimeRequest,
@@ -87,10 +86,10 @@ const STATUS_OPTIONS: Record<TabId, { value: string; label: string }[]> = {
   ],
   'leave': [
     { value: '',               label: 'All Statuses' },
-    { value: 'pending',        label: 'Pending' },
-    { value: 'head_noted',     label: 'Head Noted' },
-    { value: 'manager_checked',label: 'Manager Checked (Pending GA)' },
-    { value: 'ga_processed',   label: 'GA Processed (Pending VP)' },
+    { value: 'submitted',      label: 'Submitted' },
+    { value: 'head_approved',  label: 'Head Approved' },
+    { value: 'manager_approved', label: 'Manager Approved' },
+    { value: 'hr_approved',    label: 'HR Approved (Pending VP)' },
     { value: 'approved',       label: 'Approved' },
     { value: 'rejected',       label: 'Rejected' },
     { value: 'cancelled',      label: 'Cancelled' },
@@ -133,7 +132,7 @@ const VP_ACTION_STATUSES: Record<TabId, string[]> = {
   'loans':             ['officer_reviewed'],
   'mrq':               ['reviewed'],
   'payroll':           ['ACCTG_APPROVED'],
-  'leave':             ['manager_checked', 'ga_processed'],
+  'leave':             ['submitted', 'head_approved', 'manager_approved', 'hr_approved'],
   'overtime':          [],
 }
 
@@ -163,14 +162,14 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
   const canOvertimeList = hasPermission(PERMISSIONS.overtime.view)
 
   // Action permissions
-  const canLeaveApprove = hasPermission(PERMISSIONS.leaves.executive_approve) || hasPermission(PERMISSIONS.leaves.ga_process) || hasPermission(PERMISSIONS.leaves.vp_note)
+  const canLeaveApprove = hasPermission(PERMISSIONS.leaves.hr_approve) || hasPermission(PERMISSIONS.leaves.vp_approve)
   const canOvertimeApprove = hasPermission(PERMISSIONS.overtime.executive_approve)
   const canPrApprove = hasPermission(PERMISSIONS.procurement.purchase_request.view)
   const canLoanApprove = hasPermission(PERMISSIONS.loans.vp_approve)
   const canMrqApprove = hasPermission(PERMISSIONS.inventory.mrq.vp_approve)
   const canPayrollApprove = hasPermission(PERMISSIONS.payroll.vp_approve)
-  const canVpNote  = hasPermission(PERMISSIONS.leaves.vp_note)
-  const canGaProcess = hasPermission(PERMISSIONS.leaves.ga_process)
+  const canVpApprove = hasPermission(PERMISSIONS.leaves.vp_approve)
+  const canHrApprove = hasPermission(PERMISSIONS.leaves.hr_approve)
 
   // ── Search + filters ──────────────────────────────────────────────────────────
   const [search, setSearch] = useState('')
@@ -203,10 +202,9 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
   }, [debouncedSearch])
 
   // ── Leave state ──────────────────────────────────────────────────────────────
-  const [processId, setProcessId] = useState<number | null>(null)
-  const [actionTaken, setActionTaken] = useState<GaProcessPayload['action_taken']>('approved_with_pay')
+  const [hrApproveId, setHrApproveId] = useState<number | null>(null)
   const [leaveRemarks, setLeaveRemarks] = useState('')
-  const [vpNoteId, setVpNoteId] = useState<number | null>(null)
+  const [vpApproveId, setVpApproveId] = useState<number | null>(null)
   const [vpRemarks, setVpRemarks] = useState('')
 
   // ── Overtime state ───────────────────────────────────────────────────────────
@@ -248,8 +246,8 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
   const otQuery = usePendingExecutiveOvertimeRequests(overtimeFilters, canOvertimeList)
 
   // ── Mutations ────────────────────────────────────────────────────────────────
-  const gaProcess   = useGaProcessLeaveRequest()
-  const vpNote      = useVpNoteLeaveRequest()
+  const hrApproveLeave = useHrApproveLeaveRequest()
+  const vpApproveLeave = useVpApproveLeaveRequest()
   const rejectLeave = useRejectLeaveRequest()
   const approveOt   = useExecutiveApproveOvertimeRequest()
   const rejectOt    = useExecutiveRejectOvertimeRequest()
@@ -562,15 +560,11 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        {canGaProcess && row.status === 'manager_checked' && (
-                          <>
-                            <button onClick={() => setProcessId(row.id)} disabled={gaProcess.isPending} className="px-2 py-1 text-xs bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">Process</button>
-                          </>
+                        {canHrApprove && ((row.requester_type === 'staff' && row.status === 'head_approved') || (row.requester_type === 'head_officer' && row.status === 'manager_approved') || (row.requester_type === 'dept_manager' && row.status === 'submitted')) && (
+                          <button onClick={() => setHrApproveId(row.id)} disabled={hrApproveLeave.isPending} className="px-2 py-1 text-xs bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">HR Approve</button>
                         )}
-                        {canVpNote && row.status === 'ga_processed' && (
-                          <>
-                            <SodActionButton initiatedById={row.submitted_by} label="VP Approve" onClick={() => { setVpNoteId(row.id); setVpRemarks('') }} isLoading={vpNote.isPending} variant="success" />
-                          </>
+                        {canVpApprove && ((row.requester_type === 'dept_manager' && row.status === 'hr_approved') || (row.requester_type === 'hr_manager' && row.status === 'submitted')) && (
+                          <SodActionButton initiatedById={row.submitted_by} label="VP Approve" onClick={() => { setVpApproveId(row.id); setVpRemarks('') }} isLoading={vpApproveLeave.isPending} variant="success" />
                         )}
                       </div>
                     </td>
@@ -617,48 +611,38 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
 
       {/* ── Modals ───────────────────────────────────────────────────────────── */}
 
-      {/* GA Process Leave */}
-      {processId && (
+      {/* HR Approve Leave */}
+      {hrApproveId && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded max-w-md w-full p-6 space-y-4">
-            <h3 className="text-base font-medium text-neutral-900">Process Leave Request (GA Officer)</h3>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">Action Taken</label>
-              <select value={actionTaken} onChange={(e) => setActionTaken(e.target.value as GaProcessPayload['action_taken'])}
-                className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none">
-                <option value="approved_with_pay">Approved With Pay</option>
-                <option value="approved_without_pay">Approved Without Pay</option>
-                <option value="disapproved">Disapproved</option>
-              </select>
-            </div>
+            <h3 className="text-base font-medium text-neutral-900">HR Approve Leave Request</h3>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Remarks (optional)</label>
               <textarea value={leaveRemarks} onChange={(e) => setLeaveRemarks(e.target.value)} rows={3} className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none resize-none" />
             </div>
             <div className="flex justify-end gap-3">
-              <button onClick={() => { setProcessId(null); setLeaveRemarks(''); setActionTaken('approved_with_pay') }} className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
-                <button onClick={() => gaProcess.mutate({ id: processId!, action_taken: actionTaken, remarks: leaveRemarks }, { onSuccess: () => { setProcessId(null); setLeaveRemarks(''); setActionTaken('approved_with_pay') } })} disabled={gaProcess.isPending} className="text-sm px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
-                {gaProcess.isPending ? 'Processing…' : 'Submit'}
+              <button onClick={() => { setHrApproveId(null); setLeaveRemarks('') }} className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
+                <button onClick={() => hrApproveLeave.mutate({ id: hrApproveId, remarks: leaveRemarks }, { onSuccess: () => { setHrApproveId(null); setLeaveRemarks('') } })} disabled={hrApproveLeave.isPending} className="text-sm px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
+                {hrApproveLeave.isPending ? 'Approving…' : 'Approve'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* VP Note Leave */}
-      {vpNoteId && (
+      {/* VP Approve Leave */}
+      {vpApproveId && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded max-w-md w-full p-6 space-y-4">
-            <h3 className="text-base font-medium text-neutral-900">VP Final Notation</h3>
-            <p className="text-sm text-neutral-500">Approving will deduct the employee's leave balance for approved-with-pay requests.</p>
+            <h3 className="text-base font-medium text-neutral-900">VP Final Approval</h3>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">Remarks (optional)</label>
               <textarea value={vpRemarks} onChange={(e) => setVpRemarks(e.target.value)} rows={3} className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-neutral-400 outline-none resize-none" />
             </div>
             <div className="flex justify-end gap-3">
-              <button onClick={() => { setVpNoteId(null); setVpRemarks('') }} className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
-                <button onClick={() => gaProcess.mutate({ id: processId!, action_taken: actionTaken, remarks: leaveRemarks }, { onSuccess: () => { setProcessId(null); setLeaveRemarks(''); setActionTaken('approved_with_pay') } })} disabled={gaProcess.isPending} className="text-sm px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
-                {vpNote.isPending ? 'Approving…' : 'Approve (VP)'}
+              <button onClick={() => { setVpApproveId(null); setVpRemarks('') }} className="text-sm px-4 py-2 border border-neutral-300 rounded hover:bg-neutral-50">Cancel</button>
+                <button onClick={() => vpApproveLeave.mutate({ id: vpApproveId, remarks: vpRemarks }, { onSuccess: () => { setVpApproveId(null); setVpRemarks('') } })} disabled={vpApproveLeave.isPending} className="text-sm px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 disabled:opacity-50">
+                {vpApproveLeave.isPending ? 'Approving…' : 'Approve (VP)'}
               </button>
             </div>
           </div>
