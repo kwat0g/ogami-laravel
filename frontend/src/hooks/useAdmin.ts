@@ -565,6 +565,110 @@ export function useRestoreBackup() {
   })
 }
 
+// ---------------------------------------------------------------------------
+// Department Permission Profiles
+// ---------------------------------------------------------------------------
+
+export interface DepartmentProfile {
+  id:                number
+  department_id:     number
+  department_name:   string
+  department_code:   string
+  role:              string
+  profile_label:     string | null
+  permissions_count: number
+  is_active:         boolean
+}
+
+export interface DepartmentProfileDetail extends DepartmentProfile {
+  permissions: string[]
+}
+
+/** Fetch all department permission profiles. */
+export function useDepartmentProfiles() {
+  return useQuery({
+    queryKey: ['admin-department-profiles'],
+    queryFn: async () => {
+      const res = await api.get<{ data: DepartmentProfile[] }>('/admin/department-profiles')
+      return res.data.data
+    },
+    staleTime: 60_000,
+  })
+}
+
+/** Fetch a single department permission profile with full permissions. */
+export function useDepartmentProfileDetail(profileId: number | null) {
+  return useQuery({
+    queryKey: ['admin-department-profile-detail', profileId],
+    queryFn: async () => {
+      const res = await api.get<{ data: DepartmentProfileDetail }>(`/admin/department-profiles/${profileId}`)
+      return res.data.data
+    },
+    enabled: !!profileId,
+    staleTime: 60_000,
+  })
+}
+
+/** Upsert a department permission profile. */
+export function useUpsertDepartmentProfile() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: {
+      department_id: number
+      role: string
+      permissions: string[]
+      profile_label?: string | null
+      is_active?: boolean
+    }) => {
+      const res = await api.put<{ message: string; data: { id: number; permissions_count: number } }>(
+        '/admin/department-profiles',
+        data,
+      )
+      return res.data
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['admin-department-profiles'] })
+      void qc.invalidateQueries({ queryKey: ['admin-department-profile-detail'] })
+      void qc.invalidateQueries({ queryKey: ['auth-me'] })
+    },
+  })
+}
+
+/** Toggle active status of a department permission profile. */
+export function useToggleDepartmentProfile() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (profileId: number) => {
+      const res = await api.patch<{ message: string; data: { id: number; is_active: boolean } }>(
+        `/admin/department-profiles/${profileId}/toggle`,
+      )
+      return res.data
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['admin-department-profiles'] })
+      void qc.invalidateQueries({ queryKey: ['admin-department-profile-detail'] })
+    },
+  })
+}
+
+/** Delete a department permission profile. */
+export function useDeleteDepartmentProfile() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (profileId: number) => {
+      const res = await api.delete<{ message: string }>(`/admin/department-profiles/${profileId}`)
+      return res.data
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['admin-department-profiles'] })
+    },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Backups
+// ---------------------------------------------------------------------------
+
 /** Returns a download URL for a backup archive (opens directly in browser). */
 export function backupDownloadUrl(filename: string): string {
   return `/api/v1/admin/backups/download?file=${encodeURIComponent(filename)}`
