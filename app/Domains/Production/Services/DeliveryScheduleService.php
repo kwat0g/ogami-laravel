@@ -110,32 +110,98 @@ final class DeliveryScheduleService implements ServiceContract
 
     /**
      * Check if Production Order should be auto-created for this Delivery Schedule.
-     * Creates PO if:
-     * 1. No existing PO linked to this DS
-     * 2. Stock is insufficient to fulfill the order
+     * For multi-item DS, iterates DSI items individually (not just the parent DS product).
+     * Creates PO per item if:
+     * 1. No existing PO linked to this DS item
+     * 2. Stock is insufficient to fulfill the item
      * 3. BOM exists for the product
      */
     private function maybeAutoCreateProductionOrder(DeliverySchedule $ds): void
     {
-        // Skip if production orders already exist for this DS
+        $systemUser = User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
+        if ($systemUser === null) {
+            Log::error('DS-Auto-PO: System user not found, cannot auto-create PO');
+
+            return;
+        }
+
+        // Multi-item DS: iterate DSI items individually
+        $dsItems = $ds->items()->get();
+        if ($dsItems->isNotEmpty()) {
+            foreach ($dsItems as $dsItem) {
+                // Skip if PO already exists for this specific DSI
+                $existingPo = ProductionOrder::where('delivery_schedule_id', $ds->id)
+                    ->where('delivery_schedule_item_id', $dsItem->id)
+                    ->whereNotIn('status', ['cancelled', 'closed'])
+                    ->exists();
+
+                if ($existingPo) {
+                    Log::info("DS-Auto-PO: PO already exists for DSI #{$dsItem->id} in DS {$ds->ds_reference}");
+
+                    continue;
+                }
+
+                $availableStock = $this->getAvailableStock($dsItem->product_item_id);
+                $requiredQty = (float) $dsItem->qty_ordered;
+
+                if ($availableStock >= $requiredQty) {
+                    Log::info("DS-Auto-PO: Sufficient stock ({$availableStock}) for DSI #{$dsItem->id}, skipping PO");
+
+                    continue;
+                }
+
+                $bom = BillOfMaterials::where('product_item_id', $dsItem->product_item_id)
+                    ->where('is_active', true)
+                    ->latest('version')
+                    ->first();
+
+                if ($bom === null) {
+                    Log::warning("DS-Auto-PO: No active BOM for product #{$dsItem->product_item_id} in DSI #{$dsItem->id}");
+
+                    continue;
+                }
+
+                $qtyToProduce = $requiredQty - $availableStock;
+
+                try {
+                    $po = $this->poService->store([
+                        'delivery_schedule_id' => $ds->id,
+                        'delivery_schedule_item_id' => $dsItem->id,
+                        'source_type' => 'delivery_schedule',
+                        'source_id' => $ds->id,
+                        'product_item_id' => $dsItem->product_item_id,
+                        'bom_id' => $bom->id,
+                        'qty_required' => $qtyToProduce,
+                        'target_start_date' => now()->addDay()->toDateString(),
+                        'target_end_date' => now()->addDays(max(1, $bom->standard_production_days ?? 7))->toDateString(),
+                        'notes' => "Auto-created from DS {$ds->ds_reference} item #{$dsItem->id}. Stock: {$availableStock}, To produce: {$qtyToProduce}",
+                    ], $systemUser);
+
+                    Log::info("DS-Auto-PO: Created PO {$po->po_reference} for DSI #{$dsItem->id} in DS {$ds->ds_reference}");
+                } catch (\Throwable $e) {
+                    Log::error("DS-Auto-PO: Failed for DSI #{$dsItem->id}: {$e->getMessage()}");
+                }
+            }
+
+            return;
+        }
+
+        // Fallback: single-item DS (legacy behavior)
         if ($ds->productionOrders()->count() > 0) {
             Log::info("DS-Auto-PO: Production orders already exist for DS {$ds->ds_reference}");
 
             return;
         }
 
-        // Get available stock for the product
         $availableStock = $this->getAvailableStock($ds->product_item_id);
         $requiredQty = (float) $ds->qty_ordered;
 
-        // If sufficient stock, no need to produce
         if ($availableStock >= $requiredQty) {
             Log::info("DS-Auto-PO: Sufficient stock ({$availableStock}) for DS {$ds->ds_reference}, skipping PO creation");
 
             return;
         }
 
-        // Find active BOM for the product
         $bom = BillOfMaterials::where('product_item_id', $ds->product_item_id)
             ->where('is_active', true)
             ->latest('version')
@@ -147,25 +213,10 @@ final class DeliveryScheduleService implements ServiceContract
             return;
         }
 
-        // Calculate quantity to produce
         $qtyToProduce = $requiredQty - $availableStock;
 
-        // Get system user for auto-creation
-        $systemUser = User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
-        if ($systemUser === null) {
-            Log::error('DS-Auto-PO: System user not found, cannot auto-create PO');
-
-            return;
-        }
-
         try {
-            $po = $this->createProductionOrderFromDeliverySchedule(
-                $ds,
-                $bom,
-                $qtyToProduce,
-                $systemUser
-            );
-
+            $po = $this->createProductionOrderFromDeliverySchedule($ds, $bom, $qtyToProduce, $systemUser);
             Log::info("DS-Auto-PO: Created Production Order {$po->po_reference} for DS {$ds->ds_reference}");
         } catch (\Throwable $e) {
             Log::error("DS-Auto-PO: Failed to create PO for DS {$ds->ds_reference}: {$e->getMessage()}");

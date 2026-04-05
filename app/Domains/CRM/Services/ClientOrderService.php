@@ -1012,7 +1012,7 @@ final class ClientOrderService implements ServiceContract
             );
         }
 
-        if (! in_array($mode, ['preserve_stock_produce_full', 'consume_stock_then_replenish', 'per_item'], true)) {
+        if (! in_array($mode, ['preserve_stock_produce_full', 'consume_stock_then_replenish', 'stock_aware_produce_deficit', 'per_item'], true)) {
             throw new DomainException(
                 'Invalid force production mode.',
                 'CLIENT_ORDER_FORCE_PROD_INVALID_MODE',
@@ -1050,7 +1050,27 @@ final class ClientOrderService implements ServiceContract
                     ? 'replenishment'
                     : 'force_production';
 
-                if (! in_array($effectiveMode, ['preserve_stock_produce_full', 'consume_stock_then_replenish'], true)) {
+                // Stock-aware mode: only produce the deficit (qty_required - available_stock)
+                if ($effectiveMode === 'stock_aware_produce_deficit') {
+                    $availableStock = $this->stockReservationService->getTotalAvailableStock($itemId);
+                    $deficit = $qtyRequired - $availableStock;
+
+                    if ($deficit <= 0) {
+                        $skipped[] = [
+                            'item_master_id' => $itemId,
+                            'reason' => 'SUFFICIENT_STOCK',
+                            'available_stock' => $availableStock,
+                            'qty_required' => $qtyRequired,
+                        ];
+
+                        continue;
+                    }
+
+                    $qtyRequired = $deficit;
+                    $sourceType = 'force_production';
+                }
+
+                if (! in_array($effectiveMode, ['preserve_stock_produce_full', 'consume_stock_then_replenish', 'stock_aware_produce_deficit'], true)) {
                     $skipped[] = [
                         'item_master_id' => $itemId,
                         'reason' => 'INVALID_ITEM_MODE',
@@ -1146,6 +1166,41 @@ final class ClientOrderService implements ServiceContract
                 'deliverySchedules.deliverySchedule',
             ]) ?? $order;
         });
+    }
+
+    /**
+     * Get stock availability status for each item in a client order.
+     * Used by the frontend to show stock info before force production.
+     *
+     * @return list<array{item_master_id: int, item_name: string, qty_required: float, available_stock: float, has_bom: bool, deficit: float, can_fulfill_from_stock: bool}>
+     */
+    public function getStockAvailability(ClientOrder $order): array
+    {
+        $order->loadMissing('items.itemMaster');
+        $result = [];
+
+        foreach ($order->items as $item) {
+            $itemId = (int) $item->item_master_id;
+            $qtyRequired = (float) ($item->negotiated_quantity ?? $item->quantity);
+            $availableStock = $this->stockReservationService->getTotalAvailableStock($itemId);
+            $hasBom = BillOfMaterials::where('product_item_id', $itemId)
+                ->where('is_active', true)
+                ->exists();
+            $deficit = max(0, $qtyRequired - $availableStock);
+
+            $result[] = [
+                'item_master_id' => $itemId,
+                'item_name' => $item->itemMaster?->name ?? "Item #{$itemId}",
+                'item_code' => $item->itemMaster?->item_code ?? '',
+                'qty_required' => $qtyRequired,
+                'available_stock' => round($availableStock, 4),
+                'has_bom' => $hasBom,
+                'deficit' => round($deficit, 4),
+                'can_fulfill_from_stock' => $availableStock >= $qtyRequired,
+            ];
+        }
+
+        return $result;
     }
 
     /**
