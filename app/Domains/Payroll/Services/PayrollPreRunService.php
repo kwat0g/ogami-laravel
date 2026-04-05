@@ -352,7 +352,7 @@ final class PayrollPreRunService implements ServiceContract
             $issues[] = 'Pag-IBIG contribution table is empty';
         }
 
-        if (\App\Domains\Payroll\Models\TrainTaxBracket::where('effective_year', '<=', $year)->doesntExist()) {
+        if (\App\Domains\Payroll\Models\TrainTaxBracket::where('effective_date', '<=', "{$year}-12-31")->doesntExist()) {
             $issues[] = "TRAIN tax brackets have no entries effective for year {$year}";
         }
 

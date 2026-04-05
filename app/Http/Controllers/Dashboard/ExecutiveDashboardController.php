@@ -37,7 +37,10 @@ final class ExecutiveDashboardController extends Controller
      */
     public function __invoke(): JsonResponse
     {
-        $this->authorize('viewAny', \App\Domains\Payroll\Models\PayrollRun::class);
+        abort_unless(
+            request()->user()?->hasAnyPermission(['reports.financial_statements', 'payroll.vp_approve', 'payroll.view_runs']),
+            403,
+        );
 
         $currentYear = (int) now()->format('Y');
 

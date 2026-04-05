@@ -62,17 +62,23 @@ final class PayrollRunController extends Controller
         // Accounting Managers (acctg_approve without initiate/hr_approve) only
         // need to see runs that are pending their action or already published.
         $isAcctgOnly = $user->hasPermissionTo('payroll.acctg_approve')
-            && ! $user->hasAnyPermission(['payroll.initiate', 'payroll.hr_approve']);
+            && ! $user->hasAnyPermission(['payroll.initiate', 'payroll.hr_approve', 'payroll.vp_approve']);
+
+        $isVpOnly = $user->hasPermissionTo('payroll.vp_approve')
+            && ! $user->hasAnyPermission(['payroll.initiate', 'payroll.hr_approve', 'payroll.acctg_approve']);
 
         if ($isAcctgOnly) {
-            // If the user requested a specific status that is outside their
-            // scope, honour it only if it is in the allowed set; otherwise
-            // fall back to the full allowed set.
-            $acctgStatuses = ['SUBMITTED', 'PUBLISHED'];
+            $acctgStatuses = ['HR_APPROVED', 'ACCTG_APPROVED', 'VP_APPROVED', 'DISBURSED', 'PUBLISHED'];
             if (isset($filters['status']) && ! in_array($filters['status'], $acctgStatuses, true)) {
                 unset($filters['status']);
             }
             $filters['statuses'] = $acctgStatuses;
+        } elseif ($isVpOnly) {
+            $vpStatuses = ['ACCTG_APPROVED', 'VP_APPROVED', 'DISBURSED', 'PUBLISHED'];
+            if (isset($filters['status']) && ! in_array($filters['status'], $vpStatuses, true)) {
+                unset($filters['status']);
+            }
+            $filters['statuses'] = $vpStatuses;
         }
 
         $runs = $this->service->list(

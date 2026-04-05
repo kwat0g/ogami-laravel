@@ -24,7 +24,7 @@ final class HrApprovePayrollRunRequest extends FormRequest
             // Required comment when returning
             'return_comments' => ['required_if:action,RETURNED', 'nullable', 'string', 'min:10', 'max:5000'],
             // Required checkbox acknowledgements when approving
-            'checkboxes_checked' => ['required_if:action,APPROVED', 'nullable', 'array', 'min:3'],
+            'checkboxes_checked' => ['required_if:action,APPROVED', 'nullable', 'array', 'min:1'],
             'checkboxes_checked.*' => ['string'],
         ];
     }

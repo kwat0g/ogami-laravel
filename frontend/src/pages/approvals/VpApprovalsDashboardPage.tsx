@@ -157,7 +157,7 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
   const canPrList = hasPermission(PERMISSIONS.procurement.purchase_request.view)
   const canLoanList = hasPermission(PERMISSIONS.loans.view) || hasPermission(PERMISSIONS.loans.view_department)
   const canMrqList = hasPermission(PERMISSIONS.inventory.mrq.view)
-  const canPayrollList = hasPermission(PERMISSIONS.payroll.view_runs)
+  const canPayrollList = hasPermission(PERMISSIONS.payroll.view_runs) || hasPermission(PERMISSIONS.payroll.vp_approve)
   const canLeaveList = hasPermission(PERMISSIONS.leaves.view_team)
   const canOvertimeList = hasPermission(PERMISSIONS.overtime.view)
 

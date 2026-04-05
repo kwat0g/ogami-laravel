@@ -445,6 +445,11 @@ export default function PayrollRunDetailPage() {
   const navigate = useNavigate()
   const { hasPermission } = useAuthStore()
 
+  const canInitiateWorkflow =
+    hasPermission(PERMISSIONS.payroll.initiate) ||
+    hasPermission(PERMISSIONS.payroll.hr_approve) ||
+    hasPermission(PERMISSIONS.hr.full_access)
+
   const [activeTab, setActiveTab] = useState<Tab>('payslips')
   const [detailPage, setDetailPage] = useState(1)
   const [traceDetail, setTraceDetail] = useState<import('@/types/payroll').PayrollDetail | null>(
@@ -670,8 +675,8 @@ export default function PayrollRunDetailPage() {
               </button>
             )}
 
-            {/* Accounting Manager Approval for SUBMITTED status */}
-            {run.status === 'SUBMITTED' && hasPermission(PERMISSIONS.payroll.acctg_approve) && (
+            {/* Accounting Manager Approval — after HR has approved */}
+            {run.status === 'HR_APPROVED' && hasPermission(PERMISSIONS.payroll.acctg_approve) && (
               <AcctgApprovalButtons runId={runId!} initiatedById={run.initiated_by_id} />
             )}
 
@@ -1012,6 +1017,3 @@ export default function PayrollRunDetailPage() {
     </>
   )
 }
-  const canInitiateWorkflow = hasPermission(PERMISSIONS.payroll.initiate)
-    || hasPermission(PERMISSIONS.payroll.hr_approve)
-    || hasPermission(PERMISSIONS.hr.full_access)

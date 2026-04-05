@@ -98,12 +98,6 @@ final class PayrollWorkflowService implements ServiceContract
             return $run;
         }
 
-        if ($run->initiated_by_id && $approverId === (int) $run->initiated_by_id) {
-            throw new SodViolationException(
-                'SOD-005: The HR Manager who approves cannot be the same person who initiated this run.',
-            );
-        }
-
         DB::transaction(function () use ($run, $approverId, $data) {
             $run->hr_approved_by_id = $approverId;
             $run->hr_approved_at = now();

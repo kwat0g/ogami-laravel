@@ -231,9 +231,6 @@ const SECTIONS: NavSection[] = [
       { divider: true, label: 'Maintenance' },
       { label: 'Equipment', href: '/maintenance/equipment', permission: 'maintenance.view' },
       { label: 'Maintenance Work Orders', href: '/maintenance/work-orders', permission: 'maintenance.view' },
-      // ── Mold ────────────────────────────────────────────────────────────────
-      { divider: true, label: 'Mold' },
-      { label: 'Mold Masters', href: '/mold/masters', permission: 'mold.view' },
     ],
   },
   // ═════════════════════════════════════════════════════════════════════════════

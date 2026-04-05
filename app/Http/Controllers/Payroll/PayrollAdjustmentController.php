@@ -27,6 +27,7 @@ final class PayrollAdjustmentController extends Controller
                 'payroll.initiate',
                 'payroll.compute',
                 'payroll.hr_approve',
+                'payroll.acctg_approve',
                 'payroll.approve',
             ]),
             403,

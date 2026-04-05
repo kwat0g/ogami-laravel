@@ -486,7 +486,7 @@ const router = createBrowserRouter([
       { path: '/payroll/runs/:ulid/hr-review', element: withSuspense(guard('payroll.hr_approve', <PayrollRunHrReviewPage />)) },
       { path: '/payroll/runs/:ulid/acctg-review', element: withSuspense(guard('payroll.acctg_approve|payroll.hr_approve|hr.full_access', <PayrollRunAcctgReviewPage />)) },
       { path: '/payroll/runs/:ulid/vp-review', element: withSuspense(guard('payroll.vp_approve|payroll.hr_approve|payroll.acctg_approve|hr.full_access', <PayrollRunVpReviewPage />)) },
-      { path: '/payroll/runs/:ulid/disburse', element: withSuspense(guard('payroll.disburse|payroll.publish|payroll.hr_approve|payroll.acctg_approve|hr.full_access', <PayrollRunDisbursePage />)) },
+      { path: '/payroll/runs/:ulid/disburse', element: withSuspense(guard('payroll.disburse|payroll.publish|payroll.hr_approve|payroll.acctg_approve|hr.full_access|payroll.view_runs|payroll.vp_approve', <PayrollRunDisbursePage />)) },
       { path: '/payroll/periods', element: withSuspense(guard('payroll.manage_pay_periods', <PayPeriodListPage />)) },
       { path: '/payroll/final-pay', element: withSuspense(guard('payroll.view_runs', <FinalPayPage />)) },
 

@@ -92,7 +92,7 @@ final class PayrollRunPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyPermission(['payroll.view_runs', 'payroll.view']);
+        return $user->hasAnyPermission(['payroll.view_runs', 'payroll.view', 'payroll.vp_approve']);
     }
 
     public function view(User $user, PayrollRun $run): bool
@@ -108,7 +108,7 @@ final class PayrollRunPolicy
             return true;
         }
 
-        // Allow HR and Accounting to view during all workflow states
+        // Allow HR, Accounting, and VP to view during all workflow states
         if ($user->hasAnyPermission(['payroll.initiate', 'payroll.hr_approve', 'payroll.acctg_approve', 'payroll.vp_approve', 'payroll.approve', 'payroll.post'])) {
             return true;
         }
@@ -167,21 +167,15 @@ final class PayrollRunPolicy
     /** Step 5→6: submit run for HR approval — HR Manager */
     public function submitForHr(User $user, PayrollRun $run): bool
     {
-        return $user->hasAnyPermission(['payroll.submit_for_hr', 'payroll.submit']);
+        return $user->hasAnyPermission(['payroll.submit_for_hr', 'payroll.submit', 'payroll.initiate', 'payroll.hr_approve', 'hr.full_access']);
     }
 
     /**
      * Step 6: HR first-level approval.
-     * SOD-005/006: approver must NOT be the user who initiated the run.
      */
     public function hrApprove(User $user, PayrollRun $run): bool
     {
-        if (! $user->hasAnyPermission(['payroll.hr_approve', 'payroll.approve'])) {
-            return false;
-        }
-
-        // SOD-005/006: initiator cannot also approve at HR level
-        return (int) $user->id !== (int) $run->created_by;
+        return $user->hasAnyPermission(['payroll.hr_approve', 'payroll.approve']);
     }
 
     /** Step 6: return run to initiator with notes */

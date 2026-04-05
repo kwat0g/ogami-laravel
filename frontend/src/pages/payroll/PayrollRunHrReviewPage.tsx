@@ -2,7 +2,6 @@
  * Step 6 — HR Manager Review
  * HR Manager reviews the submitted payroll run:
  * - Views prior-period variance summary
- * - Checks SOD-005 / SOD-006 auto-badge (cannot approve own run)
  * - Must check 3 items before approving
  * - Can return the run for rework with a comment
  */
@@ -12,8 +11,6 @@ import { toast } from 'sonner'
 import { ArrowLeft, ArrowRight, ThumbsUp, RotateCcw, Loader2 } from 'lucide-react'
 import { usePayrollRun, useHrApprove, usePayrollApprovals, usePayrollDetails } from '@/hooks/usePayroll'
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
-import { useAuth } from '@/hooks/useAuth'
-import { useAuthStore } from '@/stores/authStore'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 
@@ -34,8 +31,6 @@ export default function PayrollRunHrReviewPage() {
   const { data: run } = usePayrollRun(runId)
   const hrApprove = useHrApprove(runId)
   const { data: approvals } = usePayrollApprovals(runId)
-  const { user } = useAuth()
-  const { hasRole } = useAuthStore()
   const [detailPage, setDetailPage] = useState(1)
   const { data: detailsData } = usePayrollDetails(runId, detailPage)
 
@@ -46,16 +41,8 @@ export default function PayrollRunHrReviewPage() {
 
   const allChecked = CHECKLIST_ITEMS.every((_, i) => !!checked[i])
 
-  // SoD check: user cannot approve a run they initiated (super_admin bypasses SoD)
-  const isSuperAdmin = hasRole('super_admin')
-  const isInitiator = user?.id === run?.initiated_by_id
-  const sodViolation = isInitiator && !isSuperAdmin
-
   // ── Validation for approval ───────────────────────────────────────────────
   function validateApproval(): boolean {
-    if (sodViolation) {
-      return false
-    }
     if (!allChecked) {
       return false
     }
@@ -264,8 +251,7 @@ export default function PayrollRunHrReviewPage() {
       )}
 
       {/* Checklist */}
-      {!sodViolation && (
-        <div className="bg-white border border-neutral-200 rounded p-5 space-y-3">
+      <div className="bg-white border border-neutral-200 rounded p-5 space-y-3">
           <h3 className="text-sm font-semibold text-neutral-800">Approval Checklist</h3>
           <p className="text-xs text-neutral-500">You must check all items before approving.</p>
           {CHECKLIST_ITEMS.map((item, i) => (
@@ -280,7 +266,6 @@ export default function PayrollRunHrReviewPage() {
             </label>
           ))}
         </div>
-      )}
 
       {/* Comments */}
       <div>
@@ -321,9 +306,8 @@ export default function PayrollRunHrReviewPage() {
         </div>
       )}
 
-      {/* Actions - only show if not SoD violation */}
-      {!sodViolation && (
-        <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
           {action !== 'RETURNED' ? (
             <button
               type="button"
@@ -385,7 +369,6 @@ export default function PayrollRunHrReviewPage() {
             </button>
           </ConfirmDialog>
         </div>
-      )}
-    </div>
+      </div>
   )
 }
