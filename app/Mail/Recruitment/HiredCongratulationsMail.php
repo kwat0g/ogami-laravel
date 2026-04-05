@@ -16,15 +16,15 @@ final class HiredCongratulationsMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public string $queue = 'notifications';
-
     public function __construct(
         public readonly string $candidateName,
         public readonly string $positionTitle,
         public readonly string $departmentName,
         public readonly string $startDate,
         public readonly ?string $employeeCode,
-    ) {}
+    ) {
+        $this->queue = 'notifications';
+    }
 
     public static function fromModel(Hiring $hiring): self
     {
