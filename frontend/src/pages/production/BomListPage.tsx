@@ -8,6 +8,7 @@ import SearchInput from '@/components/ui/SearchInput'
 import Pagination from '@/components/ui/Pagination'
 import { useBoms } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { ExportButton } from '@/components/ui/ExportButton'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
@@ -39,7 +40,7 @@ export default function BomListPage(): React.ReactElement {
   const currentLoading = isArchiveView ? archivedLoading : isLoading
   const isSuperAdmin = useAuthStore(s => s.user?.roles?.some((r: { name: string }) => r.name === 'super_admin'))
   const { hasPermission } = useAuthStore()
-  const canCreate = hasPermission('production.bom.manage')
+  const canCreate = hasPermission(PERMISSIONS.production.bom.manage)
   const navigate  = useNavigate()
 
   return (

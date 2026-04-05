@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import SearchInput from '@/components/ui/SearchInput'
 import { useStockBalances, useWarehouseLocations, useStockAdjust } from '@/hooks/useInventory'
 import { usePermission } from '@/hooks/usePermission'
+import { PERMISSIONS } from '@/lib/permissions'
 import { isHandledApiError } from '@/lib/api'
 import { toast } from 'sonner'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -35,7 +36,7 @@ export default function StockBalancePage(): React.ReactElement {
   const [adjusting, setAdjusting]   = useState<AdjustState | null>(null)
   const [showConfirm, setShowConfirm] = useState(false)
 
-  const canAdjust = usePermission('inventory.adjustments.create')
+  const canAdjust = usePermission(PERMISSIONS.inventory.adjustments.create)
   const adjustMut = useStockAdjust()
 
   const { data: locations } = useWarehouseLocations({ is_active: true })

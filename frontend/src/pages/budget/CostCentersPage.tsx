@@ -4,6 +4,7 @@ import { firstErrorMessage } from '@/lib/errorHandler'
 import { Plus, Building2 } from 'lucide-react'
 import { useCostCenters, useCreateCostCenter, type CostCenter } from '@/hooks/useBudget'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
@@ -20,7 +21,7 @@ export default function CostCentersPage(): React.ReactElement {
   const [editing, setEditing] = useState(false)
   const { data, isLoading } = useCostCenters()
   const create = useCreateCostCenter()
-  const canManage = useAuthStore((s) => s.hasPermission('budget.manage'))
+  const canManage = useAuthStore((s) => s.hasPermission(PERMISSIONS.budget.manage))
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }))

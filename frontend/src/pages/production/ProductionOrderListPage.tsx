@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import SearchInput from '@/components/ui/SearchInput'
 import { useProductionOrders } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { ExportButton } from '@/components/ui/ExportButton'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
@@ -54,7 +55,7 @@ export default function ProductionOrderListPage(): React.ReactElement {
   const currentLoading = isArchiveView ? archivedLoading : isLoading
   const _isSuperAdmin = useAuthStore(s => s.user?.roles?.some((r: { name: string }) => r.name === 'super_admin'))
   const { hasPermission } = useAuthStore()
-  const _canCreate = hasPermission('production.orders.create')
+  const _canCreate = hasPermission(PERMISSIONS.production.orders.create)
 
   return (
     <div>

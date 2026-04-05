@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -71,7 +72,7 @@ const months = [
 
 export default function DepartmentBudgetsPage(): React.ReactElement {
   const { hasPermission } = useAuthStore()
-  const canManage = hasPermission('budget.manage')
+  const canManage = hasPermission(PERMISSIONS.budget.manage)
   const { data, isLoading, isError } = useDepartmentBudgets()
   const updateBudget = useUpdateDepartmentBudget()
 

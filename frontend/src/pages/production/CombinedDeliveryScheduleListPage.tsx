@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardBody } from '@/components/ui/Card'
 import { useCombinedDeliverySchedules } from '@/hooks/useCombinedDeliverySchedules'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import type { CombinedDeliverySchedule, CombinedDeliveryScheduleStatus } from '@/types/production'
 
@@ -40,7 +41,7 @@ export default function CombinedDeliveryScheduleListPage(): JSX.Element {
     per_page: 20,
   })
 
-  const canManage = hasPermission('production.delivery-schedule.manage')
+  const canManage = hasPermission(PERMISSIONS.production.delivery_schedule.manage)
 
   if (isLoading) {
     return <SkeletonLoader rows={5} />

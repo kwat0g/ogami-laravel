@@ -8,6 +8,7 @@ import {
   type VendorPortalGoodsReceipt,
 } from '@/hooks/useVendorPortal'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -44,7 +45,7 @@ export default function VendorInvoicesPage(): React.ReactElement {
   const { data: invoicesData, isLoading } = useVendorInvoices()
   const { data: grData } = useVendorGoodsReceipts()
   const create = useCreateVendorInvoice()
-  const canSubmitInvoice = useAuthStore((s) => s.hasPermission('vendor_portal.update_fulfillment'))
+  const canSubmitInvoice = useAuthStore((s) => s.hasPermission(PERMISSIONS.vendor_portal.update_fulfillment))
 
   const invoices: VendorPortalInvoice[] = invoicesData?.data ?? []
   const eligibleGRs: VendorPortalGoodsReceipt[] = (grData?.data ?? []).filter(

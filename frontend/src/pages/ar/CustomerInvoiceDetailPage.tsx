@@ -12,6 +12,7 @@ import {
 } from '@/hooks/useAR'
 import { useChartOfAccounts } from '@/hooks/useAccounting'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -304,15 +305,15 @@ export default function CustomerInvoiceDetailPage() {
   if (isLoading) return <SkeletonLoader rows={10} />
   if (!invoice) return <p className="p-6 text-neutral-500">Invoice not found.</p>
 
-  const canApprove = invoice.status === 'draft' && hasPermission('customer_invoices.approve')
-  const canCancel = invoice.status === 'draft' && hasPermission('customer_invoices.cancel')
+  const canApprove = invoice.status === 'draft' && hasPermission(PERMISSIONS.customer_invoices.approve)
+  const canCancel = invoice.status === 'draft' && hasPermission(PERMISSIONS.customer_invoices.cancel)
   const canReceivePayment =
     (invoice.status === 'approved' || invoice.status === 'partially_paid') &&
-    hasPermission('customer_invoices.receive_payment')
+    hasPermission(PERMISSIONS.customer_invoices.receive_payment)
   const canWriteOff =
     (invoice.status === 'approved' || invoice.status === 'partially_paid') &&
     invoice.balance_due > 0 &&
-    hasPermission('customer_invoices.write_off')
+    hasPermission(PERMISSIONS.customer_invoices.write_off)
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">

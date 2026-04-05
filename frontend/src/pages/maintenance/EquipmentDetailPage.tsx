@@ -4,6 +4,7 @@ import { Settings, Pencil, PowerOff, Power, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEquipmentDetail, useUpdateEquipment, useStorePmSchedule, useDeleteEquipment } from '@/hooks/useMaintenance';
 import { useAuthStore } from '@/stores/authStore';
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog';
@@ -40,7 +41,7 @@ export default function EquipmentDetailPage(): React.ReactElement {
   const storePmMut = useStorePmSchedule(ulid ?? '');
   const deleteMut = useDeleteEquipment();
 
-  const canManage = hasPermission('maintenance.manage');
+  const canManage = hasPermission(PERMISSIONS.maintenance.manage);
 
   const [isEditing, setIsEditing] = useState(false);
   const [showAddPm, setShowAddPm] = useState(false);

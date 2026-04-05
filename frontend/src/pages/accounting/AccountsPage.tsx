@@ -11,6 +11,7 @@ import {
 } from '@/hooks/useAccounting'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
@@ -295,7 +296,7 @@ function AccountModal({ open, initial, accounts, onClose, onSave, saving }: Acco
 // Main Page
 // ---------------------------------------------------------------------------
 export default function AccountsPage() {
-  const canManage = useAuthStore(s => s.hasPermission('chart_of_accounts.manage'))
+  const canManage = useAuthStore(s => s.hasPermission(PERMISSIONS.chart_of_accounts.manage))
   const [includeArchived, setIncludeArchived] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<ChartOfAccount | null>(null)

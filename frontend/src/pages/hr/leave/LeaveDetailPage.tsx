@@ -13,6 +13,7 @@ import {
   useRejectLeaveRequest,
 } from '@/hooks/useLeave'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { toast } from 'sonner'
 import { useState } from 'react'
 
@@ -146,7 +147,7 @@ export default function LeaveDetailPage() {
         </div>
 
         <div className="flex gap-3">
-          {request.status === 'pending' && hasPermission('hr.full_access') && (
+          {request.status === 'pending' && hasPermission(PERMISSIONS.hr.full_access) && (
             <button
               onClick={handleHeadApprove}
               disabled={headApprove.isPending}
@@ -156,7 +157,7 @@ export default function LeaveDetailPage() {
             </button>
           )}
 
-          {request.status === 'head_approved' && hasPermission('hr.full_access') && (
+          {request.status === 'head_approved' && hasPermission(PERMISSIONS.hr.full_access) && (
             <button
               onClick={handleManagerCheck}
               disabled={managerCheck.isPending}
@@ -166,7 +167,7 @@ export default function LeaveDetailPage() {
             </button>
           )}
 
-          {!['approved', 'rejected'].includes(request.status) && hasPermission('hr.full_access') && (
+          {!['approved', 'rejected'].includes(request.status) && hasPermission(PERMISSIONS.hr.full_access) && (
             <button
               onClick={() => setShowRejectModal(true)}
               className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700"

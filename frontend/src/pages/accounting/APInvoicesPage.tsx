@@ -6,6 +6,7 @@ import SearchInput from '@/components/ui/SearchInput'
 import { useAPInvoices, useCreateInvoiceFromPO, useBatchApproveAPInvoices, useBatchRejectAPInvoices } from '@/hooks/useAP'
 import { usePurchaseOrders } from '@/hooks/usePurchaseOrders'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { toast } from 'sonner'
 import type { VendorInvoiceStatus } from '@/types/ap'
@@ -74,7 +75,7 @@ interface CreateFromPOModalProps {
 
 function CreateFromPOModal({ isOpen, onClose, onSelect, isLoading }: CreateFromPOModalProps) {
   const [selectedPoId, setSelectedPoId] = useState<number | null>(null)
-  const canViewPurchaseOrders = useAuthStore(s => s.hasPermission('procurement.purchase-order.view'))
+  const canViewPurchaseOrders = useAuthStore(s => s.hasPermission(PERMISSIONS.procurement.purchase_order.view))
   
   // Fetch eligible POs only when modal is open and user can view purchase orders.
   const { data: poData, isLoading: isLoadingPOs } = usePurchaseOrders(
@@ -179,8 +180,8 @@ function CreateFromPOModal({ isOpen, onClose, onSelect, isLoading }: CreateFromP
 
 export default function APInvoicesPage() {
   const navigate = useNavigate()
-  const canCreate = useAuthStore(s => s.hasPermission('vendor_invoices.create'))
-  const canApprove = useAuthStore(s => s.hasPermission('vendor_invoices.approve'))
+  const canCreate = useAuthStore(s => s.hasPermission(PERMISSIONS.vendor_invoices.create))
+  const canApprove = useAuthStore(s => s.hasPermission(PERMISSIONS.vendor_invoices.approve))
   const [activeStatus, setActiveStatus] = useState<VendorInvoiceStatus | null>(null)
   const [dueSoonOnly, setDueSoonOnly] = useState(false)
   const [isArchiveView, setIsArchiveView] = useState(false)

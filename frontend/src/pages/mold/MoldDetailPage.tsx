@@ -5,6 +5,7 @@ import { useMold, useLogShots, useUpdateMold } from '@/hooks/useMold';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useProductionOrders } from '@/hooks/useProduction';
 import { useAuthStore } from '@/stores/authStore';
+import { PERMISSIONS } from '@/lib/permissions'
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 import { firstErrorMessage } from '@/lib/errorHandler'
@@ -24,8 +25,8 @@ export default function MoldDetailPage() {
   const updateMut = useUpdateMold(ulid ?? '');
   const [showForm, setShowForm] = useState(false);
 
-  const canManage = hasPermission('mold.manage');
-  const canLog    = hasPermission('mold.log_shots');
+  const canManage = hasPermission(PERMISSIONS.mold.manage);
+  const canLog    = hasPermission(PERMISSIONS.mold.log_shots);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({

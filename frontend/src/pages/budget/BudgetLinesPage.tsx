@@ -11,6 +11,7 @@ import {
   type BudgetLine,
 } from '@/hooks/useBudget'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
@@ -30,8 +31,8 @@ export default function BudgetLinesPage(): React.ReactElement {
   const submitBudget = useSubmitBudget()
   const approveBudget = useApproveBudget()
   const rejectBudget = useRejectBudget()
-  const canManage = useAuthStore((s) => s.hasPermission('budget.manage'))
-  const canApprove = useAuthStore((s) => s.hasPermission('budget.approve'))
+  const canManage = useAuthStore((s) => s.hasPermission(PERMISSIONS.budget.manage))
+  const canApprove = useAuthStore((s) => s.hasPermission(PERMISSIONS.budget.approve))
 
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ cost_center_id: 0, account_id: 0, fiscal_year: new Date().getFullYear(), amount_centavos: 0 })

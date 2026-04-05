@@ -7,6 +7,7 @@ import SearchInput from '@/components/ui/SearchInput';
 import Pagination from '@/components/ui/Pagination';
 import { useMolds } from '@/hooks/useMold';
 import { useAuthStore } from '@/stores/authStore';
+import { PERMISSIONS } from '@/lib/permissions'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton';
 import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 import api from '@/lib/api';
@@ -40,7 +41,7 @@ export default function MoldListPage() {
 
   const _currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? []);
   const _currentLoading = isArchiveView ? archivedLoading : isLoading;
-  const canManage = useAuthStore(s => s.hasPermission('mold.manage'));
+  const canManage = useAuthStore(s => s.hasPermission(PERMISSIONS.mold.manage));
   const _isSuperAdmin = useAuthStore(s => s.user?.roles?.some((r: { name: string }) => r.name === 'super_admin'));
 
   const handleSearch = useCallback((val: string) => {

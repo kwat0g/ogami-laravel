@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAttendanceDashboard } from '@/hooks/useAttendance'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import SkeletonTable from '@/components/ui/SkeletonTable'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -12,7 +13,7 @@ import { firstErrorMessage } from '@/lib/errorHandler'
 
 export default function AttendanceDashboardPage() {
   const { hasPermission } = useAuthStore()
-  const canApproveOT = hasPermission('overtime.approve')
+  const canApproveOT = hasPermission(PERMISSIONS.overtime.approve)
 
   const { data, isLoading, isError, refetch } = useAttendanceDashboard()
 

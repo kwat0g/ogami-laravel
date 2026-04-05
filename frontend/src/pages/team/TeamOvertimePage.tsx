@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import {
   useTeamOvertimeRequests,
   useApproveOvertimeRequest,
@@ -18,7 +19,7 @@ import type { OvertimeFilters } from '@/types/hr'
 
 export default function TeamOvertimePage() {
   const { hasPermission } = useAuthStore()
-  const canApprove = hasPermission('overtime.approve')
+  const canApprove = hasPermission(PERMISSIONS.overtime.approve)
 
   const [filters, setFilters] = useState<OvertimeFilters>({ per_page: 25 })
 

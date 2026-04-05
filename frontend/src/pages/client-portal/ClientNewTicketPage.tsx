@@ -4,11 +4,12 @@ import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useCreateTicket } from '@/hooks/useCRM'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 
 export default function ClientNewTicketPage() {
   const navigate = useNavigate()
   const createMutation = useCreateTicket()
-  const canCreate = useAuthStore((s) => s.hasPermission('crm.tickets.create'))
+  const canCreate = useAuthStore((s) => s.hasPermission(PERMISSIONS.crm.tickets.create))
 
   const [form, setForm] = useState({
     subject: '',

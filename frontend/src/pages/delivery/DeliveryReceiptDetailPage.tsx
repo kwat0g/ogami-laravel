@@ -18,6 +18,7 @@ import {
 // Driver is a text input -- not linked to employee records because
 // drivers may be third-party contractors or temporary staff not in HR system
 import { useAuthStore } from '@/stores/authStore';
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import PageHeader from '@/components/ui/PageHeader';
@@ -451,7 +452,7 @@ export default function DeliveryReceiptDetailPage(): React.ReactElement {
   const [dispatchOpen, setDispatchOpen] = useState(false);
   const [podDeliverOpen, setPodDeliverOpen] = useState(false);
   const [shipmentOpen, setShipmentOpen] = useState(false);
-  const canManage = hasPermission('delivery.manage');
+  const canManage = hasPermission(PERMISSIONS.delivery.manage);
 
   if (isLoading) return <SkeletonLoader rows={6} />;
 

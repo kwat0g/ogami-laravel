@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
@@ -62,8 +63,8 @@ export default function CustomerCreditNotesPage(): React.ReactElement {
   const [touched, setTouched] = useState<Set<string>>(new Set())
 
   const list = notes ?? []
-  const canCreate = useAuthStore((s) => s.hasPermission('customer_invoices.create'))
-  const canApprove = useAuthStore((s) => s.hasPermission('customer_invoices.approve'))
+  const canCreate = useAuthStore((s) => s.hasPermission(PERMISSIONS.customer_invoices.create))
+  const canApprove = useAuthStore((s) => s.hasPermission(PERMISSIONS.customer_invoices.approve))
 
   const touch = (k: string) => setTouched(prev => new Set([...prev, k]))
 

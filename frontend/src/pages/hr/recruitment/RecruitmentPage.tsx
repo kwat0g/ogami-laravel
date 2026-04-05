@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Briefcase, Users, Calendar, BarChart3 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import api from '@/lib/api'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -55,7 +56,7 @@ export default function RecruitmentPage() {
   }
 
   const visibleTabs = TABS.filter(
-    (t) => !t.permission || hasPermission(t.permission) || hasPermission('hr.full_access')
+    (t) => !t.permission || hasPermission(t.permission) || hasPermission(PERMISSIONS.hr.full_access)
   )
   const safeActiveTab = visibleTabs.some((tab) => tab.key === activeTab) ? activeTab : 'dashboard'
 
@@ -65,7 +66,7 @@ export default function RecruitmentPage() {
         title="Recruitment"
         subtitle="Manage the full hiring lifecycle"
         actions={
-          hasPermission('recruitment.postings.create') || hasPermission('hr.full_access') ? (
+          hasPermission(PERMISSIONS.recruitment.postings.create) || hasPermission(PERMISSIONS.hr.full_access) ? (
             <Link
               to="/hr/recruitment/postings/new"
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"

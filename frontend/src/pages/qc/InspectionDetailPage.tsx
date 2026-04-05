@@ -4,6 +4,7 @@ import { ClipboardCheck, AlertTriangle, Plus, Trash2, CheckCircle2, XCircle } fr
 import { toast } from 'sonner'
 import { useCancelResults, useInspection, useRecordResults } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -44,7 +45,7 @@ export default function InspectionDetailPage(): React.ReactElement {
   const recordMut  = useRecordResults(ulid ?? '')
   const cancelMut  = useCancelResults(ulid ?? '')
 
-  const canEdit = hasPermission('qc.inspections.create')
+  const canEdit = hasPermission(PERMISSIONS.qc.inspections.create)
 
   // ── Record-results form state ─────────────────────────────────────────────
   const [showForm, setShowForm] = useState(false)

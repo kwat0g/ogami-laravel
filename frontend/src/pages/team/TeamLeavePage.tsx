@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import {
   useTeamLeaveRequests,
   useHeadApproveLeaveRequest,
@@ -19,8 +20,8 @@ const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 
 export default function TeamLeavePage() {
   const { hasPermission } = useAuthStore()
-  const canHeadApprove = hasPermission('leaves.head_approve')
-  const canManagerCheck = hasPermission('leaves.manager_check')
+  const canHeadApprove = hasPermission(PERMISSIONS.leaves.head_approve)
+  const canManagerCheck = hasPermission(PERMISSIONS.leaves.manager_check)
 
   const [filters, setFilters] = useState<LeaveFilters>({ per_page: 25 })
   const [rejectId, setRejectId] = useState<number | null>(null)

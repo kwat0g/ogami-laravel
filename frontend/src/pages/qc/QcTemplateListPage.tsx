@@ -4,6 +4,7 @@ import SearchInput from '@/components/ui/SearchInput'
 import { toast } from 'sonner'
 import { useInspectionTemplates, useDeleteInspectionTemplate, useCreateInspectionTemplate } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
 import api from '@/lib/api'
@@ -27,7 +28,7 @@ const STAGE_LABELS: Record<InspectionStage, string> = {
 
 export default function QcTemplateListPage(): React.ReactElement {
   const { hasPermission } = useAuthStore()
-  const canManage = hasPermission('qc.templates.manage')
+  const canManage = hasPermission(PERMISSIONS.qc.templates.manage)
   const [stage, setStage] = useState('')
   const [isArchiveView, setIsArchiveView] = useState(false)
   const [templateToDelete, setTemplateToDelete] = useState<InspectionTemplate | null>(null)

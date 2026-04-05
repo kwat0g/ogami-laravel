@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import {
   useShifts,
   useCreateShift,
@@ -63,7 +64,7 @@ function shiftFromExisting(s: ShiftSchedule): ShiftForm {
 export default function ShiftsPage() {
   const { hasPermission } = useAuthStore()
   const navigate = useNavigate()
-  const canManage = hasPermission('attendance.manage_shifts')
+  const canManage = hasPermission(PERMISSIONS.attendance.manage_shifts)
   const { data, isLoading, isError, refetch } = useShifts()
   const create = useCreateShift()
   const upd = useUpdateShift()

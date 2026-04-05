@@ -7,6 +7,7 @@ import SearchInput from '@/components/ui/SearchInput';
 import Pagination from '@/components/ui/Pagination';
 import { useEquipment } from '@/hooks/useMaintenance';
 import { useAuthStore } from '@/stores/authStore';
+import { PERMISSIONS } from '@/lib/permissions'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton';
 import ArchiveViewBanner from '@/components/ui/ArchiveViewBanner'
 import api from '@/lib/api';
@@ -40,7 +41,7 @@ export default function EquipmentListPage() {
 
   const _currentData = isArchiveView ? (archivedData?.data?.data ?? []) : (data?.data ?? []);
   const _currentLoading = isArchiveView ? archivedLoading : isLoading;
-  const canManage = useAuthStore(s => s.hasPermission('maintenance.manage'));
+  const canManage = useAuthStore(s => s.hasPermission(PERMISSIONS.maintenance.manage));
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val);

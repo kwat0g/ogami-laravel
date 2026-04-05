@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import SearchInput from '@/components/ui/SearchInput'
 import { useDeliverySchedules } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
 import api from '@/lib/api'
@@ -52,8 +53,8 @@ export default function DeliveryScheduleListPage(): React.ReactElement {
     enabled: isArchiveView,
   })
   const { hasPermission } = useAuthStore()
-  const canCreate = hasPermission('production.delivery-schedule.manage')
-  const _canCreateWO = hasPermission('production.orders.create')
+  const canCreate = hasPermission(PERMISSIONS.production.delivery_schedule.manage)
+  const _canCreateWO = hasPermission(PERMISSIONS.production.orders.create)
 
   return (
     <div>

@@ -3,6 +3,7 @@ import { Power, Trash2 } from 'lucide-react'
 import { useRecurringTemplates, useToggleRecurringTemplate, useDeleteRecurringTemplate, type RecurringJournalTemplate } from '@/hooks/useAccounting'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -13,7 +14,7 @@ export default function RecurringTemplatesPage(): React.ReactElement {
   const remove = useDeleteRecurringTemplate()
 
   const list: RecurringJournalTemplate[] = templates ?? []
-  const canManage = useAuthStore((s) => s.hasPermission('journal_entries.create'))
+  const canManage = useAuthStore((s) => s.hasPermission(PERMISSIONS.journal_entries.create))
 
   async function handleToggle(id: string) {
     try {

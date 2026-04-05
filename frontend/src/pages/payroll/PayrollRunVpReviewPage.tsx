@@ -16,6 +16,7 @@ import {
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 
@@ -39,7 +40,7 @@ export default function PayrollRunVpReviewPage(): JSX.Element {
   const { data: approvals } = usePayrollApprovals(runId)
   const { data: breakdown } = usePayrollBreakdown(runId, { per_page: 5 })
   const { user } = useAuth()
-  const hasVpApprove = useAuthStore((s) => s.hasPermission('payroll.vp_approve'))
+  const hasVpApprove = useAuthStore((s) => s.hasPermission(PERMISSIONS.payroll.vp_approve))
 
   const [checked, setChecked] = useState<Record<number, boolean>>({})
   const [comments, setComments] = useState('')

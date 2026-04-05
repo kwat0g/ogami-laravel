@@ -4,6 +4,7 @@ import { Truck, CheckCircle, AlertCircle, X, ThumbsUp, MessageSquare, ChevronDow
 import { useVendorOrder, useMarkInTransit, useMarkDelivered, useAcknowledgePO, useProposeChanges } from '@/hooks/useVendorPortal'
 import type { ProposeChangesItem, ProposeChangesPayload } from '@/hooks/useVendorPortal'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -335,7 +336,7 @@ export default function VendorOrderDetailPage(): React.ReactElement {
     )
   }
 
-  const canFulfill = ['sent', 'acknowledged', 'in_transit'].includes(order.status) && hasPermission('vendor_portal.update_fulfillment')
+  const canFulfill = ['sent', 'acknowledged', 'in_transit'].includes(order.status) && hasPermission(PERMISSIONS.vendor_portal.update_fulfillment)
   const canAcknowledgeOrPropose = order.status === 'sent'
   const canMarkInTransit = order.status === 'acknowledged'
   const canMarkDelivered = order.status === 'in_transit'

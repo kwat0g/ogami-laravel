@@ -8,6 +8,7 @@ import {
   useBatchRejectPurchaseRequests,
 } from '@/hooks/usePurchaseRequests'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
 import api from '@/lib/api'
@@ -188,8 +189,8 @@ interface PurchaseRequestListPageProps {
 export default function PurchaseRequestListPage({ lockedStatus, pageTitle }: PurchaseRequestListPageProps = {}): React.ReactElement {
   const navigate = useNavigate()
   const { hasPermission } = useAuthStore()
-  const canCreate = hasPermission('procurement.purchase-request.create') || hasPermission('procurement.purchase-request.create-dept')
-  const canReview = hasPermission('procurement.purchase-request.review')
+  const canCreate = hasPermission(PERMISSIONS.procurement.purchase_request.create) || hasPermission(PERMISSIONS.procurement.purchase_request['create-dept'])
+  const canReview = hasPermission(PERMISSIONS.procurement.purchase_request.review)
 
   const [searchParams] = useSearchParams()
   const [filters, setFilters] = useState<PurchaseRequestFilters>({

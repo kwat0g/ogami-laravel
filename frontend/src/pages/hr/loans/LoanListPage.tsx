@@ -6,6 +6,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ExportButton } from '@/components/ui/ExportButton'
 import type { LoanFilters, LoanStatus } from '@/types/hr'
@@ -14,7 +15,7 @@ export default function LoanListPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { hasPermission } = useAuthStore()
-  const _canCreate = hasPermission('loans.create') || hasPermission('loans.apply')
+  const _canCreate = hasPermission(PERMISSIONS.loans.create) || hasPermission(PERMISSIONS.loans.apply)
   const isAccountingContext = location.pathname.startsWith('/accounting')
   const loanBasePath = isAccountingContext ? '/accounting/loans' : '/hr/loans'
 

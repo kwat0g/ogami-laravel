@@ -6,6 +6,7 @@ import SearchInput from '@/components/ui/SearchInput';
 import Pagination from '@/components/ui/Pagination';
 import { useWorkOrders } from '@/hooks/useMaintenance';
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
 import api from '@/lib/api';
@@ -34,7 +35,7 @@ export default function WorkOrderListPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
-  const canManage = useAuthStore(s => s.hasPermission('maintenance.manage'));
+  const canManage = useAuthStore(s => s.hasPermission(PERMISSIONS.maintenance.manage));
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val);

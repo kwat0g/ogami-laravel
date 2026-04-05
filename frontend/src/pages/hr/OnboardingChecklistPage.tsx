@@ -6,6 +6,7 @@ import { firstErrorMessage } from '@/lib/errorHandler'
 import api from '@/lib/api'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
@@ -55,7 +56,7 @@ export default function OnboardingChecklistPage(): React.ReactElement {
   const { ulid } = useParams<{ ulid: string }>()
   const qc = useQueryClient()
   const { data, isLoading } = useOnboardingChecklist(ulid ?? '')
-  const canManage = useAuthStore((s) => s.hasPermission('hr.full_access'))
+  const canManage = useAuthStore((s) => s.hasPermission(PERMISSIONS.hr.full_access))
 
   const initMut = useMutation({
     mutationFn: async () => {

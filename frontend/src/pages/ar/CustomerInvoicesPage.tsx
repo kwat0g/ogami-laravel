@@ -10,6 +10,7 @@ import {
   useCancelCustomerInvoice,
 } from '@/hooks/useAR'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -139,9 +140,9 @@ function BulkActions({
 
 export default function CustomerInvoicesPage() {
   const navigate = useNavigate()
-  const canCreate = useAuthStore(s => s.hasPermission('customer_invoices.create'))
-  const canApprove = useAuthStore(s => s.hasPermission('customer_invoices.approve'))
-  const canCancel = useAuthStore(s => s.hasPermission('customer_invoices.cancel'))
+  const canCreate = useAuthStore(s => s.hasPermission(PERMISSIONS.customer_invoices.create))
+  const canApprove = useAuthStore(s => s.hasPermission(PERMISSIONS.customer_invoices.approve))
+  const canCancel = useAuthStore(s => s.hasPermission(PERMISSIONS.customer_invoices.cancel))
   const [activeTab, setActiveTab] = useState<CustomerInvoiceStatus | 'all'>('all')
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')

@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom'
 import { useEmployee, useEmployeeTransition, useDeleteEmployee } from '@/hooks/useEmployees'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { EmployeeProfileView } from '@/components/employee'
@@ -77,9 +78,9 @@ export default function EmployeeDetailPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
   const navigate = useNavigate()
   const { hasPermission } = useAuthStore()
-  const canEdit = hasPermission('employees.update')
-  const canDelete = hasPermission('employees.delete')
-  const canTransition = hasPermission('employees.suspend') || hasPermission('employees.terminate')
+  const canEdit = hasPermission(PERMISSIONS.employees.update)
+  const canDelete = hasPermission(PERMISSIONS.employees.delete)
+  const canTransition = hasPermission(PERMISSIONS.employees.suspend) || hasPermission(PERMISSIONS.employees.terminate)
   const employeeId = id ?? null
 
   const { data: employee, isLoading, isError, refetch } = useEmployee(employeeId)

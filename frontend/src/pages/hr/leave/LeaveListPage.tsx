@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { useLeaveRequests, useBatchHeadApproveLeave, useBatchRejectLeave } from '@/hooks/useLeave'
 import { useDepartments } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -18,8 +19,8 @@ const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 
 export default function LeaveListPage() {
   const { hasPermission } = useAuthStore()
-  const canFileOnBehalf = hasPermission('leaves.file_on_behalf')
-  const canHeadApprove = hasPermission('leaves.head_approve')
+  const canFileOnBehalf = hasPermission(PERMISSIONS.leaves.file_on_behalf)
+  const canHeadApprove = hasPermission(PERMISSIONS.leaves.head_approve)
   const [filters, setFilters] = useState<LeaveFilters>({ per_page: 15, page: 1 })
   const [expandedRow, setExpandedRow] = useState<number | null>(null)
   

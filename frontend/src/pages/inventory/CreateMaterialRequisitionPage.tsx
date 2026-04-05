@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { useCreateMRQ, useItems } from '@/hooks/useInventory'
 import { useDepartments } from '@/hooks/useEmployees'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { firstErrorMessage } from '@/lib/errorHandler'
@@ -30,7 +31,7 @@ export default function CreateMaterialRequisitionPage(): React.ReactElement {
   const navigate      = useNavigate()
   const createMRQ     = useCreateMRQ()
   const { hasPermission } = useAuthStore()
-  const canCreate = hasPermission('inventory.mrq.create')
+  const canCreate = hasPermission(PERMISSIONS.inventory.mrq.create)
   const { data: deptData } = useDepartments(true)
   const [itemSearch, setItemSearch] = useState('')
 

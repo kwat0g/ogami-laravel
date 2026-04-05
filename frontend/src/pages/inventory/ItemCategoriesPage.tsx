@@ -7,6 +7,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import api from '@/lib/api'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { ItemCategory } from '@/types/inventory'
@@ -122,8 +123,8 @@ export default function ItemCategoriesPage(): React.ReactElement {
   const { data: categories, isLoading, refetch } = useItemCategories()
   const [showForm, setShowForm] = useState(false)
   const [, setDeletingId] = useState<number | null>(null)
-  const canCreate = useAuthStore(s => s.hasPermission('inventory.items.create'))
-  const canDelete = useAuthStore(s => s.hasPermission('inventory.items.delete'))
+  const canCreate = useAuthStore(s => s.hasPermission(PERMISSIONS.inventory.items.create))
+  const canDelete = useAuthStore(s => s.hasPermission(PERMISSIONS.inventory.items.delete))
   useAuthStore(s => s.user)
 
   const handleDelete = async (id: number) => {

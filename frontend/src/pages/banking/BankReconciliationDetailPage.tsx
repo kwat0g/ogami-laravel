@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import {
@@ -23,8 +24,8 @@ export default function BankReconciliationDetailPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
   const reconciliationId = id ?? null
 
-  const canCertify = hasPermission('bank_reconciliations.certify')
-  const canEdit = hasPermission('bank_reconciliations.create')
+  const canCertify = hasPermission(PERMISSIONS.bank_reconciliations.certify)
+  const canEdit = hasPermission(PERMISSIONS.bank_reconciliations.create)
 
   const { data: recon, isLoading, isError } = useBankReconciliation(reconciliationId)
   const unmatch  = useUnmatchTransaction(reconciliationId ?? '')

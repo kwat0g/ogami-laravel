@@ -5,6 +5,7 @@ import { firstErrorMessage } from '@/lib/errorHandler'
 import { Package } from 'lucide-react'
 import { useFixedAsset, useDisposeAsset } from '@/hooks/useFixedAssets'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -17,7 +18,7 @@ export default function FixedAssetDetailPage(): React.ReactElement {
   const dispose = useDisposeAsset(ulid ?? '')
   const [showDispose, setShowDispose] = useState(false)
   const [dispForm, setDispForm] = useState({ disposal_date: '', disposal_method: 'scrap', sale_price_centavos: 0, notes: '' })
-  const canManage = useAuthStore((s) => s.hasPermission('fixed_assets.manage'))
+  const canManage = useAuthStore((s) => s.hasPermission(PERMISSIONS.fixed_assets.manage))
 
   if (isLoading) return <SkeletonLoader rows={6} />
   if (isError || !asset) return (

@@ -18,6 +18,7 @@ import { disconnectEcho } from '@/lib/echo'
 import { getPasswordChangePath } from '@/lib/roleLanding'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 
 export default function ClientPortalLayout() {
@@ -54,7 +55,7 @@ export default function ClientPortalLayout() {
   }
 
   // Only client role users can access this portal
-  if (!(user?.roles as string[] | undefined)?.includes('client') || !hasPermission('crm.tickets.view')) {
+  if (!(user?.roles as string[] | undefined)?.includes('client') || !hasPermission(PERMISSIONS.crm.tickets.view)) {
     return <Navigate to="/dashboard" replace />
   }
 

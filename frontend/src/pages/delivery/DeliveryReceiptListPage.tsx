@@ -6,6 +6,7 @@ import SearchInput from '@/components/ui/SearchInput';
 import Pagination from '@/components/ui/Pagination';
 import { useDeliveryReceipts } from '@/hooks/useDelivery';
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
 import { ExportButton } from '@/components/ui/ExportButton';
 import type { DrDirection, DrStatus } from '@/types/delivery';
@@ -32,7 +33,7 @@ export default function DeliveryReceiptListPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
-  const canManage = useAuthStore(s => s.hasPermission('delivery.manage'));
+  const canManage = useAuthStore(s => s.hasPermission(PERMISSIONS.delivery.manage));
 
   const params: Record<string, string | number | boolean> = { page, per_page: 20 };
   if (direction) params.direction = direction;
