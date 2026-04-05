@@ -195,15 +195,15 @@ const SECTIONS: NavSection[] = [
       // ── Procurement ─────────────────────────────────────────────────────────
       { divider: true, label: 'Procurement' },
       { label: 'Purchase Requests', href: '/procurement/purchase-requests', permission: 'procurement.purchase-request.view' },
-      { label: 'Purchase Orders', href: '/procurement/purchase-orders', permission: 'procurement.purchase-order.view' },
-      { label: 'Goods Receipts', href: '/procurement/goods-receipts', permission: 'procurement.goods-receipt.view' },
+      { label: 'Purchase Orders', href: '/procurement/purchase-orders', permission: 'procurement.purchase-order.view', departments: ['PURCH'] },
+      { label: 'Goods Receipts', href: '/procurement/goods-receipts', permission: 'procurement.goods-receipt.view', departments: ['PURCH', 'WH'] },
       // ── Inventory ────────────────────────────────────────────────────────────
       { divider: true, label: 'Inventory' },
-      { label: 'Item Master', href: '/inventory/items', permission: 'inventory.items.view' },
-      { label: 'Stock Balances', href: '/inventory/stock', permission: 'inventory.stock.view' },
+      { label: 'Item Master', href: '/inventory/items', permission: 'inventory.items.view', departments: ['WH', 'PURCH', 'PROD', 'PLANT', 'PPC'] },
+      { label: 'Stock Balances', href: '/inventory/stock', permission: 'inventory.stock.view', departments: ['WH', 'PURCH', 'PROD', 'PLANT', 'PPC'] },
       { label: 'Material Requisitions', href: '/inventory/requisitions', permission: 'inventory.mrq.view' },
-      { label: 'Warehouse Locations', href: '/inventory/locations', permission: 'inventory.locations.view' },
-      { label: 'Stock Transfers', href: '/inventory/transfers', permission: 'inventory.transfers.manage' },
+      { label: 'Warehouse Locations', href: '/inventory/locations', permission: 'inventory.locations.view', departments: ['WH'] },
+      { label: 'Stock Transfers', href: '/inventory/transfers', permission: 'inventory.transfers.manage', departments: ['WH'] },
     ],
   },
   // ═════════════════════════════════════════════════════════════════════════════
