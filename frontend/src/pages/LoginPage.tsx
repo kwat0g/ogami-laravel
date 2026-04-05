@@ -8,6 +8,7 @@ import axios from 'axios'
 import { useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { getLandingPath } from '@/lib/roleLanding'
+import { setLoginGrace } from '@/lib/authEpoch'
 import { bumpAuthEpoch } from '@/lib/authEpoch'
 import { useAuthStore } from '@/stores/authStore'
 import type { ApiSuccess, LoginResult } from '@/types/api'
@@ -55,6 +56,8 @@ export default function LoginPage() {
         setAuth(result.user)
         // Fence off any 401 handlers spawned during login transition.
         bumpAuthEpoch()
+        // Suppress 401s for 3s while session cookie propagates to concurrent requests.
+        setLoginGrace(3000)
         navigate(getLandingPath(result.user))
       }
     } catch (err: unknown) {

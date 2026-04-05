@@ -1,6 +1,6 @@
 import axios, { type AxiosRequestConfig } from 'axios'
 import type { ApiError } from '@/types/api'
-import { bumpAuthEpoch, getAuthEpoch } from '@/lib/authEpoch'
+import { bumpAuthEpoch, getAuthEpoch, isInLoginGrace } from '@/lib/authEpoch'
 
 export const api = axios.create({
   baseURL: '/api/v1',
@@ -118,6 +118,12 @@ api.interceptors.response.use(
     // We check uiStore instead of the cache endpoint to avoid an extra
     // round-trip on every 401.
     if (status === 401) {
+      // Post-login grace: suppress 401s for 3 seconds after login to allow
+      // session cookies to propagate to all concurrent requests.
+      if (isInLoginGrace()) {
+        return Promise.reject({ __handled: true })
+      }
+
       const cfg = error.config as {
         __authEpoch?: number
         __skipAuthRedirect?: boolean
