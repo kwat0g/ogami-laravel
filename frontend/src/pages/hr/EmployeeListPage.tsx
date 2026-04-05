@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
 import { useEmployees, useTeamEmployees, useDepartments } from '@/hooks/useEmployees'
 import { useAuthStore } from '@/stores/authStore'
-import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -35,7 +34,7 @@ interface EmployeeListPageProps {
 export default function EmployeeListPage({ view = 'all' }: EmployeeListPageProps) {
   const navigate = useNavigate()
   const { hasPermission } = useAuthStore()
-  const canEdit = hasPermission(PERMISSIONS.employees.update)
+  const canEdit = hasPermission('employees.update')
   const [filters, setFilters] = useState<EmployeeFilters>({ per_page: 25 })
   const [searchValue, setSearchValue] = useState('')
   const [isArchiveView, setIsArchiveView] = useState(false)

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
@@ -438,9 +438,8 @@ export default function LeaveListPage() {
               <tr><td colSpan={canHeadApprove ? 9 : 8} className="px-3 py-8 text-center text-neutral-400">No leave requests found.</td></tr>
             )}
             {rows.map((row) => (
-              <>
-                <tr 
-                  key={row.id} 
+              <React.Fragment key={row.id}>
+                <tr
                   className={`hover:bg-neutral-50 transition-colors cursor-pointer ${
                     selectedIds.has(row.id) ? 'bg-accent-soft/50' : 'even:bg-neutral-100'
                   }`}
@@ -536,7 +535,7 @@ export default function LeaveListPage() {
                     </td>
                   </tr>
                 )}
-              </>
+              </React.Fragment>
             ))}
           </tbody>
         </table>
