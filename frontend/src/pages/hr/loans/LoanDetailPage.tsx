@@ -25,6 +25,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ApprovalStepForm from '@/components/ui/ApprovalStepForm'
 import StatusTimeline from '@/components/ui/StatusTimeline'
+import { PERMISSIONS } from '@/lib/permissions'
 import { getLoanSteps, isRejectedStatus } from '@/lib/workflowSteps'
 
 export default function LoanDetailPage() {
@@ -36,13 +37,13 @@ export default function LoanDetailPage() {
   const { data: loan, isLoading, isError, refetch } = useLoan(loanId)
 
   const isRequester = user?.id === loan?.requested_by
-  const canApprove = hasPermission('loans.approve') && !isRequester
-  const canAccountingApprove = hasPermission('loans.accounting_approve') && !isRequester && user?.id !== loan?.approved_by
-  const canDisburse = (hasPermission('loans.accounting_approve') || hasPermission('loans.hr_approve')) && !isRequester
-  const canHeadNote = hasPermission('loans.head_note') && !isRequester
-  const canManagerCheck = hasPermission('loans.manager_check') && !isRequester && user?.id !== loan?.head_noted_by
-  const canOfficerReview = hasPermission('loans.officer_review') && !isRequester && user?.id !== loan?.manager_checked_by
-  const canVpApprove = hasPermission('loans.vp_approve') && !isRequester && user?.id !== loan?.officer_reviewed_by
+  const canApprove = hasPermission(PERMISSIONS.loans.approve) && !isRequester
+  const canAccountingApprove = hasPermission(PERMISSIONS.loans.accounting_approve) && !isRequester && user?.id !== loan?.approved_by
+  const canDisburse = (hasPermission(PERMISSIONS.loans.accounting_approve) || hasPermission(PERMISSIONS.loans.hr_approve)) && !isRequester
+  const canHeadNote = hasPermission(PERMISSIONS.loans.head_note) && !isRequester
+  const canManagerCheck = hasPermission(PERMISSIONS.loans.manager_check) && !isRequester && user?.id !== loan?.head_noted_by
+  const canOfficerReview = hasPermission(PERMISSIONS.loans.officer_review) && !isRequester && user?.id !== loan?.manager_checked_by
+  const canVpApprove = hasPermission(PERMISSIONS.loans.vp_approve) && !isRequester && user?.id !== loan?.officer_reviewed_by
 
   const { data: schedule, isLoading: schedLoading } = useLoanSchedule(loanId)
   const { data: loanHistory } = useEmployeeLoanHistory(loanId)

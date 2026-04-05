@@ -3,6 +3,7 @@ import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useNavigate, Link } from 'react-router-dom'
 import { Plus, RefreshCw } from 'lucide-react'
+import { PERMISSIONS } from '@/lib/permissions'
 import { usePayrollRuns } from '@/hooks/usePayroll'
 import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -30,13 +31,13 @@ function formatDate(iso: string) {
 export default function PayrollRunListPage() {
   const navigate = useNavigate()
   const hasPermission = useAuthStore((s) => s.hasPermission)
-  const canInitiate = hasPermission('payroll.initiate')
+  const canInitiate = hasPermission(PERMISSIONS.payroll.initiate)
 
   // Accounting Managers see only runs pending their action / already published.
   const isAcctgOnly =
-    hasPermission('payroll.acctg_approve') &&
-    !hasPermission('payroll.initiate') &&
-    !hasPermission('payroll.hr_approve')
+    hasPermission(PERMISSIONS.payroll.acctg_approve) &&
+    !hasPermission(PERMISSIONS.payroll.initiate) &&
+    !hasPermission(PERMISSIONS.payroll.hr_approve)
 
   const STATUSES = isAcctgOnly ? ACCTG_STATUSES : ALL_STATUSES
 
