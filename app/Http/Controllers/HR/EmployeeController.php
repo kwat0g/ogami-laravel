@@ -171,11 +171,11 @@ final class EmployeeController extends Controller
      */
     public function transition(Request $request, Employee $employee): EmployeeResource
     {
-        $this->authorize('transition', $employee);
-
         $validated = $request->validate([
             'to_state' => ['required', 'string', 'in:active,on_leave,suspended,resigned,terminated'],
         ]);
+
+        $this->authorize('transition', [$employee, $validated['to_state']]);
 
         $employee = $this->employeeService->transition(
             $employee,

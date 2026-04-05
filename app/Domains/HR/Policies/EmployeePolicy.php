@@ -138,16 +138,36 @@ final class EmployeePolicy
         return (int) $user->id !== (int) $employee->created_by;
     }
 
-    /** State transition (suspend / terminate).
-     *  SELF-002: cannot terminate or suspend your own employee record. */
-    public function transition(User $user, Employee $employee): bool
+    /**
+     * Employment status transition.
+     *
+     * active|on_leave  => employees.activate
+     * suspended        => employees.suspend
+     * resigned|terminated => employees.terminate
+     *
+     * hr.full_access may perform any employee lifecycle transition.
+     * SELF-002: cannot change your own employee record.
+     */
+    public function transition(User $user, Employee $employee, ?string $toState = null): bool
     {
-        if (! ($user->hasPermissionTo('employees.suspend') || $user->hasPermissionTo('employees.terminate'))) {
+        if ($this->isOwnEmployee($user, $employee)) {
             return false;
         }
 
-        // SELF-002: cannot terminate/suspend own record
-        return ! $this->isOwnEmployee($user, $employee);
+        if ($toState === null) {
+            return $user->hasPermissionTo('hr.full_access')
+                || $user->hasPermissionTo('employees.activate')
+                || $user->hasPermissionTo('employees.suspend')
+                || $user->hasPermissionTo('employees.terminate');
+        }
+
+        return match ($toState) {
+            'active' => $this->activate($user, $employee) || $user->hasPermissionTo('hr.full_access'),
+            'on_leave' => $user->hasPermissionTo('hr.full_access') || $user->hasPermissionTo('employees.activate'),
+            'suspended' => $user->hasPermissionTo('hr.full_access') || $user->hasPermissionTo('employees.suspend'),
+            'resigned', 'terminated' => $user->hasPermissionTo('hr.full_access') || $user->hasPermissionTo('employees.terminate'),
+            default => false,
+        };
     }
 
     public function delete(User $user, Employee $employee): bool

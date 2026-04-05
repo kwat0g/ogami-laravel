@@ -78,9 +78,12 @@ export default function EmployeeDetailPage() {
   const { ulid: id } = useParams<{ ulid: string }>()
   const navigate = useNavigate()
   const { hasPermission } = useAuthStore()
+  const hasHrFullAccess = hasPermission(PERMISSIONS.hr.full_access)
   const canEdit = hasPermission(PERMISSIONS.employees.update)
   const canDelete = hasPermission(PERMISSIONS.employees.delete)
-  const canTransition = hasPermission(PERMISSIONS.employees.suspend) || hasPermission(PERMISSIONS.employees.terminate)
+  const canSetActiveStates = hasHrFullAccess || hasPermission(PERMISSIONS.employees.activate)
+  const canSuspend = hasHrFullAccess || hasPermission(PERMISSIONS.employees.suspend)
+  const canSeparate = hasHrFullAccess || hasPermission(PERMISSIONS.employees.terminate)
   const employeeId = id ?? null
 
   const { data: employee, isLoading, isError, refetch } = useEmployee(employeeId)
@@ -133,7 +136,12 @@ export default function EmployeeDetailPage() {
     return <div className="text-red-600 text-sm mt-4">Employee not found or failed to load.</div>
   }
 
-  const allowedNext = ALLOWED_TRANSITIONS[employee.employment_status] ?? []
+  const allowedNext = (ALLOWED_TRANSITIONS[employee.employment_status] ?? []).filter((state) => {
+    if (state === 'active' || state === 'on_leave') return canSetActiveStates
+    if (state === 'suspended') return canSuspend
+    if (state === 'resigned' || state === 'terminated') return canSeparate
+    return false
+  })
   const missingOnboardingItems = getMissingOnboardingItems(employee)
   const showOnboardingBanner = !employee.is_active || employee.onboarding_status === 'documents_pending'
 
@@ -168,7 +176,7 @@ export default function EmployeeDetailPage() {
         </ConfirmDestructiveDialog>
       )}
 
-      {allowedNext.length > 0 && canTransition && (
+      {allowedNext.length > 0 && (
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
