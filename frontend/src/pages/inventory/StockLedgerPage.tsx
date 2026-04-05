@@ -54,7 +54,7 @@ export default function StockLedgerPage(): React.ReactElement {
 
   return (
     <div>
-      <PageHeader title="Stock Ledger" />
+      <PageHeader title="Item Movements" backTo="/inventory/stock" />
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <select
@@ -93,14 +93,14 @@ export default function StockLedgerPage(): React.ReactElement {
       {isLoading && <SkeletonLoader rows={12} />}
       {isError && (
         <div className="flex items-center gap-2 text-red-600 text-sm">
-          <AlertTriangle className="w-4 h-4" /> Failed to load stock ledger.
+          <AlertTriangle className="w-4 h-4" /> Failed to load item movements.
         </div>
       )}
 
       {!isLoading && !isError && (
         <>
           <Card>
-            <CardHeader>Stock Ledger</CardHeader>
+            <CardHeader>Item Movement History</CardHeader>
             <CardBody className="p-0">
               <table className="min-w-full text-sm">
                 <thead className="bg-neutral-50 border-b border-neutral-200">
@@ -113,7 +113,7 @@ export default function StockLedgerPage(): React.ReactElement {
                 <tbody className="divide-y divide-neutral-100">
                   {data?.data?.length === 0 && (
                     <tr>
-                      <td colSpan={9} className="px-4 py-8 text-center text-neutral-400 text-sm">No ledger entries found.</td>
+                      <td colSpan={9} className="px-4 py-8 text-center text-neutral-400 text-sm">No item movements found.</td>
                     </tr>
                   )}
                   {data?.data?.map((entry) => {

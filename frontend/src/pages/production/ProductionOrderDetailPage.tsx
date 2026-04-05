@@ -263,9 +263,16 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
 
   const validateLogData = (): boolean => {
     const errors: Record<string, string> = {}
+    const currentRequired = parseFloat(order.qty_required || '0')
+    const currentProduced = parseFloat(order.qty_produced || '0')
+    const remainingQty = Math.max(0, currentRequired - currentProduced)
+    const inputProducedQty = parseFloat(logData.qty_produced || '0')
+    const tolerance = 0.0001
     
-    if (!logData.qty_produced || parseFloat(logData.qty_produced) <= 0) {
+    if (!logData.qty_produced || inputProducedQty <= 0) {
       errors.qty_produced = 'Quantity produced must be greater than 0.'
+    } else if (inputProducedQty - remainingQty > tolerance) {
+      errors.qty_produced = `Quantity produced cannot exceed remaining quantity (${formatQty(remainingQty)}).`
     }
     if (!logData.operator_id) {
       errors.operator_id = 'Operator is required.'
@@ -325,6 +332,12 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       ? 'Approved'
       : 'Pending'
     : 'Not Required'
+  const hasPassedOqcInspection = (order.inspections ?? []).some((inspection) => {
+    if (typeof inspection !== 'object' || inspection === null) return false
+    const stage = (inspection as { stage?: unknown }).stage
+    const status = (inspection as { status?: unknown }).status
+    return stage === 'oqc' && status === 'passed'
+  })
   const nextStepText =
     order.status === 'draft'
       ? order.requires_release_approval && !order.approved_for_release_at
@@ -337,7 +350,9 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         : order.status === 'in_progress'
           ? 'Log output regularly, then complete once target is met.'
           : order.status === 'completed'
-            ? 'Create OQC inspection. The work order auto-closes after OQC passes.'
+            ? hasPassedOqcInspection
+              ? 'OQC already passed. Work order is finalizing closure.'
+              : 'Create OQC inspection. The work order auto-closes after OQC passes.'
             : order.status === 'on_hold'
               ? 'Resume production once the hold reason is resolved.'
               : 'No further workflow actions available.'
@@ -351,14 +366,13 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
     const canShowStart = order.status === 'released' && canRelease && !order.mrq_pending
     const canShowMarkComplete = order.status === 'in_progress' && canComplete && !showLogForm && qtyProduced >= qtyRequired
     const canShowLogOutput = order.status === 'in_progress' && canLogOutput && !showLogForm
-    const canShowCreateQcInspection = order.status === 'completed' && canComplete
-    const canShowHoldPrimary = order.status === 'released' && canRelease && !showLogForm
+    const canShowCreateQcInspection = order.status === 'completed' && canComplete && !hasPassedOqcInspection
+    const canShowHoldPrimary = order.status === 'released' && canRelease && !order.mrq_pending && !showLogForm
     const canShowHoldAdvanced = order.status === 'in_progress' && canRelease && !showLogForm
 
-    const canShowEdit = ['draft', 'released', 'in_progress', 'on_hold'].includes(order.status) && canCreate && !showEditForm && !showLogForm
     const canShowCancel = ['draft', 'released', 'in_progress'].includes(order.status) && canCreate
     const canShowVoid = order.status === 'in_progress' && qtyProduced === 0 && !showLogForm && canCreate
-    const hasAdvancedActions = canShowEdit || canShowCancel || canShowVoid || canShowHoldAdvanced
+    const hasAdvancedActions = canShowCancel || canShowVoid || canShowHoldAdvanced
 
   const actionsPanel = (
     <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
@@ -468,22 +482,6 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
 
           {showAdvancedActions && (
             <div className="mt-3 flex flex-wrap gap-2">
-              {canShowEdit && (
-                <button
-                  onClick={() => {
-                    setEditData({
-                      notes: order.notes || '',
-                      target_start_date: order.target_start_date || '',
-                      target_end_date: order.target_end_date || '',
-                    })
-                    setShowEditForm(true)
-                  }}
-                  className="px-3 py-1.5 text-xs font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded"
-                >
-                  Edit
-                </button>
-              )}
-
               {canShowCancel && (
                 <ConfirmDialog
                   title="Cancel Work Order?"
@@ -928,6 +926,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
                     type="number"
                     step="0.0001"
                     min="0.0001"
+                    max={qtyRemaining > 0 ? qtyRemaining : undefined}
                     value={logData.qty_produced}
                     onChange={(e) => {
                       setLogData((d) => ({ ...d, qty_produced: e.target.value }))
@@ -938,6 +937,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
                     className={`w-full text-sm border rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${logErrors.qty_produced ? 'border-red-400' : 'border-neutral-300'}`}
                   />
                   {logErrors.qty_produced && <p className="mt-1 text-xs text-red-600">{logErrors.qty_produced}</p>}
+                  {!logErrors.qty_produced && <p className="mt-1 text-xs text-neutral-500">Remaining quantity: {formatQty(qtyRemaining)}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Rejected</label>
@@ -972,7 +972,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
               </button>
               <button
                 onClick={handleLogOutput}
-                disabled={logMut.isPending}
+                disabled={logMut.isPending || qtyRemaining <= 0}
                 className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {logMut.isPending ? 'Submitting…' : 'Submit Log'}

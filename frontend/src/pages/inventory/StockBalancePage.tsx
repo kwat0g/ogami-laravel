@@ -37,6 +37,7 @@ export default function StockBalancePage(): React.ReactElement {
   const [showConfirm, setShowConfirm] = useState(false)
 
   const canAdjust = usePermission(PERMISSIONS.inventory.adjustments.create)
+  const canViewLocations = usePermission(PERMISSIONS.inventory.locations.view)
   const adjustMut = useStockAdjust()
 
   const { data: locations } = useWarehouseLocations({ is_active: true })
@@ -140,11 +141,13 @@ export default function StockBalancePage(): React.ReactElement {
               ]}
               filename="stock-balances"
             />
-            <Link to="/inventory/locations" className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50">
-              <MapPin className="w-4 h-4" />
-              Locations
-            </Link>
-            <Link to="/inventory/ledger" className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50">
+            {canViewLocations && (
+              <Link to="/inventory/locations" className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50">
+                <MapPin className="w-4 h-4" />
+                Locations
+              </Link>
+            )}
+            <Link to="/inventory/item-movements" className="flex items-center gap-2 px-3 py-2 border border-neutral-300 text-neutral-700 text-sm rounded hover:bg-neutral-50">
               <List className="w-4 h-4" />
               Item Movements
             </Link>

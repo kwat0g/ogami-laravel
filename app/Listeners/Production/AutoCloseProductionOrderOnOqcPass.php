@@ -7,7 +7,6 @@ namespace App\Listeners\Production;
 use App\Domains\Production\Models\ProductionOrder;
 use App\Domains\Production\Services\ProductionOrderService;
 use App\Events\QC\InspectionPassed;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -17,10 +16,8 @@ use Illuminate\Support\Facades\Log;
  * still preserving the close-time gates (OQC passed + no open/failed OQC)
  * and stock receive behavior enforced by ProductionOrderService::close().
  */
-final class AutoCloseProductionOrderOnOqcPass implements ShouldQueue
+final class AutoCloseProductionOrderOnOqcPass
 {
-    public string $queue = 'default';
-
     public function __construct(private readonly ProductionOrderService $service) {}
 
     public function handle(InspectionPassed $event): void

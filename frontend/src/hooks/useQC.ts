@@ -103,6 +103,8 @@ export function useRecordResults(ulid: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...KEYS.inspections, ulid] })
       qc.invalidateQueries({ queryKey: KEYS.inspections })
+      qc.invalidateQueries({ queryKey: ['production-orders'] })
+      qc.invalidateQueries({ queryKey: ['production-order'] })
     },
   })
 }
@@ -123,6 +125,8 @@ export function useCancelResults(ulid: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...KEYS.inspections, ulid] })
       qc.invalidateQueries({ queryKey: KEYS.inspections })
+      qc.invalidateQueries({ queryKey: ['production-orders'] })
+      qc.invalidateQueries({ queryKey: ['production-order'] })
     },
   })
 }

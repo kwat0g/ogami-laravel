@@ -6,6 +6,7 @@ namespace App\Domains\Production\Services;
 
 use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Inventory\Models\MaterialRequisition;
+use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Models\StockLedger;
 use App\Domains\Inventory\Models\WarehouseLocation;
 use App\Domains\Inventory\Services\MaterialRequisitionService;
@@ -748,9 +749,11 @@ final class ProductionOrderService implements ServiceContract
         }
 
         $components = $order->bom->components()->with('componentItem')->get();
-        $location = WarehouseLocation::where('is_active', true)->first();
+        $locationIds = WarehouseLocation::query()
+            ->where('is_active', true)
+            ->pluck('id');
 
-        if ($location === null) {
+        if ($locationIds->isEmpty()) {
             return $components->map(fn ($c) => [
                 'component_item_id' => $c->component_item_id,
                 'item_name' => $c->componentItem->name ?? "Item #{$c->component_item_id}",
@@ -761,9 +764,17 @@ final class ProductionOrderService implements ServiceContract
             ])->toArray();
         }
 
-        return $components->map(function ($component) use ($order, $location) {
+        $componentItemIds = $components->pluck('component_item_id')->unique()->values();
+        $availableByItem = StockBalance::query()
+            ->selectRaw('item_id, SUM(quantity_on_hand) AS total_qty')
+            ->whereIn('item_id', $componentItemIds)
+            ->whereIn('location_id', $locationIds)
+            ->groupBy('item_id')
+            ->pluck('total_qty', 'item_id');
+
+        return $components->map(function ($component) use ($order, $availableByItem) {
             $requiredQty = $this->computeRequiredQty($component, $order);
-            $availableQty = $this->stockService->currentBalance($component->component_item_id, $location->id);
+            $availableQty = (float) ($availableByItem[$component->component_item_id] ?? 0.0);
 
             return [
                 'component_item_id' => $component->component_item_id,
@@ -1119,6 +1130,18 @@ final class ProductionOrderService implements ServiceContract
             throw new DomainException(
                 'Output can only be logged when order is in_progress. Current status: ' . $order->status,
                 'PROD_ORDER_NOT_IN_PROGRESS',
+                422,
+            );
+        }
+
+        $remainingQty = round(max(0.0, (float) $order->qty_required - (float) $order->qty_produced), 4);
+        $loggedProducedQty = round((float) ($data['qty_produced'] ?? 0), 4);
+        $tolerance = 0.0001;
+
+        if ($loggedProducedQty - $remainingQty > $tolerance) {
+            throw new DomainException(
+                "Logged quantity ({$loggedProducedQty}) exceeds remaining required quantity ({$remainingQty}).",
+                'PROD_OUTPUT_EXCEEDS_REQUIRED',
                 422,
             );
         }
