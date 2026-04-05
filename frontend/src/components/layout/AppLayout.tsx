@@ -190,17 +190,18 @@ const SECTIONS: NavSection[] = [
     icon: Package,
     permission: 'procurement.purchase-request.view|inventory.items.view|production.orders.view',
     roles: ['officer', 'manager', 'head', 'staff', 'executive', 'vice_president'],
-    departments: ['PURCH', 'PPC', 'PROD', 'PLANT', 'WH', 'ACCTG'],
+    departments: ['PURCH', 'PPC', 'PROD', 'PLANT', 'WH'],
     children: [
       // ── Procurement ─────────────────────────────────────────────────────────
+      // NOTE: ACCTG users access PRs via Finance Approvals > Budget Verification
       { divider: true, label: 'Procurement' },
       { label: 'Purchase Requests', href: '/procurement/purchase-requests', permission: 'procurement.purchase-request.view' },
       { label: 'Purchase Orders', href: '/procurement/purchase-orders', permission: 'procurement.purchase-order.view', departments: ['PURCH'] },
       { label: 'Goods Receipts', href: '/procurement/goods-receipts', permission: 'procurement.goods-receipt.view', departments: ['PURCH', 'WH'] },
       // ── Inventory ────────────────────────────────────────────────────────────
       { divider: true, label: 'Inventory' },
-      { label: 'Item Master', href: '/inventory/items', permission: 'inventory.items.view', departments: ['WH', 'PURCH', 'PROD', 'PLANT', 'PPC'] },
-      { label: 'Stock Balances', href: '/inventory/stock', permission: 'inventory.stock.view', departments: ['WH', 'PURCH', 'PROD', 'PLANT', 'PPC'] },
+      { label: 'Item Master', href: '/inventory/items', permission: 'inventory.items.view' },
+      { label: 'Stock Balances', href: '/inventory/stock', permission: 'inventory.stock.view' },
       { label: 'Material Requisitions', href: '/inventory/requisitions', permission: 'inventory.mrq.view' },
       { label: 'Warehouse Locations', href: '/inventory/locations', permission: 'inventory.locations.view', departments: ['WH'] },
       { label: 'Stock Transfers', href: '/inventory/transfers', permission: 'inventory.transfers.manage', departments: ['WH'] },
