@@ -321,8 +321,8 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'procurement.goods-receipt.confirm',
             'procurement.rfq.send',
             'vendor_portal.update_fulfillment',
-            // Cross-module: Purchasing Manager needs customer visibility for vendor-customer management
-            'customers.view',
+            // Cross-module: Purchasing Manager manages customers like vendors
+            'customers.view', 'customers.manage', 'customers.archive',
         ];
 
         $head = array_merge($staffBase, $headAdds);
