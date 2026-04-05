@@ -190,7 +190,7 @@ const SECTIONS: NavSection[] = [
     icon: Package,
     permission: 'procurement.purchase-request.view|inventory.items.view|production.orders.view',
     roles: ['officer', 'manager', 'head', 'staff', 'executive', 'vice_president'],
-    departments: ['PURCH', 'PPC', 'PROD', 'PLANT', 'WH'],
+    departments: ['PURCH', 'PPC', 'PROD', 'PLANT', 'WH', 'ACCTG'],
     children: [
       // ── Procurement ─────────────────────────────────────────────────────────
       { divider: true, label: 'Procurement' },
@@ -202,6 +202,8 @@ const SECTIONS: NavSection[] = [
       { label: 'Item Master', href: '/inventory/items', permission: 'inventory.items.view' },
       { label: 'Stock Balances', href: '/inventory/stock', permission: 'inventory.stock.view' },
       { label: 'Material Requisitions', href: '/inventory/requisitions', permission: 'inventory.mrq.view' },
+      { label: 'Warehouse Locations', href: '/inventory/locations', permission: 'inventory.locations.view' },
+      { label: 'Stock Transfers', href: '/inventory/transfers', permission: 'inventory.transfers.manage' },
     ],
   },
   // ═════════════════════════════════════════════════════════════════════════════
@@ -222,10 +224,15 @@ const SECTIONS: NavSection[] = [
       // ── Quality Control ─────────────────────────────────────────────────────
       { divider: true, label: 'Quality Control' },
       { label: 'Inspections', href: '/qc/inspections', permission: 'qc.inspections.view' },
+      { label: 'NCRs', href: '/qc/ncrs', permission: 'qc.ncr.view' },
+      { label: 'QC Templates', href: '/qc/templates', permission: 'qc.templates.view' },
       // ── Maintenance ─────────────────────────────────────────────────────────
       { divider: true, label: 'Maintenance' },
       { label: 'Equipment', href: '/maintenance/equipment', permission: 'maintenance.view' },
       { label: 'Maintenance Work Orders', href: '/maintenance/work-orders', permission: 'maintenance.view' },
+      // ── Mold ────────────────────────────────────────────────────────────────
+      { divider: true, label: 'Mold' },
+      { label: 'Mold Masters', href: '/mold/masters', permission: 'mold.view' },
     ],
   },
   // ═════════════════════════════════════════════════════════════════════════════

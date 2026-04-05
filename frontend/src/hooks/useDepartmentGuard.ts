@@ -61,7 +61,7 @@ export const MODULE_DEPARTMENTS: Record<string, string[]> = {
   'attendance': ['HR', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'ACCTG', 'IT'],
   'leaves':     ['HR', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'ACCTG', 'IT'],
   'overtime':   ['HR', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'ACCTG', 'IT'],
-  'loans':      ['HR', 'ACCTG'],
+  'loans':      ['HR', 'ACCTG', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'IT'],
   'payroll':    ['HR', 'ACCTG'],
   'departments': ['HR', 'IT', 'EXEC'],
   'positions':  ['HR'],
@@ -78,8 +78,8 @@ export const MODULE_DEPARTMENTS: Record<string, string[]> = {
   'recurring_templates': ['ACCTG'],
   'general_ledger': ['ACCTG'],
   
-  // Payables (AP) - Accounting department only
-  'ap': ['ACCTG'],
+  // Payables (AP) - Accounting and Purchasing
+  'ap': ['ACCTG', 'PURCH'],
   'vendors': ['ACCTG', 'PURCH'], // Vendors shared between AP and Procurement
   'vendor_invoices': ['ACCTG'],
   'vendor_payments': ['ACCTG'],
@@ -111,9 +111,9 @@ export const MODULE_DEPARTMENTS: Record<string, string[]> = {
   'cost_centers': ['ACCTG'],
   'annual_budget': ['ACCTG'],
   
-  // Procurement - Purchasing department only
-  'procurement': ['PURCH'],
-  'purchase_requests': ['PURCH'],
+  // Procurement - Purchasing + departments that raise PRs or verify budget
+  'procurement': ['PURCH', 'PROD', 'PLANT', 'ACCTG', 'WH'],
+  'purchase_requests': ['PURCH', 'PROD', 'PLANT', 'ACCTG'],
   'purchase_orders': ['PURCH'],
   'goods_receipts': ['PURCH', 'WH'], // GR involves both Purchasing and Warehouse
   'rfqs': ['PURCH'],
@@ -138,6 +138,9 @@ export const MODULE_DEPARTMENTS: Record<string, string[]> = {
   'inspections': ['QC', 'PROD', 'WH'],
   'ncr': ['QC', 'PROD', 'WH'],
   'capa': ['QC', 'PROD'],
+  
+  // Approvals - Executive and VP
+  'approvals': ['EXEC'],
   'templates': ['QC'],
   
   // Maintenance - Maintenance and Production
@@ -156,8 +159,8 @@ export const MODULE_DEPARTMENTS: Record<string, string[]> = {
   'receipts': ['WH', 'SALES', 'PROD'],
   'vehicles': ['WH', 'MAINT'],
   
-  // ISO — QC dept manages ISO/IATF (no separate 'ISO' dept is seeded)
-  'iso': ['QC'],
+  // ISO — QC and ISO depts manage ISO/IATF
+  'iso': ['ISO', 'QC'],
   'documents': ['QC'],
   'audits': ['QC'],
   'audit_findings': ['QC'],
