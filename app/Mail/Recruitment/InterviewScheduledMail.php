@@ -16,8 +16,6 @@ final class InterviewScheduledMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public string $queue = 'notifications';
-
     public function __construct(
         public readonly string $candidateName,
         public readonly string $positionTitle,
@@ -27,7 +25,9 @@ final class InterviewScheduledMail extends Mailable implements ShouldQueue
         public readonly ?string $location,
         public readonly int $round,
         public readonly ?string $interviewerName,
-    ) {}
+    ) {
+        $this->queue = 'notifications';
+    }
 
     public static function fromModel(InterviewSchedule $interview): self
     {
