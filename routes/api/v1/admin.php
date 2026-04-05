@@ -20,7 +20,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
+use App\Support\RolePermissionDefaults;
 
 /*
 |--------------------------------------------------------------------------
@@ -564,10 +567,193 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
                 'users_count' => DB::table('model_has_roles')
                     ->where('role_id', $role->id)
                     ->count(),
+                'permissions_count' => DB::table('role_has_permissions')
+                    ->where('role_id', $role->id)
+                    ->count(),
             ]);
 
         return response()->json(['data' => $roles]);
     })->name('roles.index');
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // RBAC Permission Management
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // GET /api/v1/admin/permissions — all permissions grouped by module prefix
+    Route::get('permissions', function (Request $request) {
+        abort_unless(
+            $request->user()->can('system.assign_roles') || $request->user()->can('system.manage_users'),
+            403,
+            'Insufficient permissions.',
+        );
+
+        $permissions = Permission::where('guard_name', 'web')
+            ->orderBy('name')
+            ->pluck('name');
+
+        // Group by module prefix (everything before the first dot)
+        $grouped = [];
+        foreach ($permissions as $perm) {
+            $dotPos = strpos($perm, '.');
+            $module = $dotPos !== false ? substr($perm, 0, $dotPos) : $perm;
+            $grouped[$module][] = $perm;
+        }
+
+        ksort($grouped);
+
+        return response()->json([
+            'data' => $grouped,
+            'meta' => ['total' => $permissions->count()],
+        ]);
+    })->name('permissions.index');
+
+    // GET /api/v1/admin/roles/{roleName} — single role with its permission names
+    Route::get('roles/{roleName}', function (Request $request, string $roleName) {
+        abort_unless(
+            $request->user()->can('system.assign_roles') || $request->user()->can('system.manage_users'),
+            403,
+            'Insufficient permissions.',
+        );
+
+        $role = Role::where('name', $roleName)->where('guard_name', 'web')->firstOrFail();
+
+        $permissions = $role->permissions()->orderBy('name')->pluck('name')->toArray();
+        $defaults = RolePermissionDefaults::forRole($roleName);
+
+        return response()->json([
+            'data' => [
+                'id' => $role->id,
+                'name' => $role->name,
+                'guard_name' => $role->guard_name,
+                'is_protected' => in_array($roleName, RolePermissionDefaults::PROTECTED_ROLES, true),
+                'users_count' => DB::table('model_has_roles')
+                    ->where('role_id', $role->id)
+                    ->count(),
+                'permissions' => $permissions,
+                'default_permissions' => $defaults,
+            ],
+        ]);
+    })->name('roles.show');
+
+    // PUT /api/v1/admin/roles/{roleName}/permissions — bulk sync permissions
+    Route::put('roles/{roleName}/permissions', function (Request $request, string $roleName) {
+        abort_unless($request->user()->can('system.assign_roles'), 403, 'Insufficient permissions.');
+
+        // super_admin always has ALL permissions — block edits
+        if ($roleName === 'super_admin') {
+            return response()->json([
+                'message' => 'Cannot modify super_admin permissions. This role always has all permissions.',
+            ], 422);
+        }
+
+        $role = Role::where('name', $roleName)->where('guard_name', 'web')->firstOrFail();
+
+        $data = $request->validate([
+            'permissions' => ['required', 'array'],
+            'permissions.*' => ['string', 'exists:permissions,name'],
+        ]);
+
+        $oldPermissions = $role->permissions()->pluck('name')->sort()->values()->toArray();
+        $newPermissions = collect($data['permissions'])->sort()->values()->toArray();
+
+        $role->syncPermissions($data['permissions']);
+
+        // Clear Spatie permission cache
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        // Compute diff for audit
+        $added = array_values(array_diff($newPermissions, $oldPermissions));
+        $removed = array_values(array_diff($oldPermissions, $newPermissions));
+
+        // Log to audits table if available
+        if (DB::getSchemaBuilder()->hasTable('audits')) {
+            DB::table('audits')->insert([
+                'user_type' => 'App\\Models\\User',
+                'user_id' => $request->user()->id,
+                'event' => 'role_permissions_sync',
+                'auditable_type' => 'Spatie\\Permission\\Models\\Role',
+                'auditable_id' => $role->id,
+                'old_values' => json_encode(['permissions' => $oldPermissions]),
+                'new_values' => json_encode(['permissions' => $newPermissions]),
+                'url' => $request->fullUrl(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'tags' => 'rbac,permission_sync',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return response()->json([
+            'message' => "Permissions for role '{$roleName}' updated successfully.",
+            'data' => [
+                'role' => $roleName,
+                'permissions_count' => count($newPermissions),
+                'added' => $added,
+                'removed' => $removed,
+            ],
+        ]);
+    })->middleware('throttle:api-action')->name('roles.permissions.sync');
+
+    // POST /api/v1/admin/roles/{roleName}/reset — reset to seeder defaults
+    Route::post('roles/{roleName}/reset', function (Request $request, string $roleName) {
+        abort_unless($request->user()->can('system.assign_roles'), 403, 'Insufficient permissions.');
+
+        if ($roleName === 'super_admin') {
+            // Re-sync super_admin with ALL permissions
+            $role = Role::where('name', 'super_admin')->where('guard_name', 'web')->firstOrFail();
+            $role->syncPermissions(Permission::all());
+            app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+            return response()->json([
+                'message' => 'super_admin reset to all permissions.',
+                'data' => [
+                    'role' => 'super_admin',
+                    'permissions_count' => Permission::count(),
+                ],
+            ]);
+        }
+
+        $defaults = RolePermissionDefaults::forRole($roleName);
+        if ($defaults === null) {
+            return response()->json([
+                'message' => "No seeder defaults found for role '{$roleName}'.",
+            ], 404);
+        }
+
+        $role = Role::where('name', $roleName)->where('guard_name', 'web')->firstOrFail();
+        $oldPermissions = $role->permissions()->pluck('name')->sort()->values()->toArray();
+
+        $role->syncPermissions($defaults);
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        // Log audit
+        if (DB::getSchemaBuilder()->hasTable('audits')) {
+            DB::table('audits')->insert([
+                'user_type' => 'App\\Models\\User',
+                'user_id' => $request->user()->id,
+                'event' => 'role_permissions_reset',
+                'auditable_type' => 'Spatie\\Permission\\Models\\Role',
+                'auditable_id' => $role->id,
+                'old_values' => json_encode(['permissions' => $oldPermissions]),
+                'new_values' => json_encode(['permissions' => $defaults]),
+                'url' => $request->fullUrl(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'tags' => 'rbac,permission_reset',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return response()->json([
+            'message' => "Role '{$roleName}' reset to seeder defaults.",
+            'data' => [
+                'role' => $roleName,
+                'permissions_count' => count($defaults),
+            ],
+        ]);
+    })->middleware('throttle:api-action')->name('roles.permissions.reset');
 
     // ─────────────────────────────────────────────────────────────────────────
     // System Settings — all operations require system.edit_settings
