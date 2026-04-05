@@ -30,13 +30,16 @@ export default function AuthLayout() {
 
       {/* Left decorative panel */}
       <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between bg-primary overflow-hidden">
-        {/* Background Image / Texture */}
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=2000&q=80')] bg-cover bg-center opacity-30 mix-blend-overlay"></div>
+        {/* Self-hosted decorative background for production-safe rendering */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.18),_transparent_32%),linear-gradient(180deg,_rgba(15,23,42,0.12)_0%,_rgba(15,23,42,0.48)_100%)]"></div>
+        <div className="absolute -top-20 -left-24 h-72 w-72 rounded-full bg-white/10 blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 h-80 w-80 translate-x-16 translate-y-16 rounded-full bg-primary-900/40 blur-3xl"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.08)_0%,transparent_38%,transparent_62%,rgba(255,255,255,0.06)_100%)]"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-primary-900 via-primary-900/60 to-transparent"></div>
 
         {/* Brand Header */}
         <div className="relative z-10 p-12 lg:p-16 flex items-center space-x-3">
-          <img src="/logo.svg" alt="Ogami ERP" className="h-10 w-auto brightness-0 invert opacity-90" />
+          <img src="/build/logo.svg" alt="Ogami ERP" className="h-10 w-auto brightness-0 invert opacity-90" />
         </div>
 
         {/* Hero Quote */}
@@ -57,7 +60,7 @@ export default function AuthLayout() {
         <div className="w-full max-w-sm">
           {/* Mobile Header (Hidden on generic desktop) */}
           <div className="lg:hidden flex items-center justify-center space-x-3 mb-12">
-            <img src="/logo.svg" alt="Ogami ERP" className="h-8 w-auto" />
+            <img src="/build/logo.svg" alt="Ogami ERP" className="h-8 w-auto" />
           </div>
 
           <Outlet />

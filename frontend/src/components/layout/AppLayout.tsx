@@ -752,7 +752,7 @@ export default function AppLayout() {
               O
             </span>
           ) : (
-            <img src="/logo.svg" alt="Ogami ERP" className="h-6 ml-2 w-auto dark:brightness-0 dark:invert mix-blend-multiply dark:mix-blend-normal" />
+            <img src="/build/logo.svg" alt="Ogami ERP" className="h-6 ml-2 w-auto dark:brightness-0 dark:invert mix-blend-multiply dark:mix-blend-normal" />
           )}
         </div>
 
@@ -872,7 +872,7 @@ export default function AppLayout() {
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[230px] p-0 bg-white border-r border-neutral-200/80">
                   <SheetHeader className="border-b border-neutral-100 px-4 py-3 text-left flex justify-center">
-                    <img src="/logo.svg" alt="Ogami" className="h-6 w-auto mix-blend-multiply dark:mix-blend-normal dark:brightness-0 dark:invert" />
+                    <img src="/build/logo.svg" alt="Ogami" className="h-6 w-auto mix-blend-multiply dark:mix-blend-normal dark:brightness-0 dark:invert" />
                     <SheetTitle className="sr-only">Ogami ERP</SheetTitle>
                   </SheetHeader>
                   <nav className="p-2 space-y-0.5 overflow-y-auto h-[calc(100vh-60px)]">

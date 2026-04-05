@@ -35,7 +35,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center space-x-3">
-              <img src="/logo.svg" alt="Ogami ERP" className="h-8 w-auto dark:brightness-0 dark:invert dark:opacity-90" />
+              <img src="/build/logo.svg" alt="Ogami ERP" className="h-8 w-auto dark:brightness-0 dark:invert dark:opacity-90" />
             </div>
             <div className="hidden md:flex items-center space-x-10 text-sm font-semibold tracking-wide uppercase text-primary-500">
               <a href="#about" className="hover:text-primary-900 dark:text-neutral-100 transition-colors">About</a>
@@ -315,7 +315,7 @@ export default function LandingPage() {
       <footer className="bg-primary-900 py-12 border-t border-primary-900 text-center text-primary-500 dark:text-neutral-400 text-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center space-x-3 mb-4 md:mb-0 opacity-80 hover:opacity-100 transition-opacity">
-            <img src="/logo.svg" alt="Ogami ERP" className="h-6 w-auto grayscale brightness-200" />
+            <img src="/build/logo.svg" alt="Ogami ERP" className="h-6 w-auto grayscale brightness-200" />
           </div>
           <p>© {new Date().getFullYear()} Ogami Co., Ltd. / Philippines Ogami Corp. All rights reserved.</p>
         </div>
