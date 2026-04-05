@@ -307,6 +307,7 @@ const ADMIN_SECTION: NavSection = {
   departments: ['IT', 'EXEC'],
   children: [
     { label: 'Users', href: '/admin/users', permission: 'system.manage_users' },
+    { label: 'Roles & Permissions', href: '/admin/roles-permissions', permission: 'system.assign_roles' },
     { label: 'System Settings', href: '/admin/settings', permission: 'system.edit_settings' },
     { label: 'Reference Tables', href: '/admin/reference-tables', permission: 'system.edit_settings' },
     { label: 'Work Locations', href: '/admin/work-locations', permission: 'system.edit_settings' },

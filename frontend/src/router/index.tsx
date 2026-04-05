@@ -196,6 +196,7 @@ const GlobalSearchPage = lazyWithRetry(() => import('@/pages/GlobalSearchPage'))
 const AuditLogsPage = lazyWithRetry(() => import('@/pages/admin/AuditLogsPage'))
 const ReferenceTablesPage = lazyWithRetry(() => import('@/pages/admin/ReferenceTablesPage'))
 const BackupPage = lazyWithRetry(() => import('@/pages/admin/BackupPage'))
+const RolesPermissionsPage = lazyWithRetry(() => import('@/pages/admin/RolesPermissionsPage'))
 
 // Auth account actions
 const ChangePasswordPage = lazyWithRetry(() => import('@/pages/auth/ChangePasswordPage'))
@@ -650,7 +651,9 @@ const router = createBrowserRouter([
       { path: '/admin/settings', element: withSuspense(guard('system.edit_settings', <SystemSettingsPage />)) },
       { path: '/search', element: withSuspense(<GlobalSearchPage />) },
       { path: '/admin/audit-logs', element: withSuspense(guard('system.view_audit_log', <AuditLogsPage />)) },
-      { path: '/admin/reference-tables', element: withSuspense(guard('system.edit_settings', <ReferenceTablesPage />)) },      { path: '/admin/backup', element: withSuspense(guard('system.manage_backups', <BackupPage />)) },
+      { path: '/admin/reference-tables', element: withSuspense(guard('system.edit_settings', <ReferenceTablesPage />)) },
+      { path: '/admin/backup', element: withSuspense(guard('system.manage_backups', <BackupPage />)) },
+      { path: '/admin/roles-permissions', element: withSuspense(guard('system.assign_roles|system.manage_users', <RolesPermissionsPage />)) },
 
       // ── CRM — Staff portal ────────────────────────────────────────────────
       { path: '/crm/dashboard',           element: withSuspense(guard('crm.tickets.view', <CrmDashboardPage />)) },

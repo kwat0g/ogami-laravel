@@ -31,6 +31,21 @@ export interface Role {
   id:         number
   name:       string
   users_count?: number
+  permissions_count?: number
+}
+
+export interface RoleDetail {
+  id:                   number
+  name:                 string
+  guard_name:           string
+  is_protected:         boolean
+  users_count:          number
+  permissions:          string[]
+  default_permissions:  string[] | null
+}
+
+export interface GroupedPermissions {
+  [module: string]: string[]
 }
 
 export interface SystemSetting {
@@ -551,4 +566,71 @@ export function useRestoreBackup() {
 /** Returns a download URL for a backup archive (opens directly in browser). */
 export function backupDownloadUrl(filename: string): string {
   return `/api/v1/admin/backups/download?file=${encodeURIComponent(filename)}`
+}
+
+// ---------------------------------------------------------------------------
+// RBAC Permission Management
+// ---------------------------------------------------------------------------
+
+/** Fetch all permissions grouped by module prefix. */
+export function usePermissionsList() {
+  return useQuery({
+    queryKey: ['admin-permissions'],
+    queryFn: async () => {
+      const res = await api.get<{ data: GroupedPermissions; meta: { total: number } }>('/admin/permissions')
+      return res.data
+    },
+    staleTime: 300_000,
+  })
+}
+
+/** Fetch a single role with its assigned permission names and seeder defaults. */
+export function useRoleDetail(roleName: string | null) {
+  return useQuery({
+    queryKey: ['admin-role-detail', roleName],
+    queryFn: async () => {
+      const res = await api.get<{ data: RoleDetail }>(`/admin/roles/${roleName}`)
+      return res.data.data
+    },
+    enabled: !!roleName,
+    staleTime: 60_000,
+  })
+}
+
+/** Bulk-sync permissions for a role. */
+export function useUpdateRolePermissions() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ roleName, permissions }: { roleName: string; permissions: string[] }) => {
+      const res = await api.put<{ message: string; data: { role: string; permissions_count: number; added: string[]; removed: string[] } }>(
+        `/admin/roles/${roleName}/permissions`,
+        { permissions },
+      )
+      return res.data
+    },
+    onSuccess: (_data: unknown, variables: { roleName: string; permissions: string[] }) => {
+      void qc.invalidateQueries({ queryKey: ['admin-roles'] })
+      void qc.invalidateQueries({ queryKey: ['admin-role-detail', variables.roleName] })
+      // Refresh current user permissions in case they were affected
+      void qc.invalidateQueries({ queryKey: ['auth-me'] })
+    },
+  })
+}
+
+/** Reset a role's permissions to seeder defaults. */
+export function useResetRolePermissions() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (roleName: string) => {
+      const res = await api.post<{ message: string; data: { role: string; permissions_count: number } }>(
+        `/admin/roles/${roleName}/reset`,
+      )
+      return res.data
+    },
+    onSuccess: (_data: unknown, roleName: string) => {
+      void qc.invalidateQueries({ queryKey: ['admin-roles'] })
+      void qc.invalidateQueries({ queryKey: ['admin-role-detail', roleName] })
+      void qc.invalidateQueries({ queryKey: ['auth-me'] })
+    },
+  })
 }
