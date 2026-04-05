@@ -21,6 +21,7 @@ import {
 } from '@/hooks/useInventory'
 import { useConvertMrqToPr } from '@/hooks/usePurchaseRequests'
 import { usePermission } from '@/hooks/usePermission'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
@@ -72,13 +73,13 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
 
   const { data: mrq, isLoading, isError } = useMaterialRequisition(ulid ?? null)
 
-  const canNote           = usePermission('inventory.mrq.note')
-  const canCheck          = usePermission('inventory.mrq.check')
-  const canReview         = usePermission('inventory.mrq.review')
-  const canVpApprove      = usePermission('inventory.mrq.vp_approve')
-  const canFulfill        = usePermission('inventory.mrq.fulfill')
-  const canCreate         = usePermission('inventory.mrq.create')
-  const canCreatePr       = usePermission('procurement.purchase-request.create')
+  const canNote           = usePermission(PERMISSIONS.inventory.mrq.note)
+  const canCheck          = usePermission(PERMISSIONS.inventory.mrq.check)
+  const canReview         = usePermission(PERMISSIONS.inventory.mrq.review)
+  const canVpApprove      = usePermission(PERMISSIONS.inventory.mrq.vp_approve)
+  const canFulfill        = usePermission(PERMISSIONS.inventory.mrq.fulfill)
+  const canCreate         = usePermission(PERMISSIONS.inventory.mrq.create)
+  const canCreatePr       = usePermission(PERMISSIONS.procurement.purchase_request.create)
   
   const submitMut      = useSubmitMRQ(ulid ?? '')
   const noteMut        = useNoteMRQ(ulid ?? '')

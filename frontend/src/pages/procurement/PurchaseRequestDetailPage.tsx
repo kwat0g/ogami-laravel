@@ -12,6 +12,7 @@ import {
   useCancelPurchaseRequest,
   useReturnPurchaseRequest,
 } from '@/hooks/usePurchaseRequests'
+import { PERMISSIONS } from '@/lib/permissions'
 import { useAuthStore } from '@/stores/authStore'
 import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import { SodActionButton } from '@/components/ui/SodActionButton'
@@ -225,28 +226,28 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
 
   // New simplified workflow permissions
   const isOwner        = user?.id === pr.requested_by_id
-  const canEdit        = (isSuperAdmin || hasPermission('procurement.purchase-request.create') || hasPermission('procurement.purchase-request.create-dept')) &&
+  const canEdit        = (isSuperAdmin || hasPermission(PERMISSIONS.procurement.purchase_request.create) || hasPermission(PERMISSIONS.procurement.purchase_request['create-dept'])) &&
                           ['draft', 'returned'].includes(pr.status) && isOwner
-  const canSubmit      = (isSuperAdmin || hasPermission('procurement.purchase-request.create') || hasPermission('procurement.purchase-request.create-dept')) &&
+  const canSubmit      = (isSuperAdmin || hasPermission(PERMISSIONS.procurement.purchase_request.create) || hasPermission(PERMISSIONS.procurement.purchase_request['create-dept'])) &&
                           pr.status === 'draft' && isOwner
   // Each action mirrors the backend policy exactly — permission + specific status only.
   // VP has procurement.purchase-request.review for viewing, NOT for the review action.
   const isVp           = user?.roles?.includes('vice_president') ?? false
-  const canReview      = (isSuperAdmin || (hasPermission('procurement.purchase-request.review') && !isVp)) &&
+  const canReview      = (isSuperAdmin || (hasPermission(PERMISSIONS.procurement.purchase_request.review) && !isVp)) &&
                           pr.status === 'pending_review'
-  const canBudgetCheck = (isSuperAdmin || hasPermission('procurement.purchase-request.budget-check')) &&
+  const canBudgetCheck = (isSuperAdmin || hasPermission(PERMISSIONS.procurement.purchase_request['budget-check'])) &&
                           pr.status === 'reviewed'
-  const canVpApprove   = (isSuperAdmin || hasPermission('approvals.vp.approve')) &&
+  const canVpApprove   = (isSuperAdmin || hasPermission(PERMISSIONS.approvals.vp.approve)) &&
                           pr.status === 'budget_verified'
   const canCancel      = pr.status === 'draft' && (isSuperAdmin || isOwner)
   // Return: Purchasing can return at pending_review, Accounting at reviewed (mirrors policy)
-  const canReturn      = (hasPermission('procurement.purchase-request.review') && !isVp && pr.status === 'pending_review') ||
-                          (hasPermission('procurement.purchase-request.budget-check') && pr.status === 'reviewed') ||
+  const canReturn      = (hasPermission(PERMISSIONS.procurement.purchase_request.review) && !isVp && pr.status === 'pending_review') ||
+                          (hasPermission(PERMISSIONS.procurement.purchase_request['budget-check']) && pr.status === 'reviewed') ||
                           (isSuperAdmin && ['pending_review', 'reviewed'].includes(pr.status))
   // Reject: scoped to the stage the user is responsible for (mirrors policy)
-  const canReject      = (hasPermission('procurement.purchase-request.review') && !isVp && pr.status === 'pending_review') ||
-                          (hasPermission('procurement.purchase-request.budget-check') && pr.status === 'reviewed') ||
-                          (hasPermission('approvals.vp.approve') && pr.status === 'budget_verified') ||
+  const canReject      = (hasPermission(PERMISSIONS.procurement.purchase_request.review) && !isVp && pr.status === 'pending_review') ||
+                          (hasPermission(PERMISSIONS.procurement.purchase_request['budget-check']) && pr.status === 'reviewed') ||
+                          (hasPermission(PERMISSIONS.approvals.vp.approve) && pr.status === 'budget_verified') ||
                           (isSuperAdmin && ['pending_review', 'reviewed', 'budget_verified'].includes(pr.status))
 
   const handleAction = async (
