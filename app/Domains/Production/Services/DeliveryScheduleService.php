@@ -8,6 +8,7 @@ use App\Domains\AR\Models\CustomerInvoice;
 use App\Domains\AR\Models\FiscalPeriod;
 use App\Domains\CRM\Models\ClientOrder;
 use App\Domains\Delivery\Models\DeliveryReceipt;
+use App\Domains\Delivery\Models\DeliveryReceiptItem;
 use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Services\StockService;
 use App\Domains\Production\Models\BillOfMaterials;
@@ -384,6 +385,20 @@ final class DeliveryScheduleService implements ServiceContract
             ]);
             $dr->update(['status' => 'confirmed']);
 
+            // GAP-P7: Create DR line items from DS items for warehouse pick/pack
+            foreach ($ds->items as $dsItem) {
+                if (in_array($dsItem->status, ['ready', 'dispatched'], true)) {
+                    DeliveryReceiptItem::create([
+                        'delivery_receipt_id' => $dr->id,
+                        'item_master_id' => $dsItem->product_item_id,
+                        'quantity_expected' => (float) $dsItem->qty_ordered,
+                        'quantity_received' => (float) $dsItem->qty_ordered,
+                        'unit_of_measure' => $dsItem->productItem?->unit_of_measure ?? 'pcs',
+                        'remarks' => $dsItem->notes,
+                    ]);
+                }
+            }
+
             // Store DR link on the schedule
             $ds->update(['delivery_receipt_id' => $dr->id]);
 
@@ -525,6 +540,16 @@ final class DeliveryScheduleService implements ServiceContract
                 $co = ClientOrder::find($ds->client_order_id);
                 if ($co && in_array($co->status, ['delivered', 'dispatched', 'ready_for_delivery'], true)) {
                     $co->update(['status' => 'fulfilled']);
+
+                    // GAP-P8: Auto-create draft Customer Invoice on successful acknowledgment
+                    if (! $hasIssues) {
+                        try {
+                            $this->autoCreateCustomerInvoice($co, $ds, $userId);
+                        } catch (\Throwable $e) {
+                            // Non-fatal: invoice creation failure should not block fulfillment
+                            Log::warning("[DS] Auto-invoice creation failed for CO #{$co->id}: {$e->getMessage()}");
+                        }
+                    }
                 }
             }
 
@@ -589,5 +614,54 @@ final class DeliveryScheduleService implements ServiceContract
         }
 
         return $firstLocation->id;
+    }
+
+    /**
+     * GAP-P8: Auto-create a draft Customer Invoice from a fulfilled Client Order.
+     *
+     * Creates a draft invoice with line items from the client order.
+     * The accounting team can then review and approve it.
+     */
+    private function autoCreateCustomerInvoice(ClientOrder $co, DeliverySchedule $ds, int $userId): void
+    {
+        // Guard: don't create duplicate invoices
+        $existingInvoice = CustomerInvoice::where('client_order_id', $co->id)->exists();
+        if ($existingInvoice) {
+            Log::info("[DS] Auto-invoice skipped: invoice already exists for CO #{$co->id}");
+
+            return;
+        }
+
+        // Find the current open fiscal period
+        $currentPeriod = FiscalPeriod::where('status', 'open')
+            ->where('start_date', '<=', now()->toDateString())
+            ->where('end_date', '>=', now()->toDateString())
+            ->first();
+
+        if ($currentPeriod === null) {
+            Log::warning("[DS] Auto-invoice skipped: no open fiscal period for CO #{$co->id}");
+
+            return;
+        }
+
+        $co->loadMissing('items.itemMaster', 'customer');
+
+        $invoice = CustomerInvoice::create([
+            'customer_id' => $co->customer_id,
+            'client_order_id' => $co->id,
+            'delivery_schedule_id' => $ds->id,
+            'fiscal_period_id' => $currentPeriod->id,
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays($co->customer->payment_terms_days ?? 30)->toDateString(),
+            'status' => 'draft',
+            'subtotal_centavos' => $co->total_amount_centavos,
+            'tax_centavos' => 0,
+            'total_centavos' => $co->total_amount_centavos,
+            'balance_due_centavos' => $co->total_amount_centavos,
+            'notes' => "Auto-generated from Client Order {$co->order_reference}, Delivery Schedule {$ds->ds_reference}",
+            'created_by_id' => $userId,
+        ]);
+
+        Log::info("[DS] Auto-created draft Customer Invoice #{$invoice->id} for CO #{$co->id}");
     }
 }

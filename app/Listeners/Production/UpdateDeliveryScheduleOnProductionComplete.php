@@ -73,6 +73,25 @@ class UpdateDeliveryScheduleOnProductionComplete
                     'completed_pos' => $completedPOs,
                     'total_pos' => $totalPOs,
                 ]);
+
+                // GAP-P6: Sync Client Order status to ready_for_delivery
+                if ($ds->client_order_id) {
+                    $clientOrder = \App\Domains\CRM\Models\ClientOrder::find($ds->client_order_id);
+                    if ($clientOrder && in_array($clientOrder->status, ['approved', 'in_production'], true)) {
+                        // Check if ALL delivery schedules for this client order are ready
+                        $allDsReady = DeliverySchedule::where('client_order_id', $clientOrder->id)
+                            ->whereNotIn('status', ['cancelled'])
+                            ->get()
+                            ->every(fn (DeliverySchedule $s) => in_array($s->status, ['ready', 'dispatched', 'delivered'], true));
+
+                        if ($allDsReady) {
+                            $clientOrder->update(['status' => 'ready_for_delivery']);
+                            Log::info('[DS] Client Order auto-transitioned to ready_for_delivery', [
+                                'client_order_id' => $clientOrder->id,
+                            ]);
+                        }
+                    }
+                }
             } else {
                 Log::info('[DS] PO completed but DS still has pending POs', [
                     'delivery_schedule_id' => $ds->id,
