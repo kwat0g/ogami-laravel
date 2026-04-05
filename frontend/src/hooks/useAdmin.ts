@@ -301,6 +301,8 @@ export function useRoles() {
         return {
           ...validRole,
           id: apiRole?.id ?? validRole.id,
+          users_count: apiRole?.users_count ?? 0,
+          permissions_count: apiRole?.permissions_count ?? 0,
         }
       })
     },
