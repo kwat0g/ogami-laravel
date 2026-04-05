@@ -12,6 +12,7 @@ import {
   useSalesRespondToCounter,
   useVpApproveClientOrder,
   useForceProductionClientOrder,
+  useStockAvailability,
   type ForceProductionMode,
 } from '@/hooks/useClientOrders'
 import { useQuery } from '@tanstack/react-query'
@@ -197,9 +198,14 @@ export default function ClientOrderDetailPage(): JSX.Element {
   const [salesResponse, setSalesResponse] = useState<'accept' | 'counter' | 'reject'>('accept')
   const [counterDeliveryDate, setCounterDeliveryDate] = useState('')
   const [counterNotes, setCounterNotes] = useState('')
-  const [forceMode, setForceMode] = useState<ForceProductionMode>('preserve_stock_produce_full')
+  const [forceMode, setForceMode] = useState<ForceProductionMode>('stock_aware_produce_deficit')
   const [forceReason, setForceReason] = useState('')
-  const [forceItemModes, setForceItemModes] = useState<Record<number, 'preserve_stock_produce_full' | 'consume_stock_then_replenish'>>({})
+  const [forceItemModes, setForceItemModes] = useState<Record<number, 'preserve_stock_produce_full' | 'consume_stock_then_replenish' | 'stock_aware_produce_deficit'>>({})
+
+  // Stock availability: fetched when force production modal opens
+  const { data: stockAvailability, isLoading: stockLoading } = useStockAvailability(
+    showForceProductionModal ? (order?.ulid ?? null) : null
+  )
 
   const handleApprove = async () => {
     try {
@@ -851,8 +857,50 @@ export default function ClientOrderDetailPage(): JSX.Element {
           <div className="bg-white rounded border border-neutral-200 w-full max-w-2xl p-6">
             <h2 className="text-lg font-semibold text-neutral-900">Force Production</h2>
             <p className="text-sm text-neutral-500 mt-2">
-              Create production orders even when stock exists, using your selected strategy.
+              Create production orders for this client order using your selected strategy.
             </p>
+
+            {/* Stock Availability Table */}
+            <div className="mt-4 border border-neutral-200 rounded overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-neutral-50 border-b border-neutral-200">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium text-neutral-600">Item</th>
+                    <th className="px-3 py-2 text-right font-medium text-neutral-600">Ordered</th>
+                    <th className="px-3 py-2 text-right font-medium text-neutral-600">In Stock</th>
+                    <th className="px-3 py-2 text-right font-medium text-neutral-600">Deficit</th>
+                    <th className="px-3 py-2 text-center font-medium text-neutral-600">BOM</th>
+                    <th className="px-3 py-2 text-center font-medium text-neutral-600">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {stockLoading ? (
+                    <tr><td colSpan={6} className="px-3 py-4 text-center text-neutral-400">Loading stock data...</td></tr>
+                  ) : stockAvailability?.map((sa) => (
+                    <tr key={sa.item_master_id} className={sa.can_fulfill_from_stock ? 'bg-green-50' : 'bg-amber-50'}>
+                      <td className="px-3 py-2 text-neutral-800">{sa.item_name}</td>
+                      <td className="px-3 py-2 text-right">{sa.qty_required}</td>
+                      <td className="px-3 py-2 text-right font-medium">{sa.available_stock}</td>
+                      <td className="px-3 py-2 text-right font-medium text-red-600">{sa.deficit > 0 ? sa.deficit : '-'}</td>
+                      <td className="px-3 py-2 text-center">{sa.has_bom ? 'Yes' : <span className="text-red-500 font-medium">No</span>}</td>
+                      <td className="px-3 py-2 text-center">
+                        {sa.can_fulfill_from_stock ? (
+                          <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-medium">In Stock</span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-medium">Needs Production</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {stockAvailability?.every(sa => sa.can_fulfill_from_stock) && (
+              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded text-sm text-green-800">
+                All items have sufficient stock. Force production will create additional inventory beyond current needs.
+              </div>
+            )}
 
             <div className="space-y-4 mt-4">
               <div>
@@ -862,10 +910,17 @@ export default function ClientOrderDetailPage(): JSX.Element {
                   onChange={(e) => setForceMode(e.target.value as ForceProductionMode)}
                   className="w-full border border-neutral-300 rounded px-3 py-2 text-sm"
                 >
+                  <option value="stock_aware_produce_deficit">Produce deficit only (recommended)</option>
                   <option value="preserve_stock_produce_full">Preserve stock and produce full quantity</option>
                   <option value="consume_stock_then_replenish">Consume stock and create replenishment production</option>
                   <option value="per_item">Per-item mixed mode</option>
                 </select>
+                <p className="text-xs text-neutral-500 mt-1">
+                  {forceMode === 'stock_aware_produce_deficit' && 'Only produces what is missing. Items with sufficient stock are skipped.'}
+                  {forceMode === 'preserve_stock_produce_full' && 'Creates production for the full ordered quantity regardless of stock.'}
+                  {forceMode === 'consume_stock_then_replenish' && 'Uses existing stock and creates replenishment production for the full quantity.'}
+                  {forceMode === 'per_item' && 'Choose a different strategy for each item below.'}
+                </p>
               </div>
 
               {forceMode === 'per_item' && (

@@ -274,6 +274,7 @@ export function useVpApproveClientOrder() {
 export type ForceProductionMode =
   | 'preserve_stock_produce_full'
   | 'consume_stock_then_replenish'
+  | 'stock_aware_produce_deficit'
   | 'per_item'
 
 export interface ForceProductionPayload {
@@ -282,8 +283,30 @@ export interface ForceProductionPayload {
   reason: string
   items?: Array<{
     item_master_id: number
-    mode: 'preserve_stock_produce_full' | 'consume_stock_then_replenish'
+    mode: 'preserve_stock_produce_full' | 'consume_stock_then_replenish' | 'stock_aware_produce_deficit'
   }>
+}
+
+export interface StockAvailabilityItem {
+  item_master_id: number
+  item_name: string
+  item_code: string
+  qty_required: number
+  available_stock: number
+  has_bom: boolean
+  deficit: number
+  can_fulfill_from_stock: boolean
+}
+
+export function useStockAvailability(orderUlid: string | null) {
+  return useQuery({
+    queryKey: ['stock-availability', orderUlid],
+    queryFn: async () => {
+      const { data } = await api.get(`${API_BASE}/${orderUlid}/stock-availability`)
+      return data.data as StockAvailabilityItem[]
+    },
+    enabled: !!orderUlid,
+  })
 }
 
 export function useForceProductionClientOrder() {
