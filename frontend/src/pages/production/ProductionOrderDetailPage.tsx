@@ -20,6 +20,7 @@ import {
   type StockCheckItem,
 } from '@/hooks/useProduction'
 import { usePermission } from '@/hooks/usePermission'
+import { PERMISSIONS } from '@/lib/permissions'
 import PermissionGuard from '@/components/ui/PermissionGuard'
 import { useEmployees, useDepartments } from '@/hooks/useEmployees'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -80,11 +81,11 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   const { data: employeesData } = useEmployees({ per_page: 200, is_active: true, department_id: prodDeptId })
   const employees = employeesData?.data ?? []
 
-  const canRelease    = usePermission('production.orders.release')
-  const canComplete   = usePermission('production.orders.complete')
-  const canLogOutput  = usePermission('production.orders.log_output')
-  const canQcOverride = usePermission('production.qc-override')
-  const canCreate     = usePermission('production.orders.create')
+  const canRelease    = usePermission(PERMISSIONS.production.orders.release)
+  const canComplete   = usePermission(PERMISSIONS.production.orders.complete)
+  const canLogOutput  = usePermission(PERMISSIONS.production.orders.log_output)
+  const canQcOverride = usePermission(PERMISSIONS.production.qc_override)
+  const canCreate     = usePermission(PERMISSIONS.production.orders.create)
 
   const releaseMut    = useReleaseOrder(ulid ?? '')
   const approveReleaseMut = useApproveReleaseOrder(ulid ?? '')

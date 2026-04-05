@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import {
   usePositions,
   useDepartments,
@@ -30,7 +31,7 @@ const emptyForm = (): PosFormState => ({ code: '', title: '', department_id: und
 export default function PositionsPage() {
   const { hasPermission } = useAuthStore()
   const navigate = useNavigate()
-  const canManage = hasPermission('employees.manage_structure')
+  const canManage = hasPermission(PERMISSIONS.employees.manage_structure)
   const [deptFilter, setDeptFilter] = useState<number | undefined>()
 
   const { data: depts, isLoading: deptsLoading } = useDepartments()

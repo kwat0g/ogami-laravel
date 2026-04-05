@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useTicket, useReplyToTicket, useReopenTicket } from '@/hooks/useCRM'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 
 const statusBadge: Record<string, string> = {
   open: 'bg-blue-50 text-blue-700 border border-blue-200',
@@ -19,7 +20,7 @@ export default function ClientTicketDetailPage() {
   const { data: ticket, isLoading } = useTicket(ulid)
   const replyMutation = useReplyToTicket(ulid)
   const reopenMutation = useReopenTicket(ulid)
-  const canReplyPermission = useAuthStore((s) => s.hasPermission('crm.tickets.reply'))
+  const canReplyPermission = useAuthStore((s) => s.hasPermission(PERMISSIONS.crm.tickets.reply))
 
   const [replyBody, setReplyBody] = useState('')
   const [showReopen, setShowReopen] = useState(false)

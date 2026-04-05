@@ -20,6 +20,7 @@ import {
 import { WizardStepHeader } from '@/components/payroll/WizardStepHeader'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
@@ -145,7 +146,7 @@ export default function PayrollRunAcctgReviewPage() {
   const acctgApprove = useAcctgApprove(runId)
   const { data: approvals } = usePayrollApprovals(runId)
   const { user } = useAuth()
-  const hasAcctgApprove = useAuthStore((s) => s.hasPermission('payroll.acctg_approve'))
+  const hasAcctgApprove = useAuthStore((s) => s.hasPermission(PERMISSIONS.payroll.acctg_approve))
 
   const [checked, setChecked] = useState<Record<number, boolean>>({})
   const [rejectionReason, setRejectionReason] = useState('')

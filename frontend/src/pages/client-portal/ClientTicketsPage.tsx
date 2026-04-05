@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Plus, Ticket } from 'lucide-react'
 import { useTickets } from '@/hooks/useCRM'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -9,7 +10,7 @@ import EmptyState from '@/components/ui/EmptyState'
 
 export default function ClientTicketsPage() {
   const { data, isLoading } = useTickets({ per_page: 20 })
-  const canCreateTicket = useAuthStore((s) => s.hasPermission('crm.tickets.create'))
+  const canCreateTicket = useAuthStore((s) => s.hasPermission(PERMISSIONS.crm.tickets.create))
   
   const tickets = data?.data ?? []
   const openCount = tickets.filter(t => t.status === 'open').length

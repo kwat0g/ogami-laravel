@@ -11,6 +11,7 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import StatusBadge from '@/components/ui/StatusBadge'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import api from '@/lib/api'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { WarehouseLocation } from '@/types/inventory'
@@ -30,8 +31,8 @@ export default function WarehouseLocationsPage(): React.ReactElement {
   const [editing, setEditing]               = useState<WarehouseLocation | null>(null)
   const [showInactive, setShowInactive]     = useState(false)
   const [, setDeletingId]                   = useState<number | null>(null)
-  const canManage = useAuthStore(s => s.hasPermission('inventory.locations.manage'))
-  const canDelete = useAuthStore(s => s.hasPermission('inventory.locations.delete'))
+  const canManage = useAuthStore(s => s.hasPermission(PERMISSIONS.inventory.locations.manage))
+  const canDelete = useAuthStore(s => s.hasPermission(PERMISSIONS.inventory.locations.delete))
 
   const { data: locations, isLoading, isError, refetch } = useWarehouseLocations({
     is_active: showInactive ? undefined : true,

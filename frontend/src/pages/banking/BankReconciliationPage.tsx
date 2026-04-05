@@ -1,6 +1,7 @@
 import { formatPesoAmount } from '@/lib/formatters'
 import { useState } from 'react'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import ExecutiveReadOnlyBanner from '@/components/ui/ExecutiveReadOnlyBanner'
@@ -219,8 +220,8 @@ function statusBadge(status: string) {
 
 function ReconciliationDetail({ reconciliation }: { reconciliation: BankReconciliation }) {
   const { hasPermission } = useAuthStore()
-  const canEdit = hasPermission('bank_reconciliations.create')
-  const canCertify = hasPermission('bank_reconciliations.certify')
+  const canEdit = hasPermission(PERMISSIONS.bank_reconciliations.create)
+  const canCertify = hasPermission(PERMISSIONS.bank_reconciliations.certify)
 
   const { data, isLoading } = useBankReconciliation(reconciliation.ulid)
   const recon = data
@@ -412,7 +413,7 @@ export default function BankReconciliationPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [selected, setSelected] = useState<BankReconciliation | null>(null)
 
-  const canCreate = hasPermission('bank_reconciliations.create')
+  const canCreate = hasPermission(PERMISSIONS.bank_reconciliations.create)
 
   return (
     <div className="space-y-6">

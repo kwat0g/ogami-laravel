@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useBomCostHistory } from '@/hooks/useProduction'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import type { Bom } from '@/types/production'
 
 // ── Types for cost breakdown API response ────────────────────────────────────
@@ -56,7 +57,7 @@ export default function BomDetailPage() {
   const { ulid } = useParams<{ ulid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const canManage = useAuthStore(s => s.hasPermission('production.bom.manage'))
+  const canManage = useAuthStore(s => s.hasPermission(PERMISSIONS.production.bom.manage))
 
   // Fetch BOM details
   const { data: bom, isLoading: bomLoading } = useQuery<{ data: Bom }>({

@@ -4,6 +4,7 @@ import SearchInput from '@/components/ui/SearchInput'
 import { toast } from 'sonner'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ExportButton } from '@/components/ui/ExportButton'
 import {
@@ -510,10 +511,10 @@ export default function VendorsPage() {
   const accreditedVendors = isArchiveView ? 0 : vendors.filter((v: Vendor) => v.accreditation_status === 'accredited').length
   const ewtVendors = isArchiveView ? 0 : vendors.filter((v: Vendor) => v.is_ewt_subject).length
 
-  const canManage = useAuthStore((s) => s.hasPermission('vendors.manage'))
-  const canAccredit = useAuthStore((s) => s.hasPermission('vendors.accredit'))
-  const canSuspend = useAuthStore((s) => s.hasPermission('vendors.suspend'))
-  const canArchive = useAuthStore((s) => s.hasPermission('vendors.archive'))
+  const canManage = useAuthStore((s) => s.hasPermission(PERMISSIONS.vendors.manage))
+  const canAccredit = useAuthStore((s) => s.hasPermission(PERMISSIONS.vendors.accredit))
+  const canSuspend = useAuthStore((s) => s.hasPermission(PERMISSIONS.vendors.suspend))
+  const canArchive = useAuthStore((s) => s.hasPermission(PERMISSIONS.vendors.archive))
   const isSuperAdmin = useAuthStore((s) => s.user?.roles?.some((r: { name: string }) => r.name === 'super_admin'))
 
 

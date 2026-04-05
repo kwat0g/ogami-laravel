@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAttendanceLogs, useCreateAttendanceLog, useUpdateAttendanceLog, useEmployeeShiftAssignments } from '@/hooks/useAttendance'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { useEmployeeSearch, useEmployee } from '@/hooks/useEmployees'
 import { useDebounce } from '@/hooks/useDebounce'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -63,7 +64,7 @@ interface EmployeeOption {
 export default function AttendanceListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { hasPermission } = useAuthStore()
-  const canManageShifts = hasPermission('attendance.manage_shifts')
+  const canManageShifts = hasPermission(PERMISSIONS.attendance.manage_shifts)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [userModifiedSearch, setUserModifiedSearch] = useState(false) // Track if user manually typed

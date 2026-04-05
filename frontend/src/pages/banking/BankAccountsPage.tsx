@@ -9,6 +9,7 @@ import {
 import { toast } from 'sonner'
 import { useChartOfAccounts } from '@/hooks/useAccounting'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { DepartmentGuard } from '@/components/ui/guards'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
@@ -179,9 +180,9 @@ export default function BankAccountsPage() {
   const [isArchiveView, setIsArchiveView] = useState(false)
   const [editing, setEditing] = useState<BankAccount | undefined>()
 
-  const canCreate = hasPermission('bank_accounts.create')
-  const canEdit = hasPermission('bank_accounts.update')
-  const canDelete = hasPermission('bank_accounts.delete')
+  const canCreate = hasPermission(PERMISSIONS.bank_accounts.create)
+  const canEdit = hasPermission(PERMISSIONS.bank_accounts.update)
+  const canDelete = hasPermission(PERMISSIONS.bank_accounts.delete)
 
   return (
     <div className="space-y-6">

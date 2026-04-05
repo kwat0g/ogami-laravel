@@ -10,6 +10,7 @@ import {
   useNotifyMissingItems 
 } from '@/hooks/useCombinedDeliverySchedules'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { toast } from 'sonner'
 import type { CombinedDeliverySchedule, ItemStatusSummary } from '@/types/production'
@@ -220,7 +221,7 @@ export default function CombinedDeliveryScheduleDetailPage(): JSX.Element {
   const { data: schedule, isLoading, isError } = useCombinedDeliverySchedule(ulid || null)
   const markDeliveredMutation = useMarkDelivered(ulid || '')
 
-  const canManage = hasPermission('production.delivery-schedule.manage')
+  const canManage = hasPermission(PERMISSIONS.production.delivery_schedule.manage)
 
   if (isLoading) return <SkeletonLoader rows={5} />
 

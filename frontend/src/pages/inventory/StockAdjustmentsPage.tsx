@@ -10,11 +10,12 @@ import {
   useStockLedger,
 } from '@/hooks/useInventory'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 
 export default function StockAdjustmentsPage(): React.ReactElement {
-  const canAdjust = useAuthStore(s => s.hasPermission('inventory.adjustments.create'))
+  const canAdjust = useAuthStore(s => s.hasPermission(PERMISSIONS.inventory.adjustments.create))
   const [itemId, setItemId] = useState<number | ''>('')
   const [locationId, setLocationId] = useState<number | ''>('')
   const [adjustedQty, setAdjustedQty] = useState('')

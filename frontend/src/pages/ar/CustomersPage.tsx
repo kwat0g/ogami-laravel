@@ -11,6 +11,7 @@ import {
   useArchiveCustomer,
 } from '@/hooks/useAR'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { DepartmentGuard } from '@/components/ui/guards'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
@@ -362,8 +363,8 @@ function CustomerFormModal({ initial, onClose, onSuccess }: CustomerFormModalPro
 // ---------------------------------------------------------------------------
 
 export default function CustomersPage() {
-  const canManage = useAuthStore(s => s.hasPermission('customers.manage'))
-  const canArchive = useAuthStore(s => s.hasPermission('customers.archive'))
+  const canManage = useAuthStore(s => s.hasPermission(PERMISSIONS.customers.manage))
+  const canArchive = useAuthStore(s => s.hasPermission(PERMISSIONS.customers.archive))
   const isSuperAdmin = useAuthStore(s => s.user?.roles?.some((r: { name: string }) => r.name === 'super_admin'))
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')

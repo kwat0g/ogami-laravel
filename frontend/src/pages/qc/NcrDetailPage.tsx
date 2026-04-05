@@ -4,6 +4,7 @@ import { AlertOctagon, AlertTriangle, CheckCircle2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNcr, useIssueCapa, useCloseNcr, useCompleteCapaAction } from '@/hooks/useQC'
 import { usePermission } from '@/hooks/usePermission'
+import { PERMISSIONS } from '@/lib/permissions'
 import { useEmployees } from '@/hooks/useEmployees'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -39,8 +40,8 @@ export default function NcrDetailPage(): React.ReactElement {
   const [capaToComplete, setCapaToComplete] = useState<string | null>(null)
 
   const { data: ncr, isLoading, isError } = useNcr(ulid ?? null)
-  const canCreate = usePermission('qc.ncr.create')
-  const canClose  = usePermission('qc.ncr.close')
+  const canCreate = usePermission(PERMISSIONS.qc.ncr.create)
+  const canClose  = usePermission(PERMISSIONS.qc.ncr.close)
 
   const issueCapaMut   = useIssueCapa(ulid ?? '')
   const closeNcrMut    = useCloseNcr(ulid ?? '')

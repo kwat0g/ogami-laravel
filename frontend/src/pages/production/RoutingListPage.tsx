@@ -4,6 +4,7 @@ import { useRoutings, useWorkCenters, useCreateRouting, useDeleteRouting, type R
 import { useBoms } from '@/hooks/useProduction'
 import PermissionGuard from '@/components/ui/PermissionGuard'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { toast } from 'sonner'
 
 export default function RoutingListPage() {
@@ -14,8 +15,8 @@ export default function RoutingListPage() {
   const createMut = useCreateRouting()
   const deleteMut = useDeleteRouting()
   const { hasPermission } = useAuthStore()
-  const canCreateRouting = hasPermission('production.orders.create')
-  const canUpdateRouting = hasPermission('production.orders.update')
+  const canCreateRouting = hasPermission(PERMISSIONS.production.orders.create)
+  const canUpdateRouting = hasPermission(PERMISSIONS.production.orders.update)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     bom_id: '',

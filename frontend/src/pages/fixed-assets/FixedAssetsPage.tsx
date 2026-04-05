@@ -8,6 +8,7 @@ import { useFiscalPeriods } from '@/hooks/useAccounting'
 import type { FixedAsset, FixedAssetCategory } from '@/types/fixed_assets'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
@@ -20,7 +21,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader'
 function AssetCategoriesModal({ onClose }: { onClose: () => void }) {
   const { data: categories, isLoading } = useFixedAssetCategories()
   const create = useCreateFixedAssetCategory()
-  const canManage = useAuthStore(s => s.hasPermission('fixed_assets.manage'))
+  const canManage = useAuthStore(s => s.hasPermission(PERMISSIONS.fixed_assets.manage))
   const [showForm, setShowForm] = useState(false)
   const [isArchiveView, setIsArchiveView] = useState(false)
   const [form, setForm] = useState({ name: '', default_useful_life_years: 5, default_depreciation_method: 'straight_line' as const })
@@ -133,7 +134,7 @@ export default function FixedAssetsPage(): React.ReactElement {
 
   const assets: FixedAsset[] = data?.data ?? []
   const periods = periodsData?.data ?? []
-  const canManage = useAuthStore((s) => s.hasPermission('fixed_assets.manage'))
+  const canManage = useAuthStore((s) => s.hasPermission(PERMISSIONS.fixed_assets.manage))
 
   // Calculate totals
   const totalCost = assets.reduce((sum, a) => sum + a.acquisition_cost_centavos, 0)

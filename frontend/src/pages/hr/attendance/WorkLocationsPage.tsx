@@ -17,12 +17,13 @@ import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useWorkLocations, useGeofenceSettings, useToggleGeofence, type WorkLocation } from '@/hooks/useAttendance'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import api from '@/lib/api'
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function WorkLocationsPage() {
   const { hasPermission } = useAuthStore()
-  const canManage = hasPermission('attendance.work_locations.manage')
+  const canManage = hasPermission(PERMISSIONS.attendance.work_locations_manage)
   const { data: locationsData, isLoading, refetch } = useWorkLocations()
   const { data: geofenceSettings } = useGeofenceSettings()
   const toggleGeofence = useToggleGeofence()

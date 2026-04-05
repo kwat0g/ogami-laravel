@@ -12,6 +12,7 @@ import {
 } from '@/hooks/useAccounting'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { ExportButton } from '@/components/ui/ExportButton'
 import StatusBadge from '@/components/ui/StatusBadge'
@@ -165,7 +166,7 @@ function JournalEntryActions({ entry, onReversed }: { entry: JournalEntry; onRev
 // ---------------------------------------------------------------------------
 export default function JournalEntriesPage() {
   const navigate = useNavigate()
-  const _canCreate = useAuthStore(s => s.hasPermission('journal_entries.create'))
+  const _canCreate = useAuthStore(s => s.hasPermission(PERMISSIONS.journal_entries.create))
   const [activeTab, setActiveTab] = useState<JournalEntryStatus | undefined>(undefined)
   const [fiscalPeriodId, setFiscalPeriodId] = useState<number | undefined>(undefined)
   const [sourceType, setSourceType] = useState<string | undefined>(undefined)

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { Plus, Eye, Send } from 'lucide-react'
 import { useVendorRfqs, useCreateVendorRfq, useSendVendorRfq, type VendorRfq } from '@/hooks/useVendorRfqs'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import SearchInput from '@/components/ui/SearchInput'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -25,8 +26,8 @@ export default function VendorRfqListPage(): React.ReactElement {
   const send = useSendVendorRfq()
 
   const rfqs: VendorRfq[] = data?.data ?? []
-  const canCreate = useAuthStore((s) => s.hasPermission('procurement.purchase-order.create'))
-  const canManage = useAuthStore((s) => s.hasPermission('procurement.purchase-order.manage'))
+  const canCreate = useAuthStore((s) => s.hasPermission(PERMISSIONS.procurement.purchase_order.create))
+  const canManage = useAuthStore((s) => s.hasPermission(PERMISSIONS.procurement.purchase_order.manage))
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()

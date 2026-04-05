@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { Shield, Search, RefreshCw, ChevronLeft, ChevronRight, Filter, X, LogIn, LogOut, AlertTriangle, Plus, Pencil, Trash2, Eye } from 'lucide-react'
 import { useAuditLogs, type AuditLog } from '@/hooks/useAdmin'
 import { usePermission } from '@/hooks/usePermission'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 
 // ---------------------------------------------------------------------------
@@ -150,7 +151,7 @@ function ValueDiff({ log }: { log: AuditLog }) {
 // ---------------------------------------------------------------------------
 
 export default function AuditLogsPage() {
-  const canViewAuditLogs = usePermission('system.view_audit_log')
+  const canViewAuditLogs = usePermission(PERMISSIONS.system.view_audit_log)
 
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')

@@ -9,6 +9,7 @@ import {
   useRejectChanges,
 } from '@/hooks/usePurchaseOrders'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -292,7 +293,7 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
     )
   }
 
-  const canManagePo       = hasPermission('procurement.purchase-order.manage')
+  const canManagePo       = hasPermission(PERMISSIONS.procurement.purchase_order.manage)
   const canSend           = po.status === 'draft' && canManagePo
   const canReviewNegotiation = po.status === 'negotiating' && canManagePo
   const canExportPdf      = po.status !== 'draft'

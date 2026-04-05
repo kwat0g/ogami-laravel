@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { getLandingPath } from '@/lib/roleLanding'
 import TimeClockWidget from '@/components/attendance/TimeClockWidget'
@@ -53,8 +54,8 @@ export default function Dashboard() {
 
     if (hasRole('officer')) {
       const dept = user?.primary_department_code ?? ''
-      if (dept === 'PURCH' || hasPermission('procurement.rfq.create')) return <PurchasingOfficerDashboard />
-      if (dept === 'ACCTG' || hasPermission('journal_entries.post')) return <OfficerDashboard />
+      if (dept === 'PURCH' || hasPermission(PERMISSIONS.procurement.purchase_order.create)) return <PurchasingOfficerDashboard />
+      if (dept === 'ACCTG' || hasPermission(PERMISSIONS.journal_entries.post)) return <OfficerDashboard />
       return <ManagerDashboard />
     }
 

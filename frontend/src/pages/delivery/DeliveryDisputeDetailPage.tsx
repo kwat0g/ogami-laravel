@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useDispute, useAssignDispute, useResolveDispute, useCloseDispute } from '@/hooks/useDeliveryDisputes'
 import type { DisputeItem, ResolutionPayload } from '@/hooks/useDeliveryDisputes'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -189,7 +190,7 @@ export default function DeliveryDisputeDetailPage() {
   const nav = useNavigate()
   const { data, isLoading } = useDispute(ulid ?? null)
   const dispute = data?.data
-  const canManage = useAuthStore(s => s.hasPermission('delivery.manage'))
+  const canManage = useAuthStore(s => s.hasPermission(PERMISSIONS.delivery.manage))
 
   const assignMut = useAssignDispute(ulid ?? '')
   const resolveMut = useResolveDispute(ulid ?? '')

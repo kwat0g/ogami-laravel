@@ -10,6 +10,7 @@ import {
 } from '@/hooks/useAccounting'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -41,7 +42,7 @@ function PeriodStatusBadge({ status }: { status: FiscalPeriodStatus }) {
 // Action buttons per row — need individual hook calls per id
 // ---------------------------------------------------------------------------
 function PeriodActions({ period }: { period: FiscalPeriod }) {
-  const canManage = useAuthStore(s => s.hasPermission('fiscal_periods.manage'))
+  const canManage = useAuthStore(s => s.hasPermission(PERMISSIONS.fiscal_periods.manage))
   const openMutation = useOpenFiscalPeriod(period.id)
   const closeMutation = useCloseFiscalPeriod(period.id)
   const busy = openMutation.isPending || closeMutation.isPending
@@ -217,7 +218,7 @@ function CreatePeriodModal({ open, onClose, onSave, saving }: CreateModalProps) 
 // Main Page
 // ---------------------------------------------------------------------------
 export default function FiscalPeriodsPage() {
-  const canManage = useAuthStore(s => s.hasPermission('fiscal_periods.manage'))
+  const canManage = useAuthStore(s => s.hasPermission(PERMISSIONS.fiscal_periods.manage))
   const [statusFilter, setStatusFilter] = useState<FiscalPeriodStatus | undefined>(undefined)
   const [modalOpen, setModalOpen] = useState(false)
 

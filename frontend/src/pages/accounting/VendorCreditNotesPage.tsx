@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -62,8 +63,8 @@ export default function VendorCreditNotesPage(): React.ReactElement {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const list = notes ?? []
-  const canCreate = useAuthStore((s) => s.hasPermission('vendor_invoices.create'))
-  const canApprove = useAuthStore((s) => s.hasPermission('vendor_invoices.approve'))
+  const canCreate = useAuthStore((s) => s.hasPermission(PERMISSIONS.vendor_invoices.create))
+  const canApprove = useAuthStore((s) => s.hasPermission(PERMISSIONS.vendor_invoices.approve))
 
   function validateForm(): boolean {
     const newErrors: Record<string, string> = {}

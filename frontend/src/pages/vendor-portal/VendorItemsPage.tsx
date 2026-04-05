@@ -12,6 +12,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { toast } from 'sonner'
 import { statusBadges } from '@/styles/design-system'
 
@@ -51,7 +52,7 @@ export default function VendorItemsPage(): React.ReactElement {
   const importItems = useImportVendorPortalItems()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const canManage = useAuthStore((s) => s.hasPermission('vendor_portal.manage_items'))
+  const canManage = useAuthStore((s) => s.hasPermission(PERMISSIONS.vendor_portal.manage_items))
   const hasSearch = debouncedSearch.trim().length > 0
   const listItems = items ?? []
   const isInitialLoading = isLoading && listItems.length === 0

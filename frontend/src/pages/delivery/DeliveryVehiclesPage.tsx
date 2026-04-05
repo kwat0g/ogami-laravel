@@ -6,6 +6,7 @@ import type { VehicleDeliveryHistory } from '@/hooks/useDelivery'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { firstErrorMessage } from '@/lib/errorHandler'
@@ -407,7 +408,7 @@ function VehicleHistoryRow({ vehicleId, colSpan }: { vehicleId: number; colSpan:
 // ── Main Page ──────────────────────────────────────────────────────────────
 export default function DeliveryVehiclesPage() {
   const { hasPermission } = useAuthStore()
-  const canManage = hasPermission('delivery.manage')
+  const canManage = hasPermission(PERMISSIONS.delivery.manage)
   const { data, isLoading } = useVehicles()
   const vehicles: Vehicle[] = (data?.data ?? []) as Vehicle[]
   const [showForm, setShowForm] = useState(false)

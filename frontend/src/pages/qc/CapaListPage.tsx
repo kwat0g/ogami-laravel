@@ -3,6 +3,7 @@ import { ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCapaActions, useCompleteCapaAction } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { CapaAction, CapaStatus } from '@/types/qc'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
@@ -28,7 +29,7 @@ export default function CapaListPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const completeMut = useCompleteCapaAction()
   const { hasPermission } = useAuthStore()
-  const canManage = hasPermission('qc.ncr.create')
+  const canManage = hasPermission(PERMISSIONS.qc.ncr.create)
 
   const handleSearch = useCallback((val: string) => {
     setDebouncedSearch(val)

@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { useWorkCenters, useCreateWorkCenter, useDeleteWorkCenter, type WorkCenter } from '@/hooks/useProduction'
 import PermissionGuard from '@/components/ui/PermissionGuard'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { toast } from 'sonner'
 
 export default function WorkCenterListPage() {
@@ -10,8 +11,8 @@ export default function WorkCenterListPage() {
   const createMut = useCreateWorkCenter()
   const deleteMut = useDeleteWorkCenter()
   const { hasPermission } = useAuthStore()
-  const canCreateWorkCenter = hasPermission('production.orders.create')
-  const canUpdateWorkCenter = hasPermission('production.orders.update')
+  const canCreateWorkCenter = hasPermission(PERMISSIONS.production.orders.create)
+  const canUpdateWorkCenter = hasPermission(PERMISSIONS.production.orders.update)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', code: '', description: '', hourly_labor_rate: '', hourly_overhead_rate: '', capacity_hours_per_day: '' })
 

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Plus, AlertTriangle } from 'lucide-react'
 import { useMaterialRequisitions } from '@/hooks/useInventory'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
 import api from '@/lib/api'
@@ -36,7 +37,7 @@ export default function MaterialRequisitionListPage(): React.ReactElement {
   const [page, setPage]     = useState(1)
   const [isArchiveView, setIsArchiveView] = useState(false)
   const { hasPermission } = useAuthStore()
-  const canCreate = hasPermission('inventory.mrq.create')
+  const canCreate = hasPermission(PERMISSIONS.inventory.mrq.create)
 
   const { data, isLoading, isError } = useMaterialRequisitions({
     status: status || undefined,

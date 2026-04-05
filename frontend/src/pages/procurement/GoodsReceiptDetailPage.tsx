@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AlertTriangle, CheckCircle2, ClipboardCheck, Trash2, XCircle, FlaskConical, Pencil } from 'lucide-react'
 import { usePermission } from '@/hooks/usePermission'
+import { PERMISSIONS } from '@/lib/permissions'
 import {
   useGoodsReceipt,
   useConfirmGoodsReceipt,
@@ -44,7 +45,7 @@ const conditionLabel: Record<GoodsReceiptCondition, string> = {
 export default function GoodsReceiptDetailPage(): React.ReactElement {
   const { ulid }  = useParams<{ ulid: string }>()
   const navigate  = useNavigate()
-  const canConfirmPermission = usePermission('procurement.goods-receipt.confirm')
+  const canConfirmPermission = usePermission(PERMISSIONS.procurement.goods_receipt.confirm)
 
   const { data: gr, isLoading, isError } = useGoodsReceipt(ulid ?? null)
   const confirmMutation    = useConfirmGoodsReceipt()

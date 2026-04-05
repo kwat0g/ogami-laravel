@@ -6,6 +6,7 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { useDeliverySchedule, useCreateProductionOrder, useBoms, useFulfillFromStock } from '@/hooks/useProduction'
 import { useCreateDeliveryReceipt } from '@/hooks/useDelivery'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import { toast } from 'sonner'
@@ -390,9 +391,9 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
   const { data: schedule, isLoading, isError } = useDeliverySchedule(ulid || null)
   const fulfillMutation = useFulfillFromStock(ulid || '')
 
-  const canCreateWO = hasPermission('production.orders.create')
-  const canManage = hasPermission('production.delivery-schedule.manage')
-  const canFulfill = hasPermission('production.delivery-schedule.manage')
+  const canCreateWO = hasPermission(PERMISSIONS.production.orders.create)
+  const canManage = hasPermission(PERMISSIONS.production.delivery_schedule.manage)
+  const canFulfill = hasPermission(PERMISSIONS.production.delivery_schedule.manage)
 
   const handleFulfillFromStock = async () => {
     try {

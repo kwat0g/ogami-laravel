@@ -24,6 +24,7 @@ import {
   type Department,
 } from '@/hooks/useAdmin'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -143,10 +144,10 @@ function validateUserForm(data: WizardState): ValidationError[] {
 export default function UsersPage() {
   const { hasPermission } = useAuthStore()
 
-  const canCreate     = hasPermission('system.manage_users')
-  const canUpdate     = hasPermission('system.manage_users')
-  const canDisable    = hasPermission('system.manage_users')
-  const canAssignRole = hasPermission('system.assign_roles')
+  const canCreate     = hasPermission(PERMISSIONS.system.manage_users)
+  const canUpdate     = hasPermission(PERMISSIONS.system.manage_users)
+  const canDisable    = hasPermission(PERMISSIONS.system.manage_users)
+  const canAssignRole = hasPermission(PERMISSIONS.system.assign_roles)
 
   // Separate local state for search input to prevent focus loss
   const [searchInput, setSearchInput] = useState('')

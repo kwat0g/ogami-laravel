@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { ArrowLeft, Trophy } from 'lucide-react'
 import { useVendorRfq, useCloseVendorRfq, useCancelVendorRfq, useRecordQuote, useRecordDecline, useAwardRfq } from '@/hooks/useVendorRfqs'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import { firstErrorMessage } from '@/lib/errorHandler'
 
@@ -19,7 +20,7 @@ export default function VendorRfqDetailPage(): React.ReactElement {
   const [quoteVendor, setQuoteVendor] = useState<number | null>(null)
   const [quoteAmount, setQuoteAmount] = useState('')
   const [quoteNotes, setQuoteNotes] = useState('')
-  const canManage = useAuthStore((s) => s.hasPermission('procurement.purchase-order.manage'))
+  const canManage = useAuthStore((s) => s.hasPermission(PERMISSIONS.procurement.purchase_order.manage))
 
   if (isLoading) return <p className="text-sm text-neutral-500 mt-4">Loading…</p>
   if (isError || !rfq) return <p className="text-sm text-red-600 mt-4">RFQ not found.</p>

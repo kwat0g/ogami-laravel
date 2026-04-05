@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Plus, Ticket } from 'lucide-react'
 import { useTickets } from '@/hooks/useCRM'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import type { TicketFilters } from '@/types/crm'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
@@ -24,7 +25,7 @@ const PRIORITY_MAP: Record<string, string> = {
 export default function TicketListPage() {
   const [filters, setFilters] = useState<TicketFilters>({ per_page: 20 })
   const { data, isLoading } = useTickets(filters)
-  const canCreate = useAuthStore((s) => s.hasPermission('crm.tickets.create'))
+  const canCreate = useAuthStore((s) => s.hasPermission(PERMISSIONS.crm.tickets.create))
   
   // Calculate summary stats
   const tickets = data?.data ?? []

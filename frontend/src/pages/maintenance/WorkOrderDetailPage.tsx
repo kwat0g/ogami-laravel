@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useWorkOrderDetail, useStartWorkOrder, useCompleteWorkOrder, useCancelWorkOrder } from '@/hooks/useMaintenance';
 import { useAuthStore } from '@/stores/authStore';
+import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog';
@@ -40,7 +41,7 @@ export default function WorkOrderDetailPage(): React.ReactElement {
   const completeMut = useCompleteWorkOrder();
   const cancelMut   = useCancelWorkOrder();
 
-  const canManage = hasPermission('maintenance.manage');
+  const canManage = hasPermission(PERMISSIONS.maintenance.manage);
 
   const [showCompleteForm, setShowCompleteForm] = useState(false);
   const [completionNotes, setCompletionNotes]   = useState('');

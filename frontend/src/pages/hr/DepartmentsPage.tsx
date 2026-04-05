@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import {
   useDepartments,
   useCreateDepartment,
@@ -27,7 +28,7 @@ const emptyForm = (): DeptFormState => ({ code: '', name: '', cost_center_code: 
 export default function DepartmentsPage() {
   const { hasPermission } = useAuthStore()
   const navigate = useNavigate()
-  const canManage = hasPermission('employees.manage_structure')
+  const canManage = hasPermission(PERMISSIONS.employees.manage_structure)
   const { data, isLoading, isError, refetch } = useDepartments()
   const create = useCreateDepartment()
   const update = useUpdateDepartment()

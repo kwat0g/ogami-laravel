@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle, Plus } from 'lucide-react'
 import { useNcrs } from '@/hooks/useQC'
 import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { useQuery } from '@tanstack/react-query'
 import ArchiveToggleButton from '@/components/ui/ArchiveToggleButton'
 import api from '@/lib/api'
@@ -54,7 +55,7 @@ export default function NcrListPage(): React.ReactElement {
     enabled: isArchiveView,
   })
   const { hasPermission } = useAuthStore()
-  const canCreate = hasPermission('qc.ncr.create')
+  const canCreate = hasPermission(PERMISSIONS.qc.ncr.create)
 
   return (
     <div>
