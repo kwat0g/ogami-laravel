@@ -321,6 +321,8 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'procurement.goods-receipt.confirm',
             'procurement.rfq.send',
             'vendor_portal.update_fulfillment',
+            // Cross-module: Purchasing Manager manages customers like vendors
+            'customers.view', 'customers.manage', 'customers.archive',
         ];
 
         $head = array_merge($staffBase, $headAdds);
@@ -428,6 +430,8 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'customer_invoices.view',
             'crm.tickets.create',
             'delivery.view',
+            // Client Orders
+            'sales.order_review',
         ];
 
         $officerAdds = [
@@ -439,6 +443,8 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'crm.tickets.reply', 'crm.tickets.manage',
             'production.delivery-schedule.view',
             'reports.sales',
+            // Client Orders
+            'sales.order_negotiate',
         ];
 
         $managerAdds = [
@@ -446,6 +452,8 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'customers.create', 'customers.edit',
             'customer_invoices.create',
             'crm.tickets.assign', 'crm.tickets.close',
+            // Client Orders (full access for Sales Manager)
+            'sales.order_approve', 'sales.order_reject',
         ];
 
         $head = array_merge($staffBase, $headAdds);
