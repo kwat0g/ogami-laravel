@@ -55,10 +55,18 @@ class UpdateClientOrderOnShipmentDelivered
                 ]);
             }
 
-            // Check if AR invoice has been created (indicates fulfillment)
-            $hasInvoice = DB::table('customer_invoices')
-                ->where('client_order_id', $clientOrder->id)
-                ->whereNull('deleted_at')
+            // Check if AR invoice has been created for any DR tied to this client order.
+            // customer_invoices does not have client_order_id; resolve through
+            // delivery_receipts -> delivery_schedules.
+            $hasInvoice = DB::table('customer_invoices as ci')
+                ->join('delivery_receipts as dr', 'dr.id', '=', 'ci.delivery_receipt_id')
+                ->leftJoin('delivery_schedules as ds_by_id', 'ds_by_id.id', '=', 'dr.delivery_schedule_id')
+                ->leftJoin('delivery_schedules as ds_by_dr', 'ds_by_dr.delivery_receipt_id', '=', 'dr.id')
+                ->whereNull('ci.deleted_at')
+                ->where(function ($query) use ($clientOrder): void {
+                    $query->where('ds_by_id.client_order_id', $clientOrder->id)
+                        ->orWhere('ds_by_dr.client_order_id', $clientOrder->id);
+                })
                 ->exists();
 
             if ($hasInvoice && $clientOrder->fresh()->status === 'delivered') {
@@ -77,6 +85,17 @@ class UpdateClientOrderOnShipmentDelivered
 
     private function resolveClientOrderId(DeliveryReceipt $receipt): ?int
     {
+        // Path 0: direct link via delivery_schedules.id (preferred, current schema).
+        if ($receipt->delivery_schedule_id) {
+            $clientOrderId = DB::table('delivery_schedules')
+                ->where('id', $receipt->delivery_schedule_id)
+                ->value('client_order_id');
+
+            if ($clientOrderId) {
+                return (int) $clientOrderId;
+            }
+        }
+
         // Path 1: delivery_schedule -> combined_delivery_schedules -> client_order_id
         if ($receipt->delivery_schedule_id) {
             $clientOrderId = DB::table('combined_delivery_schedules')
@@ -88,13 +107,30 @@ class UpdateClientOrderOnShipmentDelivered
             }
         }
 
-        // Path 2: Check if there's a production order linked via the AR invoice chain
-        // delivery_receipt -> shipment -> ar_invoice -> client_order
+        // Path 2: resolve through delivery_schedules by delivery_receipt_id.
+        // This is used when delivery_receipts.delivery_schedule_id is null.
+        $clientOrderId = DB::table('delivery_schedules')
+            ->where('delivery_receipt_id', $receipt->id)
+            ->value('client_order_id');
+
+        if ($clientOrderId) {
+            return (int) $clientOrderId;
+        }
+
+        // Path 3: last-resort lookup through invoice->delivery_receipt->delivery_schedule.
         $clientOrderId = DB::table('customer_invoices')
             ->where('delivery_receipt_id', $receipt->id)
             ->whereNull('deleted_at')
+            ->value('delivery_receipt_id');
+
+        if (! $clientOrderId) {
+            return null;
+        }
+
+        $resolvedClientOrderId = DB::table('delivery_schedules')
+            ->where('delivery_receipt_id', (int) $clientOrderId)
             ->value('client_order_id');
 
-        return $clientOrderId ? (int) $clientOrderId : null;
+        return $resolvedClientOrderId ? (int) $resolvedClientOrderId : null;
     }
 }

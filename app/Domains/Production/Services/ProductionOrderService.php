@@ -435,7 +435,7 @@ final class ProductionOrderService implements ServiceContract
             );
         }
 
-        if ($order->created_by_id === $approver->id) {
+        if ($order->created_by_id === $approver->id && ! $this->canBypassReleaseApprovalSod($approver)) {
             throw new DomainException(
                 'Creator cannot approve release for the same production order (SoD).',
                 'PROD_RELEASE_APPROVAL_SOD',
@@ -484,7 +484,11 @@ final class ProductionOrderService implements ServiceContract
             );
         }
 
-        if ($order->requires_release_approval && $order->approved_for_release_by === $order->created_by_id) {
+        if (
+            $order->requires_release_approval
+            && $order->approved_for_release_by === $order->created_by_id
+            && ! $this->creatorCanBypassReleaseApprovalSod($order)
+        ) {
             throw new DomainException(
                 'Release blocked: invalid approval because creator cannot approve own order.',
                 'PROD_RELEASE_APPROVAL_SOD',
@@ -553,6 +557,26 @@ final class ProductionOrderService implements ServiceContract
     private function requiresReleaseApproval(string $sourceType): bool
     {
         return in_array($sourceType, ['force_production', 'replenishment'], true);
+    }
+
+    private function canBypassReleaseApprovalSod(User $user): bool
+    {
+        return $user->hasAnyRole(['admin', 'super_admin']);
+    }
+
+    private function creatorCanBypassReleaseApprovalSod(ProductionOrder $order): bool
+    {
+        if ($order->createdBy instanceof User) {
+            return $this->canBypassReleaseApprovalSod($order->createdBy);
+        }
+
+        if ($order->created_by_id === null) {
+            return false;
+        }
+
+        $creator = User::find($order->created_by_id);
+
+        return $creator instanceof User && $this->canBypassReleaseApprovalSod($creator);
     }
 
     private function applyMinBatch(float $requestedQty, float $minBatchSize): float
@@ -761,7 +785,7 @@ final class ProductionOrderService implements ServiceContract
             }
 
             $actor = auth()->user() ?? User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
-            if ($actor === null) {
+            if (! $actor instanceof User) {
                 throw new DomainException(
                     'Cannot complete: no authenticated user or system user available for stock receipt.',
                     'PROD_NO_ACTOR',
@@ -784,7 +808,6 @@ final class ProductionOrderService implements ServiceContract
 
             $completedOrder = $order->refresh();
             $actorId = $actor->id;
-
             // Run side effects after commit so DB failures do not poison the main transaction.
             DB::afterCommit(function () use ($completedOrder, $actorId): void {
                 if (! app()->environment('testing')) {

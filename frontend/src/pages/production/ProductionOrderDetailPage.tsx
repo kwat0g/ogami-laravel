@@ -47,9 +47,9 @@ const statusBadge: Record<ProductionOrderStatus, string> = {
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-4 py-2 border-b border-neutral-100 last:border-0">
-      <dt className="text-sm text-neutral-500 w-36 flex-shrink-0">{label}</dt>
-      <dd className="text-sm text-neutral-900 font-medium">{value ?? '—'}</dd>
+    <div className="flex items-start gap-4 py-2 border-b border-neutral-100 dark:border-neutral-700 last:border-0">
+      <dt className="text-sm text-neutral-500 dark:text-neutral-400 w-36 flex-shrink-0">{label}</dt>
+      <dd className="text-sm text-neutral-900 dark:text-neutral-100 font-medium">{value ?? '—'}</dd>
     </div>
   )
 }
@@ -118,6 +118,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   const [holdReason, setHoldReason] = useState('')
   const [showEditForm, setShowEditForm] = useState(false)
   const [editData, setEditData] = useState({ notes: '', target_start_date: '', target_end_date: '' })
+  const [showAdvancedActions, setShowAdvancedActions] = useState(false)
 
   const anyPending = releaseMut.isPending || startMut.isPending || completeMut.isPending || cancelMut.isPending || voidMut.isPending || closeMut.isPending || holdMut.isPending || resumeMut.isPending
 
@@ -298,10 +299,324 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
     </div>
   )
 
-  const completionPercentage = order ? ((parseFloat(order.qty_produced || '0') / (parseFloat(order.qty_required || '1') || 1)) * 100).toFixed(1) : '0'
+  const qtyRequired = parseFloat(order.qty_required || '0')
+  const qtyProduced = parseFloat(order.qty_produced || '0')
+  const qtyRemaining = Math.max(0, qtyRequired - qtyProduced)
+  const completionPercentage = qtyRequired > 0 ? ((qtyProduced / qtyRequired) * 100).toFixed(1) : '0'
+  const releaseApprovalText = order.requires_release_approval
+    ? order.approved_for_release_at
+      ? 'Approved'
+      : 'Pending'
+    : 'Not Required'
+  const nextStepText =
+    order.status === 'draft'
+      ? order.requires_release_approval && !order.approved_for_release_at
+        ? 'Approve release, then release the work order.'
+        : 'Release the work order to start production flow.'
+      : order.status === 'released'
+        ? 'Start production when operators and materials are ready.'
+        : order.status === 'in_progress'
+          ? 'Log output regularly, then complete once target is met.'
+          : order.status === 'completed'
+            ? 'Create OQC inspection and close when final checks are done.'
+            : order.status === 'on_hold'
+              ? 'Resume production once the hold reason is resolved.'
+              : 'No further workflow actions available.'
+
+    const canShowRelease = order.status === 'draft' && canRelease
+    const canShowApproveRelease =
+      order.status === 'draft' &&
+      order.requires_release_approval &&
+      !order.approved_for_release_at &&
+      canRelease
+    const canShowStart = order.status === 'released' && canRelease
+    const canShowMarkComplete = order.status === 'in_progress' && canComplete && !showLogForm
+    const canShowClose = order.status === 'completed' && canComplete
+    const canShowLogOutput = order.status === 'in_progress' && canLogOutput && !showLogForm
+    const canShowCreateQcInspection = order.status === 'completed'
+    const canShowHold = ['released', 'in_progress'].includes(order.status) && canRelease && !showLogForm
+
+    const canShowEdit = ['draft', 'released', 'in_progress', 'on_hold'].includes(order.status) && canCreate && !showEditForm && !showLogForm
+    const canShowCancel = ['draft', 'released', 'in_progress'].includes(order.status) && canCreate
+    const canShowVoid = order.status === 'in_progress' && qtyProduced === 0 && !showLogForm && canCreate
+    const hasAdvancedActions = canShowEdit || canShowCancel || canShowVoid
+
+  const actionsPanel = (
+    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+      <h2 className="text-sm font-medium text-neutral-700 mb-4">Actions</h2>
+      <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">Next step: {nextStepText}</p>
+
+      {showLogForm && (
+        <div className="bg-neutral-50 border border-neutral-200 rounded p-4 mb-4 space-y-3">
+          <h3 className="text-sm font-medium text-neutral-700">Log Production Output</h3>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Shift</label>
+              <select
+                value={logData.shift}
+                onChange={(e) => setLogData((d) => ({ ...d, shift: e.target.value as 'A' | 'B' | 'C' }))}
+                className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              >
+                <option value="A">Shift A</option>
+                <option value="B">Shift B</option>
+                <option value="C">Shift C</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Date</label>
+              <input
+                type="date"
+                value={logData.log_date}
+                onChange={(e) => setLogData((d) => ({ ...d, log_date: e.target.value }))}
+                className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Operator *</label>
+              <select
+                value={logData.operator_id}
+                onChange={(e) => {
+                  setLogData((d) => ({ ...d, operator_id: e.target.value }))
+                  if (logErrors.operator_id) {
+                    setLogErrors(prev => ({ ...prev, operator_id: '' }))
+                  }
+                }}
+                className={`w-full text-sm border rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${logErrors.operator_id ? 'border-red-400' : 'border-neutral-300'}`}
+              >
+                <option value="">— Select Operator —</option>
+                {employees.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.full_name}{emp.position?.title ? ` — ${emp.position.title}` : ''}</option>
+                ))}
+              </select>
+              {logErrors.operator_id && <p className="mt-1 text-xs text-red-600">{logErrors.operator_id}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Produced *</label>
+              <input
+                type="number"
+                step="0.0001"
+                min="0.0001"
+                value={logData.qty_produced}
+                onChange={(e) => {
+                  setLogData((d) => ({ ...d, qty_produced: e.target.value }))
+                  if (logErrors.qty_produced) {
+                    setLogErrors(prev => ({ ...prev, qty_produced: '' }))
+                  }
+                }}
+                className={`w-full text-sm border rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${logErrors.qty_produced ? 'border-red-400' : 'border-neutral-300'}`}
+              />
+              {logErrors.qty_produced && <p className="mt-1 text-xs text-red-600">{logErrors.qty_produced}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Rejected</label>
+              <input
+                type="number"
+                step="0.0001"
+                min="0"
+                value={logData.qty_rejected}
+                onChange={(e) => setLogData((d) => ({ ...d, qty_rejected: e.target.value }))}
+                className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Remarks</label>
+              <input
+                value={logData.remarks}
+                onChange={(e) => setLogData((d) => ({ ...d, remarks: e.target.value }))}
+                className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleLogOutput}
+              disabled={logMut.isPending}
+              className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Submit Log
+            </button>
+            <button
+              onClick={() => {
+                setShowLogForm(false)
+                setLogErrors({})
+              }}
+              className="px-4 py-2 border border-neutral-300 text-neutral-600 text-sm rounded hover:bg-neutral-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+
+        {canShowRelease && (
+          <button
+            onClick={() => handleAction('release')}
+            disabled={anyPending || stockCheckQ.isFetching || (order.requires_release_approval && !order.approved_for_release_at)}
+            className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {stockCheckQ.isFetching ? 'Checking stock...' : 'Release'}
+          </button>
+        )}
+
+        {canShowApproveRelease && (
+          <button
+            onClick={async () => {
+              try {
+                await approveReleaseMut.mutateAsync()
+                toast.success('Release approved successfully.')
+              } catch (err) {
+                if (isHandledApiError(err)) return
+                toast.error(firstErrorMessage(err))
+              }
+            }}
+            disabled={approveReleaseMut.isPending}
+            className="px-4 py-2 text-sm font-medium border border-indigo-300 text-indigo-700 hover:bg-indigo-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {approveReleaseMut.isPending ? 'Approving...' : 'Approve Release'}
+          </button>
+        )}
+
+        {canShowStart && (
+          <button
+            onClick={() => handleAction('start')}
+            disabled={anyPending}
+            className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Start Production
+          </button>
+        )}
+
+        {canShowMarkComplete && (
+          <button
+            onClick={() => handleAction('complete')}
+            disabled={anyPending || qtyProduced <= 0}
+            title={qtyProduced <= 0 ? 'Log production output before completing' : undefined}
+            className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Mark Complete
+          </button>
+        )}
+
+        {canShowClose && (
+          <ConfirmDialog
+            title="Close Work Order?"
+            description="This will close the work order. Closed orders are terminal and cannot be reopened."
+            confirmLabel="Close"
+            onConfirm={async () => {
+              try {
+                await closeMut.mutateAsync()
+                toast.success('Work order closed successfully.')
+              } catch (err) {
+                if (isHandledApiError(err)) return
+                toast.error(firstErrorMessage(err))
+              }
+            }}
+          >
+            <button disabled={closeMut.isPending} className="px-4 py-2 text-sm font-medium bg-green-700 hover:bg-green-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
+              Close Order
+            </button>
+          </ConfirmDialog>
+        )}
+
+        {canShowLogOutput && (
+          <button onClick={() => setShowLogForm(true)} className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded">
+            Log Output
+          </button>
+        )}
+
+        {canShowCreateQcInspection && (
+          <Link
+            to={`/qc/inspections/new?po=${order.ulid}&stage=oqc`}
+            className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded inline-flex items-center gap-1.5"
+          >
+            Create QC Inspection
+          </Link>
+        )}
+
+        {canShowHold && (
+          <button
+            onClick={() => setShowHoldModal(true)}
+            disabled={anyPending}
+            className="px-4 py-2 text-sm font-medium border border-amber-300 text-amber-700 hover:bg-amber-50 rounded"
+          >
+            Hold
+          </button>
+        )}
+
+      </div>
+
+      {hasAdvancedActions && (
+        <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+          <button
+            onClick={() => setShowAdvancedActions((v) => !v)}
+            className="text-xs font-medium text-neutral-500 hover:text-neutral-700"
+          >
+            {showAdvancedActions ? 'Hide advanced actions' : 'Show advanced actions'}
+          </button>
+
+          {showAdvancedActions && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {canShowEdit && (
+                <button
+                  onClick={() => {
+                    setEditData({
+                      notes: order.notes || '',
+                      target_start_date: order.target_start_date || '',
+                      target_end_date: order.target_end_date || '',
+                    })
+                    setShowEditForm(true)
+                  }}
+                  className="px-3 py-1.5 text-xs font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded"
+                >
+                  Edit
+                </button>
+              )}
+
+              {canShowCancel && (
+                <ConfirmDialog
+                  title="Cancel Work Order?"
+                  description={order.status === 'in_progress'
+                    ? 'This will cancel the work order and reverse any issued materials. This action cannot be undone.'
+                    : 'This will cancel the work order. This action cannot be undone.'}
+                  confirmLabel="Cancel WO"
+                  variant="danger"
+                  onConfirm={async () => {
+                    await handleAction('cancel')
+                  }}
+                >
+                  <button disabled={anyPending} className="px-3 py-1.5 text-xs font-medium border border-amber-300 text-amber-700 hover:bg-amber-50 rounded">
+                    Cancel WO
+                  </button>
+                </ConfirmDialog>
+              )}
+
+              {canShowVoid && (
+                <ConfirmDestructiveDialog
+                  title="Void Work Order?"
+                  description="This work order will be voided and cannot be restarted. This action is irreversible."
+                  confirmWord="VOID"
+                  confirmLabel="Void WO"
+                  onConfirm={executeVoid}
+                >
+                  <button
+                    disabled={voidMut.isPending}
+                    className="px-3 py-1.5 text-xs font-medium border border-red-200 text-red-600 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Void WO
+                  </button>
+                </ConfirmDestructiveDialog>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto space-y-5">
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => navigate('/production/orders')} className="p-2 hover:bg-neutral-100 rounded">
           <ArrowLeft className="w-4 h-4 text-neutral-500" />
@@ -322,517 +637,320 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         </div>
       </div>
 
-      {/* Workflow Timeline */}
-      <div className="bg-white border border-neutral-200 rounded p-4 mb-5">
-        <StatusTimeline
-          steps={getProductionOrderSteps(order)}
-          currentStatus={order.status}
-          direction="horizontal"
-          isRejected={isRejectedStatus(order.status)}
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Progress</p>
+          <p className="mt-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">{completionPercentage}%</p>
+          <div className="mt-2 h-2 w-full bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+            <div className="h-full bg-neutral-700 dark:bg-neutral-200 rounded-full" style={{ width: `${Math.min(100, order.progress_pct ?? 0)}%` }} />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Qty Produced</p>
+          <p className="mt-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            {qtyProduced.toLocaleString('en-PH', { maximumFractionDigits: 4 })}
+          </p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">of {qtyRequired.toLocaleString('en-PH', { maximumFractionDigits: 4 })}</p>
+        </div>
+
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Qty Remaining</p>
+          <p className="mt-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            {qtyRemaining.toLocaleString('en-PH', { maximumFractionDigits: 4 })}
+          </p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Target end: {order.target_end_date}</p>
+        </div>
+
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Release Approval</p>
+          <p className="mt-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">{releaseApprovalText}</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Source: {order.source_type ?? 'manual'}</p>
+        </div>
       </div>
 
-      {/* Details */}
-      <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
-        <h2 className="text-sm font-medium text-neutral-700 mb-3">Work Order Details</h2>
-        <dl>
-          <InfoRow label="Product" value={`${order.product_item?.item_code} — ${order.product_item?.name}`} />
-          <InfoRow label="BOM Version" value={order.bom ? `v${order.bom.version}` : '—'} />
-          <InfoRow label="Qty Required" value={parseFloat(order.qty_required || '0').toLocaleString('en-PH', { maximumFractionDigits: 4 })} />
-          <InfoRow label="Qty Produced" value={
-            <div className="flex items-center gap-2">
-              <span>{parseFloat(order.qty_produced || '0').toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>
-              <div className="flex items-center gap-1">
-                <div className="h-2 w-24 bg-neutral-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-neutral-600 rounded-full" style={{ width: `${Math.min(100, order.progress_pct ?? 0)}%` }} />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="lg:col-span-8 space-y-5">
+          {/* Details */}
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+            <h2 className="text-sm font-medium text-neutral-700 mb-3">Work Order Details</h2>
+            <dl>
+              <InfoRow label="Product" value={`${order.product_item?.item_code} — ${order.product_item?.name}`} />
+              <InfoRow label="BOM Version" value={order.bom ? `v${order.bom.version}` : '—'} />
+              <InfoRow label="Qty Required" value={parseFloat(order.qty_required || '0').toLocaleString('en-PH', { maximumFractionDigits: 4 })} />
+              <InfoRow label="Qty Produced" value={
+                <div className="flex items-center gap-2">
+                  <span>{parseFloat(order.qty_produced || '0').toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>
+                  <div className="flex items-center gap-1">
+                    <div className="h-2 w-24 bg-neutral-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-neutral-600 rounded-full" style={{ width: `${Math.min(100, order.progress_pct ?? 0)}%` }} />
+                    </div>
+                    <span className="text-xs text-neutral-400">{(order.progress_pct ?? 0).toFixed(1)}%</span>
+                  </div>
                 </div>
-                <span className="text-xs text-neutral-400">{(order.progress_pct ?? 0).toFixed(1)}%</span>
-              </div>
-            </div>
-          } />
-          <InfoRow label="Target Start" value={order.target_start_date} />
-          <InfoRow label="Target End"   value={order.target_end_date} />
-          <InfoRow label="Source Type" value={order.source_type ?? 'manual'} />
-          {order.requires_release_approval && (
-            <InfoRow
-              label="Release Approval"
-              value={order.approved_for_release_at
-                ? `Approved on ${new Date(order.approved_for_release_at).toLocaleString('en-PH')}`
-                : 'Pending approval'}
-            />
-          )}
-          {order.delivery_schedule && (
-            <InfoRow 
-              label="Delivery Schedule" 
-              value={
-                <Link 
-                  to={`/production/delivery-schedules/${order.delivery_schedule.ulid}`}
-                  className="underline underline-offset-2 text-neutral-700 hover:text-neutral-900 font-medium"
-                >
-                  {order.delivery_schedule.ds_reference}
-                </Link>
-              } 
-            />
-          )}
-          <InfoRow label="Created By" value={order.created_by?.name} />
-        </dl>
-      </div>
-
-      {/* BOM Components */}
-      {order.bom && (order.bom.components ?? []).length > 0 && (
-        <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
-          <h2 className="text-sm font-medium text-neutral-700 mb-3">BOM Components</h2>
-          <table className="min-w-full text-sm">
-            <thead className="bg-neutral-50">
-              <tr>
-                {['Component', 'Qty/Unit', 'UOM', 'Scrap %'].map((h) => (
-                  <th key={h} className="px-3 py-2 text-left text-xs font-medium text-neutral-600">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {order.bom.components?.map((comp) => (
-                <tr key={comp.id}>
-                  <td className="px-3 py-2">
-                    <div className="font-mono text-xs text-neutral-400">{comp.component_item?.item_code}</div>
-                    <div className="text-sm text-neutral-800">{comp.component_item?.name}</div>
-                  </td>
-                  <td className="px-3 py-2 tabular-nums">{parseFloat(comp.qty_per_unit).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
-                  <td className="px-3 py-2 text-neutral-400">{comp.unit_of_measure}</td>
-                  <td className="px-3 py-2 text-neutral-400">{comp.scrap_factor_pct}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Output Logs */}
-      {(order.output_logs ?? []).length > 0 && (
-        <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
-          <h2 className="text-sm font-medium text-neutral-700 mb-3">Output Logs</h2>
-          <table className="min-w-full text-sm">
-            <thead className="bg-neutral-50">
-              <tr>
-                {['Date', 'Shift', 'Produced', 'Rejected', 'Operator', 'Recorded By'].map((h) => (
-                  <th key={h} className="px-3 py-2 text-left text-xs font-medium text-neutral-600">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {order.output_logs?.map((log) => (
-                <tr key={log.id}>
-                  <td className="px-3 py-2 text-neutral-500 text-xs">{log.log_date}</td>
-                  <td className="px-3 py-2 font-semibold">{log.shift}</td>
-                  <td className="px-3 py-2 tabular-nums text-neutral-900 font-semibold">{parseFloat(log.qty_produced).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
-                  <td className="px-3 py-2 tabular-nums text-red-600">{parseFloat(log.qty_rejected).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
-                  <td className="px-3 py-2 text-neutral-500">{log.operator?.name ?? '—'}</td>
-                  <td className="px-3 py-2 text-neutral-400 text-xs">{log.recorded_by?.name ?? '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* QC Inspections */}
-      {(order.inspections ?? []).length > 0 && (
-        <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
-          <h2 className="text-sm font-medium text-neutral-700 mb-3">QC Inspections</h2>
-          <table className="min-w-full text-sm">
-            <thead className="bg-neutral-50">
-              <tr>
-                {['Reference', 'Date', 'Stage', 'Inspected', 'Passed', 'Failed', 'Status'].map((h) => (
-                  <th key={h} className="px-3 py-2 text-left text-xs font-medium text-neutral-600">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              {order.inspections?.map((ins: any) => (
-                <tr key={ins.ulid}>
-                  <td className="px-3 py-2">
-                    <Link to={`/qc/inspections/${ins.ulid}`} className="font-mono text-sm text-amber-700 hover:text-amber-900 font-medium underline underline-offset-2">
-                      {ins.ulid.slice(0, 8)}...
+              } />
+              <InfoRow label="Target Start" value={order.target_start_date} />
+              <InfoRow label="Target End"   value={order.target_end_date} />
+              <InfoRow label="Source Type" value={order.source_type ?? 'manual'} />
+              {order.requires_release_approval && (
+                <InfoRow
+                  label="Release Approval"
+                  value={order.approved_for_release_at
+                    ? `Approved on ${new Date(order.approved_for_release_at).toLocaleString('en-PH')}`
+                    : 'Pending approval'}
+                />
+              )}
+              {order.delivery_schedule && (
+                <InfoRow
+                  label="Delivery Schedule"
+                  value={
+                    <Link
+                      to={`/production/delivery-schedules/${order.delivery_schedule.ulid}`}
+                      className="underline underline-offset-2 text-neutral-700 hover:text-neutral-900 font-medium"
+                    >
+                      {order.delivery_schedule.ds_reference}
                     </Link>
-                  </td>
-                  <td className="px-3 py-2 text-neutral-500 text-xs">{ins.inspection_date ?? '—'}</td>
-                  <td className="px-3 py-2 font-semibold uppercase text-neutral-700 text-xs">{ins.stage}</td>
-                  <td className="px-3 py-2 tabular-nums text-neutral-900">{parseFloat(ins.qty_inspected || 0).toLocaleString('en-PH')}</td>
-                  <td className="px-3 py-2 tabular-nums text-emerald-600 font-medium">{parseFloat(ins.qty_passed || 0).toLocaleString('en-PH')}</td>
-                  <td className="px-3 py-2 tabular-nums text-red-600 font-medium">{parseFloat(ins.qty_failed || 0).toLocaleString('en-PH')}</td>
-                  <td className="px-3 py-2">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      ins.status === 'passed' ? 'bg-emerald-100 text-emerald-800' :
-                      ins.status === 'failed' ? 'bg-red-100 text-red-800' :
-                      'bg-amber-100 text-amber-800'
-                    }`}>
-                      {ins.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Post to GL - shown only for completed orders */}
-      {order.status === 'completed' && (
-        <PermissionGuard permission="journal_entries.post">
-          <div className="bg-green-50 border border-green-200 rounded p-4 mb-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-green-800">Cost Posting</h3>
-                <p className="text-xs text-green-600 mt-1">Post production cost variance to General Ledger</p>
-              </div>
-              <button
-                onClick={() => postCostMut.mutate()}
-                disabled={postCostMut.isPending}
-                className="inline-flex items-center gap-1.5 bg-green-700 hover:bg-green-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50"
-              >
-                {postCostMut.isPending ? 'Posting...' : 'Post to GL'}
-              </button>
-            </div>
-            {postCostMut.isSuccess && (
-              <p className="text-xs text-green-700 mt-2">Cost variance posted successfully.</p>
-            )}
-          </div>
-        </PermissionGuard>
-      )}
-
-      {/* On Hold Banner */}
-      {order.status === 'on_hold' && (
-        <div className="bg-amber-50 border border-amber-200 rounded p-4 mb-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-amber-800">Order On Hold</h3>
-              {order.hold_reason && <p className="text-xs text-amber-600 mt-1">{order.hold_reason}</p>}
-            </div>
-            {canRelease && (
-              <button
-                onClick={async () => {
-                  try {
-                    await resumeMut.mutateAsync()
-                    toast.success('Work order resumed successfully.')
-                  } catch (err) {
-                    if (isHandledApiError(err)) return
-                    toast.error(firstErrorMessage(err))
                   }
-                }}
-                disabled={resumeMut.isPending}
-                className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50"
-              >
-                {resumeMut.isPending ? 'Resuming...' : 'Resume Production'}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Edit Form (for editable statuses) */}
-      {showEditForm && ['draft', 'released', 'in_progress', 'on_hold'].includes(order.status) && (
-        <div className="bg-white border border-neutral-200 rounded p-6 mb-5">
-          <h2 className="text-sm font-medium text-neutral-700 mb-3">Edit Work Order</h2>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            {order.status === 'draft' && (
-              <>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1">Target Start Date</label>
-                  <input type="date" value={editData.target_start_date} onChange={e => setEditData(d => ({ ...d, target_start_date: e.target.value }))} className="w-full text-sm border border-neutral-300 rounded px-3 py-2" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1">Target End Date</label>
-                  <input type="date" value={editData.target_end_date} min={editData.target_start_date || undefined} onChange={e => setEditData(d => ({ ...d, target_end_date: e.target.value }))} className="w-full text-sm border border-neutral-300 rounded px-3 py-2" />
-                </div>
-              </>
-            )}
-            <div className={order.status === 'draft' ? 'col-span-2' : 'col-span-2'}>
-              <label className="block text-xs font-medium text-neutral-600 mb-1">Notes</label>
-              <textarea rows={2} value={editData.notes} onChange={e => setEditData(d => ({ ...d, notes: e.target.value }))} className="w-full text-sm border border-neutral-300 rounded px-3 py-2 resize-none" />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={async () => {
-                try {
-                  const payload: Record<string, string> = {}
-                  if (editData.notes) payload.notes = editData.notes
-                  if (editData.target_start_date) payload.target_start_date = editData.target_start_date
-                  if (editData.target_end_date) payload.target_end_date = editData.target_end_date
-                  await updateMut.mutateAsync(payload)
-                  toast.success('Work order updated.')
-                  setShowEditForm(false)
-                } catch (err) {
-                  if (isHandledApiError(err)) return
-                  toast.error(firstErrorMessage(err))
-                }
-              }}
-              disabled={updateMut.isPending}
-              className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50"
-            >
-              Save Changes
-            </button>
-            <button onClick={() => setShowEditForm(false)} className="px-4 py-2 border border-neutral-300 text-neutral-600 text-sm rounded hover:bg-neutral-50">
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="bg-white border border-neutral-200 rounded p-6">
-        <h2 className="text-sm font-medium text-neutral-700 mb-4">Actions</h2>
-
-        {showLogForm && (
-          <div className="bg-neutral-50 border border-neutral-200 rounded p-4 mb-4 space-y-3">
-            <h3 className="text-sm font-medium text-neutral-700">Log Production Output</h3>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 mb-1">Shift</label>
-                <select
-                  value={logData.shift}
-                  onChange={(e) => setLogData((d) => ({ ...d, shift: e.target.value as 'A' | 'B' | 'C' }))}
-                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                >
-                  <option value="A">Shift A</option>
-                  <option value="B">Shift B</option>
-                  <option value="C">Shift C</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 mb-1">Date</label>
-                <input
-                  type="date"
-                  value={logData.log_date}
-                  onChange={(e) => setLogData((d) => ({ ...d, log_date: e.target.value }))}
-                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                 />
+              )}
+              <InfoRow label="Created By" value={order.created_by?.name} />
+            </dl>
+          </div>
+
+          {/* Edit Form (for editable statuses) */}
+          {showEditForm && ['draft', 'released', 'in_progress', 'on_hold'].includes(order.status) && (
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+              <h2 className="text-sm font-medium text-neutral-700 mb-3">Edit Work Order</h2>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                {order.status === 'draft' && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-600 mb-1">Target Start Date</label>
+                      <input type="date" value={editData.target_start_date} onChange={e => setEditData(d => ({ ...d, target_start_date: e.target.value }))} className="w-full text-sm border border-neutral-300 rounded px-3 py-2" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-600 mb-1">Target End Date</label>
+                      <input type="date" value={editData.target_end_date} min={editData.target_start_date || undefined} onChange={e => setEditData(d => ({ ...d, target_end_date: e.target.value }))} className="w-full text-sm border border-neutral-300 rounded px-3 py-2" />
+                    </div>
+                  </>
+                )}
+                <div className={order.status === 'draft' ? 'col-span-2' : 'col-span-2'}>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">Notes</label>
+                  <textarea rows={2} value={editData.notes} onChange={e => setEditData(d => ({ ...d, notes: e.target.value }))} className="w-full text-sm border border-neutral-300 rounded px-3 py-2 resize-none" />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 mb-1">Operator *</label>
-                <select
-                  value={logData.operator_id}
-                  onChange={(e) => {
-                    setLogData((d) => ({ ...d, operator_id: e.target.value }))
-                    if (logErrors.operator_id) {
-                      setLogErrors(prev => ({ ...prev, operator_id: '' }))
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    try {
+                      const payload: Record<string, string> = {}
+                      if (editData.notes) payload.notes = editData.notes
+                      if (editData.target_start_date) payload.target_start_date = editData.target_start_date
+                      if (editData.target_end_date) payload.target_end_date = editData.target_end_date
+                      await updateMut.mutateAsync(payload)
+                      toast.success('Work order updated.')
+                      setShowEditForm(false)
+                    } catch (err) {
+                      if (isHandledApiError(err)) return
+                      toast.error(firstErrorMessage(err))
                     }
                   }}
-                  className={`w-full text-sm border rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${logErrors.operator_id ? 'border-red-400' : 'border-neutral-300'}`}
+                  disabled={updateMut.isPending}
+                  className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50"
                 >
-                  <option value="">— Select Operator —</option>
-                  {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.full_name}{emp.position?.title ? ` — ${emp.position.title}` : ''}</option>
-                  ))}
-                </select>
-                {logErrors.operator_id && <p className="mt-1 text-xs text-red-600">{logErrors.operator_id}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Produced *</label>
-                <input
-                  type="number"
-                  step="0.0001"
-                  min="0.0001"
-                  value={logData.qty_produced}
-                  onChange={(e) => {
-                    setLogData((d) => ({ ...d, qty_produced: e.target.value }))
-                    if (logErrors.qty_produced) {
-                      setLogErrors(prev => ({ ...prev, qty_produced: '' }))
-                    }
-                  }}
-                  className={`w-full text-sm border rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${logErrors.qty_produced ? 'border-red-400' : 'border-neutral-300'}`}
-                />
-                {logErrors.qty_produced && <p className="mt-1 text-xs text-red-600">{logErrors.qty_produced}</p>}
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Rejected</label>
-                <input
-                  type="number"
-                  step="0.0001"
-                  min="0"
-                  value={logData.qty_rejected}
-                  onChange={(e) => setLogData((d) => ({ ...d, qty_rejected: e.target.value }))}
-                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 mb-1">Remarks</label>
-                <input
-                  value={logData.remarks}
-                  onChange={(e) => setLogData((d) => ({ ...d, remarks: e.target.value }))}
-                  className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-                />
+                  Save Changes
+                </button>
+                <button onClick={() => setShowEditForm(false)} className="px-4 py-2 border border-neutral-300 text-neutral-600 text-sm rounded hover:bg-neutral-50">
+                  Cancel
+                </button>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleLogOutput}
-                disabled={logMut.isPending}
-                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Submit Log
-              </button>
-              <button 
-                onClick={() => {
-                  setShowLogForm(false)
-                  setLogErrors({})
-                }} 
-                className="px-4 py-2 border border-neutral-300 text-neutral-600 text-sm rounded hover:bg-neutral-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
+          )}
 
-        <div className="flex flex-wrap gap-2">
-          {/* Edit button — available for editable statuses */}
-          {['draft', 'released', 'in_progress', 'on_hold'].includes(order.status) && canCreate && !showEditForm && !showLogForm && (
-            <button
-              onClick={() => {
-                setEditData({
-                  notes: order.notes || '',
-                  target_start_date: order.target_start_date || '',
-                  target_end_date: order.target_end_date || '',
-                })
-                setShowEditForm(true)
-              }}
-              className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded"
-            >
-              Edit
-            </button>
+          {/* BOM Components */}
+          {order.bom && (order.bom.components ?? []).length > 0 && (
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+              <h2 className="text-sm font-medium text-neutral-700 mb-3">BOM Components</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-neutral-50">
+                    <tr>
+                      {['Component', 'Qty/Unit', 'UOM', 'Scrap %'].map((h) => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-neutral-600">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100">
+                    {order.bom.components?.map((comp) => (
+                      <tr key={comp.id}>
+                        <td className="px-3 py-2">
+                          <div className="font-mono text-xs text-neutral-400">{comp.component_item?.item_code}</div>
+                          <div className="text-sm text-neutral-800">{comp.component_item?.name}</div>
+                        </td>
+                        <td className="px-3 py-2 tabular-nums">{parseFloat(comp.qty_per_unit).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
+                        <td className="px-3 py-2 text-neutral-400">{comp.unit_of_measure}</td>
+                        <td className="px-3 py-2 text-neutral-400">{comp.scrap_factor_pct}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
-          {/* Release — draft only */}
-          {order.status === 'draft' && canRelease && (
-            <button
-              onClick={() => handleAction('release')}
-              disabled={anyPending || stockCheckQ.isFetching || (order.requires_release_approval && !order.approved_for_release_at)}
-              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {stockCheckQ.isFetching ? 'Checking stock...' : 'Release'}
-            </button>
+
+          {/* Output Logs */}
+          {(order.output_logs ?? []).length > 0 && (
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+              <h2 className="text-sm font-medium text-neutral-700 mb-3">Output Logs</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-neutral-50">
+                    <tr>
+                      {['Date', 'Shift', 'Produced', 'Rejected', 'Operator', 'Recorded By'].map((h) => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-neutral-600">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100">
+                    {order.output_logs?.map((log) => (
+                      <tr key={log.id}>
+                        <td className="px-3 py-2 text-neutral-500 text-xs">{log.log_date}</td>
+                        <td className="px-3 py-2 font-semibold">{log.shift}</td>
+                        <td className="px-3 py-2 tabular-nums text-neutral-900 font-semibold">{parseFloat(log.qty_produced).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
+                        <td className="px-3 py-2 tabular-nums text-red-600">{parseFloat(log.qty_rejected).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
+                        <td className="px-3 py-2 text-neutral-500">{log.operator?.name ?? '—'}</td>
+                        <td className="px-3 py-2 text-neutral-400 text-xs">{log.recorded_by?.name ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
-          {order.status === 'draft' && order.requires_release_approval && !order.approved_for_release_at && canRelease && (
-            <button
-              onClick={async () => {
-                try {
-                  await approveReleaseMut.mutateAsync()
-                  toast.success('Release approved successfully.')
-                } catch (err) {
-                  if (isHandledApiError(err)) return
-                  toast.error(firstErrorMessage(err))
-                }
-              }}
-              disabled={approveReleaseMut.isPending}
-              className="px-4 py-2 text-sm font-medium border border-indigo-300 text-indigo-700 hover:bg-indigo-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {approveReleaseMut.isPending ? 'Approving...' : 'Approve Release'}
-            </button>
+
+          {/* QC Inspections */}
+          {(order.inspections ?? []).length > 0 && (
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
+              <h2 className="text-sm font-medium text-neutral-700 mb-3">QC Inspections</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-neutral-50">
+                    <tr>
+                      {['Reference', 'Date', 'Stage', 'Inspected', 'Passed', 'Failed', 'Status'].map((h) => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-neutral-600">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {order.inspections?.map((ins: any) => (
+                      <tr key={ins.ulid}>
+                        <td className="px-3 py-2">
+                          <Link to={`/qc/inspections/${ins.ulid}`} className="font-mono text-sm text-amber-700 hover:text-amber-900 font-medium underline underline-offset-2">
+                            {ins.ulid.slice(0, 8)}...
+                          </Link>
+                        </td>
+                        <td className="px-3 py-2 text-neutral-500 text-xs">{ins.inspection_date ?? '—'}</td>
+                        <td className="px-3 py-2 font-semibold uppercase text-neutral-700 text-xs">{ins.stage}</td>
+                        <td className="px-3 py-2 tabular-nums text-neutral-900">{parseFloat(ins.qty_inspected || 0).toLocaleString('en-PH')}</td>
+                        <td className="px-3 py-2 tabular-nums text-emerald-600 font-medium">{parseFloat(ins.qty_passed || 0).toLocaleString('en-PH')}</td>
+                        <td className="px-3 py-2 tabular-nums text-red-600 font-medium">{parseFloat(ins.qty_failed || 0).toLocaleString('en-PH')}</td>
+                        <td className="px-3 py-2">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            ins.status === 'passed' ? 'bg-emerald-100 text-emerald-800' :
+                            ins.status === 'failed' ? 'bg-red-100 text-red-800' :
+                            'bg-amber-100 text-amber-800'
+                          }`}>
+                            {ins.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
-          {/* Start — released only (fixed race condition: use handleAction) */}
-          {order.status === 'released' && canRelease && (
-            <button
-              onClick={() => handleAction('start')}
-              disabled={anyPending}
-              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Start Production
-            </button>
-          )}
-          {/* Complete — in_progress only */}
-          {order.status === 'in_progress' && canComplete && !showLogForm && (
-            <button
-              onClick={() => handleAction('complete')}
-              disabled={anyPending || parseFloat(order.qty_produced) <= 0}
-              title={parseFloat(order.qty_produced) <= 0 ? 'Log production output before completing' : undefined}
-              className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Mark Complete
-            </button>
-          )}
-          {/* Close — completed only */}
-          {order.status === 'completed' && canComplete && (
-            <ConfirmDialog
-              title="Close Work Order?"
-              description="This will close the work order. Closed orders are terminal and cannot be reopened."
-              confirmLabel="Close"
-              onConfirm={async () => {
-                try {
-                  await closeMut.mutateAsync()
-                  toast.success('Work order closed successfully.')
-                } catch (err) {
-                  if (isHandledApiError(err)) return
-                  toast.error(firstErrorMessage(err))
-                }
-              }}
-            >
-              <button disabled={closeMut.isPending} className="px-4 py-2 text-sm font-medium bg-green-700 hover:bg-green-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
-                Close Order
-              </button>
-            </ConfirmDialog>
-          )}
-          {/* Log Output — in_progress only */}
-          {order.status === 'in_progress' && canLogOutput && !showLogForm && (
-            <button onClick={() => setShowLogForm(true)} className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded">
-              Log Output
-            </button>
-          )}
-          {/* Create QC Inspection — in_progress or completed */}
-          {['in_progress', 'completed'].includes(order.status) && (
-            <Link
-              to={`/qc/inspections/new?po=${order.ulid}&stage=${order.status === 'completed' ? 'oqc' : 'ipqc'}`}
-              className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded inline-flex items-center gap-1.5"
-            >
-              Create QC Inspection
-            </Link>
-          )}
-          {/* Hold — released or in_progress */}
-          {['released', 'in_progress'].includes(order.status) && canRelease && !showLogForm && (
-            <button
-              onClick={() => setShowHoldModal(true)}
-              disabled={anyPending}
-              className="px-4 py-2 text-sm font-medium border border-amber-300 text-amber-700 hover:bg-amber-50 rounded"
-            >
-              Hold
-            </button>
-          )}
-          {/* Cancel — draft, released, or in_progress */}
-          {['draft', 'released', 'in_progress'].includes(order.status) && canCreate && (
-            <ConfirmDialog
-              title="Cancel Work Order?"
-              description={order.status === 'in_progress'
-                ? 'This will cancel the work order and reverse any issued materials. This action cannot be undone.'
-                : 'This will cancel the work order. This action cannot be undone.'}
-              confirmLabel="Cancel WO"
-              variant="danger"
-              onConfirm={async () => {
-                await handleAction('cancel')
-              }}
-            >
-              <button disabled={anyPending} className="px-4 py-2 text-sm font-medium border border-amber-300 text-amber-700 hover:bg-amber-50 rounded">
-                Cancel WO
-              </button>
-            </ConfirmDialog>
-          )}
-          {/* Void — in_progress with no output */}
-          {order.status === 'in_progress' && parseFloat(order.qty_produced) === 0 && !showLogForm && canCreate && (
-            <ConfirmDestructiveDialog
-              title="Void Work Order?"
-              description="This work order will be voided and cannot be restarted. This action is irreversible."
-              confirmWord="VOID"
-              confirmLabel="Void WO"
-              onConfirm={executeVoid}
-            >
-              <button
-                disabled={voidMut.isPending}
-                className="px-4 py-2 text-sm font-medium border border-red-200 text-red-600 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Void WO
-              </button>
-            </ConfirmDestructiveDialog>
-          )}
+
+          {/* Document Chain */}
+          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-5">
+            <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wide mb-3">Document Chain</h3>
+            <ChainRecordTimeline documentType="production_order" documentId={order.id} />
+          </div>
+
+          {/* Activity Timeline */}
+          <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-5">
+            <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wide mb-3">Activity Timeline</h3>
+            <StatusTimeline auditableType="production_order" auditableId={order.id} />
+          </div>
         </div>
+
+        <aside className="lg:col-span-4 space-y-5">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+            <h2 className="text-sm font-medium text-neutral-700 mb-3">Workflow Status</h2>
+            <StatusTimeline
+              steps={getProductionOrderSteps(order)}
+              currentStatus={order.status}
+              direction="horizontal"
+              isRejected={isRejectedStatus(order.status)}
+            />
+          </div>
+
+          {order.status === 'on_hold' && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-medium text-amber-800">Order On Hold</h3>
+                  {order.hold_reason && <p className="text-xs text-amber-600 mt-1">{order.hold_reason}</p>}
+                </div>
+                {canRelease && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await resumeMut.mutateAsync()
+                        toast.success('Work order resumed successfully.')
+                      } catch (err) {
+                        if (isHandledApiError(err)) return
+                        toast.error(firstErrorMessage(err))
+                      }
+                    }}
+                    disabled={resumeMut.isPending}
+                    className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50"
+                  >
+                    {resumeMut.isPending ? 'Resuming...' : 'Resume'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {order.status === 'completed' && (
+            <PermissionGuard permission="journal_entries.post">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-medium text-green-800">Cost Posting</h3>
+                    <p className="text-xs text-green-600 mt-1">Post production cost variance to General Ledger</p>
+                  </div>
+                  <button
+                    onClick={() => postCostMut.mutate()}
+                    disabled={postCostMut.isPending}
+                    className="inline-flex items-center gap-1.5 bg-green-700 hover:bg-green-800 text-white text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50"
+                  >
+                    {postCostMut.isPending ? 'Posting...' : 'Post to GL'}
+                  </button>
+                </div>
+                {postCostMut.isSuccess && (
+                  <p className="text-xs text-green-700 mt-2">Cost variance posted successfully.</p>
+                )}
+              </div>
+            </PermissionGuard>
+          )}
+
+          <div className="lg:sticky lg:top-4">
+            {actionsPanel}
+          </div>
+        </aside>
       </div>
 
       {/* ── Hold Modal ──────────────────────────────────────────────────────── */}
@@ -1034,18 +1152,6 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         loading={cancelMut.isPending}
         variant="danger"
       />
-
-      {/* Document Chain */}
-      <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-5">
-        <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wide mb-3">Document Chain</h3>
-        <ChainRecordTimeline documentType="production_order" documentId={order.id} />
-      </div>
-
-      {/* Activity Timeline */}
-      <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-5">
-        <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wide mb-3">Activity Timeline</h3>
-        <StatusTimeline auditableType="production_order" auditableId={order.id} />
-      </div>
 
       {/* Void Confirmation Dialog - using ConfirmDestructiveDialog inline */}
       <ConfirmDialog

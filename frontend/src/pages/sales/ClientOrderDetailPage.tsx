@@ -387,7 +387,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
             </ActionGuard>
           )}
           {canVpApprove && (
-            <ActionGuard permission="sales.order_vp_approve">
+            <ActionGuard permission="sales.order_vp_approve" rolesAny={['vice_president', 'executive']}>
               <button
                 onClick={() => setShowVpApproveModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white text-sm rounded hover:bg-orange-700"
@@ -398,7 +398,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
             </ActionGuard>
           )}
           {canForceProduction && (
-            <ActionGuard permission="sales.order_approve">
+            <ActionGuard permission="sales.order_vp_approve" rolesAny={['vice_president', 'executive']}>
               <button
                 onClick={() => setShowForceProductionModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700"

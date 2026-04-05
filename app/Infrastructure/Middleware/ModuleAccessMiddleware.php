@@ -154,6 +154,20 @@ class ModuleAccessMiddleware
             return $next($request);
         }
 
+        // Client portal delivery acknowledgment flow lives under production routes.
+        // Allow only delivery-schedule endpoints needed by clients, then rely on
+        // route/controller policies for ownership checks.
+        if (
+            $user->hasRole('client')
+            && $module === 'production'
+            && (
+                $request->is('api/v1/production/delivery-schedules/*')
+                || $request->is('api/v1/production/combined-delivery-schedules/*')
+            )
+        ) {
+            return $next($request);
+        }
+
         // Vendor portal users can access vendors module
         if ($user->hasRole('vendor') && in_array($module, ['vendors', 'vendor_portal'], true)) {
             return $next($request);

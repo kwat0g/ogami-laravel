@@ -11,6 +11,12 @@ interface ActionGuardProps {
    * If not provided, only department/SoD checks are applied.
    */
   permission?: string
+
+  /**
+   * Optional role-based override. If provided, users with any of these roles
+   * can pass the principal auth check even without the permission string.
+   */
+  rolesAny?: string[]
   
   /**
    * The module key for department-based SoD enforcement.
@@ -50,6 +56,8 @@ export interface GuardResult {
   allowed: boolean
   reason: string | null
   permissionOk: boolean
+  roleOk: boolean
+  principalOk: boolean
   departmentOk: boolean
   sodOk: boolean
 }
@@ -93,6 +101,7 @@ export interface GuardResult {
  */
 export function ActionGuard({
   permission,
+  rolesAny,
   module,
   initiatedById,
   disabled = false,
@@ -101,6 +110,7 @@ export function ActionGuard({
   showDisabled = false,
 }: ActionGuardProps): React.ReactElement | null {
   const hasPermission = useAuthStore((s) => s.hasPermission)
+  const hasAnyRole = useAuthStore((s) => s.hasAnyRole)
 
   // ── Hooks must be called unconditionally (Rules of Hooks) ──────────────────
   // We always call both hooks; the `module` / `initiatedById` props control
@@ -109,7 +119,9 @@ export function ActionGuard({
   const sodCheck = useSodCheck(initiatedById ?? null)
 
   // Check permission
-  const permissionOk = !permission || hasPermission(permission)
+  const permissionOk = !!permission && hasPermission(permission)
+  const roleOk = !!rolesAny?.length && hasAnyRole(rolesAny)
+  const principalOk = (!permission && !rolesAny?.length) || permissionOk || roleOk
 
   // Check department access (only relevant when a module was specified)
   const departmentOk = !module || deptCheck.hasAccess
@@ -118,14 +130,16 @@ export function ActionGuard({
   const sodOk = initiatedById === undefined || !sodCheck.isBlocked
 
   // Combined result
-  const allowed = permissionOk && departmentOk && sodOk && !disabled
+  const allowed = principalOk && departmentOk && sodOk && !disabled
 
   // Build reason message
   let reason: string | null = null
   if (disabled) {
     reason = 'Action is disabled'
-  } else if (!permissionOk) {
-    reason = `Permission required: ${permission}`
+  } else if (!principalOk) {
+    reason = permission
+      ? `Permission required: ${permission}`
+      : 'Role access required'
   } else if (!departmentOk) {
     reason = deptCheck.reason
   } else if (!sodOk) {

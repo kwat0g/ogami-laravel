@@ -6,6 +6,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import axios from 'axios'
 
 const DS_API_BASE = '/production/delivery-schedules'
 
@@ -18,7 +19,11 @@ export function useCombinedDeliverySchedule(ulid: string | null) {
       try {
         const { data } = await api.get(`${DS_API_BASE}/${ulid}`)
         return data.data ?? data
-      } catch {
+      } catch (error) {
+        const status = (error as { response?: { status?: number } })?.response?.status
+        if (status !== 404) {
+          throw error
+        }
         // Fallback to CDS for backward compat with existing records
         const { data } = await api.get(`/production/combined-delivery-schedules/${ulid}`)
         return data.data ?? data
@@ -44,7 +49,10 @@ export function useAcknowledgeReceipt(ulid: string) {
       try {
         const { data } = await api.post(`${DS_API_BASE}/${ulid}/acknowledge`, payload)
         return data.data ?? data
-      } catch {
+      } catch (error) {
+        if (!axios.isAxiosError(error) || error.response?.status !== 404) {
+          throw error
+        }
         const { data } = await api.post(`/production/combined-delivery-schedules/${ulid}/acknowledge`, payload)
         return data.data ?? data
       }

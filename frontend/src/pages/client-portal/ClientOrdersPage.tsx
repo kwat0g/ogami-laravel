@@ -1,7 +1,7 @@
 import { firstErrorMessage } from '@/lib/errorHandler'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useDebounce } from '@/hooks/useDebounce'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { 
   Package, 
   Clock, 
@@ -138,7 +138,9 @@ function formatCurrency(centavos: number) {
 
 export default function ClientOrdersPage(): JSX.Element {
   const navigate = useNavigate()
-  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [searchParams] = useSearchParams()
+  const initialStatus = searchParams.get('status') ?? 'active'
+  const [statusFilter, setStatusFilter] = useState<string>(initialStatus)
   const [searchQuery, setSearchQuery] = useState('')
   const [orderToCancel, setOrderToCancel] = useState<ClientOrder | null>(null)
   const { data: orders, isLoading } = useMyClientOrders()
@@ -146,6 +148,12 @@ export default function ClientOrdersPage(): JSX.Element {
 
   // Debounce search query with 400ms delay
   const debouncedSearchQuery = useDebounce(searchQuery, 400)
+
+  // Keep local filter state in sync with URL query (e.g. dashboard deep links).
+  useEffect(() => {
+    const statusFromUrl = searchParams.get('status') ?? 'active'
+    setStatusFilter(statusFromUrl)
+  }, [searchParams])
 
   const filteredOrders = useMemo(() => {
     return orders?.data?.filter((order: ClientOrder) => {
@@ -233,6 +241,12 @@ export default function ClientOrdersPage(): JSX.Element {
           <option value="negotiating">Under Negotiation</option>
           <option value="client_responded">Awaiting Sales</option>
           <option value="approved">Approved</option>
+          <option value="in_production">In Production</option>
+          <option value="ready_for_delivery">Ready for Delivery</option>
+          <option value="dispatched">Dispatched</option>
+          <option value="delivered">Delivered</option>
+          <option value="fulfilled">Fulfilled</option>
+          <option value="completed">Completed</option>
           <option value="rejected">Rejected</option>
           <option value="cancelled">Cancelled</option>
         </select>

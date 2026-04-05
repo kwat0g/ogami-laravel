@@ -102,7 +102,8 @@ final class DeliveryScheduleController extends Controller
 
     public function acknowledgeReceipt(Request $request, DeliverySchedule $deliverySchedule): DeliveryScheduleResource
     {
-        // Client portal users can acknowledge via respond policy
+        $this->authorize('respond', $deliverySchedule);
+
         $validated = $request->validate([
             'item_acknowledgments' => 'required|array',
             'item_acknowledgments.*.item_id' => 'required|integer',

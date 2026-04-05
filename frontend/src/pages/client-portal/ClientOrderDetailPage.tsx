@@ -184,6 +184,23 @@ export default function ClientOrderDetailPage(): JSX.Element {
   }
 
   const status = STATUS_CONFIG[order.status] ?? FALLBACK_STATUS
+  // API payloads can arrive in either camelCase or snake_case relation keys.
+  const deliveryScheduleRows = ((order.deliverySchedules ?? (order as { delivery_schedules?: unknown[] }).delivery_schedules) ?? []) as Array<Record<string, unknown>>
+  const deliverySchedules = deliveryScheduleRows
+    .map((row) => {
+      const schedule = (row.deliverySchedule as Record<string, unknown> | undefined)
+        ?? (row.delivery_schedule as Record<string, unknown> | undefined)
+      if (!schedule) return null
+      return {
+        id: row.id as number,
+        schedule,
+      }
+    })
+    .filter((row): row is { id: number; schedule: Record<string, unknown> } => row !== null)
+  const firstDeliveryScheduleUlid = (
+    deliverySchedules.find((ds) => ds.schedule.status === 'delivered' && typeof ds.schedule.ulid === 'string')
+    ?? deliverySchedules.find((ds) => typeof ds.schedule.ulid === 'string')
+  )?.schedule.ulid as string | undefined
 
   return (
     <div className="space-y-5 max-w-5xl mx-auto">
@@ -461,7 +478,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
           )}
 
           {/* Delivery Tracking — shown for all post-approval statuses */}
-          {['approved', 'in_production', 'ready_for_delivery', 'dispatched', 'delivered', 'fulfilled', 'completed'].includes(order.status) && order.deliverySchedules && order.deliverySchedules.length > 0 && (
+          {['approved', 'in_production', 'ready_for_delivery', 'dispatched', 'delivered', 'fulfilled', 'completed'].includes(order.status) && deliverySchedules.length > 0 && (
             <Card>
               <CardHeader>
                 <span className="flex items-center gap-2">
@@ -476,9 +493,24 @@ export default function ClientOrderDetailPage(): JSX.Element {
                    order.status === 'fulfilled' || order.status === 'completed' ? 'Delivery complete.' :
                    'Your order is being prepared for delivery.'}
                 </p>
-                {order.deliverySchedules.map((ds) => {
-                  const sched = ds.deliverySchedule
-                  if (!sched) return null
+                {deliverySchedules.map((ds) => {
+                  const sched = ds.schedule as {
+                    ds_reference?: string
+                    status?: string
+                    target_delivery_date?: string | null
+                    actual_delivery_date?: string | null
+                    ulid?: string
+                    delivery_receipts?: Array<{
+                      ulid: string
+                      dr_reference: string
+                      status: string
+                      receipt_date: string | null
+                      pod_receiver_name?: string | null
+                      pod_photo_urls?: string[]
+                      pod_recorded_at?: string | null
+                      pod_notes?: string | null
+                    }>
+                  }
                   const schedStatusColors: Record<string, string> = {
                     open: 'bg-amber-100 text-amber-700',
                     in_production: 'bg-indigo-100 text-indigo-700',
@@ -548,11 +580,12 @@ export default function ClientOrderDetailPage(): JSX.Element {
                 })}
 
                 {/* Acknowledge delivery button for delivered orders */}
-                {order.status === 'delivered' && order.deliverySchedules.some(ds => ds.deliverySchedule?.ulid) && (
+                {order.status === 'delivered' && firstDeliveryScheduleUlid && (
                   <button
                     onClick={() => {
-                      const dsUlid = order.deliverySchedules.find(ds => ds.deliverySchedule?.ulid)?.deliverySchedule?.ulid
-                      if (dsUlid) window.location.href = `/client-portal/deliveries/${dsUlid}`
+                      if (firstDeliveryScheduleUlid) {
+                        navigate(`/client-portal/deliveries/${firstDeliveryScheduleUlid}`)
+                      }
                     }}
                     className="w-full py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
                   >
@@ -565,7 +598,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
           )}
 
           {/* Post-approval next steps when no delivery schedules visible yet */}
-          {order.status === 'approved' && (!order.deliverySchedules || order.deliverySchedules.length === 0) && (
+          {order.status === 'approved' && deliverySchedules.length === 0 && (
             <div className="bg-emerald-50 rounded-xl border border-emerald-100 p-4">
               <h3 className="font-medium text-emerald-900 mb-1 flex items-center gap-2 text-sm">
                 <CheckCircle className="h-4 w-4" />

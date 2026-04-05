@@ -28,7 +28,23 @@ final class DeliverySchedulePolicy
 
     public function view(User $user, DeliverySchedule $deliverySchedule): bool
     {
+        if ($user->hasRole('client') && $user->client_id) {
+            return $user->client_id === $deliverySchedule->customer_id;
+        }
+
         return $user->hasPermissionTo('production.delivery-schedule.view');
+    }
+
+    /**
+     * Client can acknowledge delivery schedules tied to their customer account.
+     */
+    public function respond(User $user, DeliverySchedule $deliverySchedule): bool
+    {
+        if ($user->hasRole('client') && $user->client_id) {
+            return $user->client_id === $deliverySchedule->customer_id;
+        }
+
+        return $user->hasPermissionTo('production.delivery-schedule.manage');
     }
 
     public function create(User $user): bool

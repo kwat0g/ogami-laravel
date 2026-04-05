@@ -46,6 +46,13 @@ export default function OrderReceiptPage(): JSX.Element {
   }
 
   const itemSummaries = schedule.item_status_summary ?? []
+  // Supports both DS (`items`) and CDS (`item_schedules`) payload shapes.
+  const scheduleItems = ((schedule.item_schedules as Array<Record<string, unknown>> | undefined)
+    ?? (schedule.items as Array<Record<string, unknown>> | undefined)
+    ?? [])
+  const existingAcknowledgments = Array.isArray(schedule.client_acknowledgment)
+    ? schedule.client_acknowledgment
+    : []
   const missingItemIds = new Set(
     itemSummaries
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,15 +61,22 @@ export default function OrderReceiptPage(): JSX.Element {
       .map((summary: any) => Number(summary?.delivery_schedule_item_id ?? summary?.delivery_schedule_id))
       .filter((id): id is number => Number.isFinite(id))
   )
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const actionableItemIds = (schedule.item_schedules?.map((i: any) => i.id) ?? []).filter(id => !missingItemIds.has(id))
+  const actionableItemIds = scheduleItems
+    .map((i) => Number(i.id))
+    .filter((id): id is number => Number.isFinite(id) && !missingItemIds.has(id))
   const actionableSummaries = itemSummaries.filter(summary => !summary?.is_missing)
-  const hasAcknowledgment = actionableSummaries.length > 0
+  const hasSummaryAck = actionableSummaries.length > 0
     && actionableSummaries.every((summary: ItemStatusSummary & { client_acknowledgment?: unknown }) => Boolean(summary.client_acknowledgment))
+  const hasStoredAck = existingAcknowledgments.length > 0
+  const hasAcknowledgment = hasSummaryAck || hasStoredAck
 
   // Acknowledgment is only allowed after delivery has been completed.
   const canAcknowledge = schedule.status === 'delivered' && !hasAcknowledgment
   const isAlreadyAcknowledged = hasAcknowledgment
+  const deliveredDateRaw = schedule.actual_delivery_date || schedule.dispatched_at || null
+  const deliveredDateLabel = deliveredDateRaw
+    ? new Date(deliveredDateRaw).toLocaleDateString('en-PH')
+    : 'Not available'
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAcknowledgmentChange = (itemId: number, field: keyof AcknowledgmentForm, value: any) => {
@@ -71,7 +85,7 @@ export default function OrderReceiptPage(): JSX.Element {
       [itemId]: {
         ...prev[itemId],
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        received_qty: prev[itemId]?.received_qty ?? parseFloat(schedule.item_schedules?.find((i: any) => i.id === itemId)?.qty_ordered || '0'),
+        received_qty: prev[itemId]?.received_qty ?? parseFloat(String(scheduleItems.find((i) => Number(i.id) === itemId)?.qty_ordered ?? '0')),
         condition: prev[itemId]?.condition ?? 'good',
         notes: prev[itemId]?.notes ?? '',
         photo_urls: prev[itemId]?.photo_urls ?? [],
@@ -85,6 +99,7 @@ export default function OrderReceiptPage(): JSX.Element {
     const missingItems = actionableItemIds.filter(id => !acknowledgments[id])
 
     if (missingItems.length > 0) {
+      toast.error('Please acknowledge all delivered items before submitting.')
       return
     }
 
@@ -135,8 +150,8 @@ export default function OrderReceiptPage(): JSX.Element {
           <Truck className="w-8 h-8" />
         </div>
         <h1 className="text-2xl font-semibold text-neutral-900">Order Delivered</h1>
-        <p className="text-neutral-500 mt-1">{schedule.cds_reference}</p>
-        <p className="text-sm text-neutral-400">Delivered on {new Date(schedule.actual_delivery_date || schedule.dispatched_at || '').toLocaleDateString('en-PH')}</p>
+        <p className="text-neutral-500 mt-1">{schedule.cds_reference ?? schedule.ds_reference}</p>
+        <p className="text-sm text-neutral-400">Delivered on {deliveredDateLabel}</p>
       </div>
 
       {/* Instructions */}
@@ -160,7 +175,7 @@ export default function OrderReceiptPage(): JSX.Element {
         <CardBody>
           <div className="space-y-4">
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {schedule.item_schedules?.map((item: any) => {
+            {scheduleItems.map((item) => {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const summary = schedule.item_status_summary?.find((s: any) => (s.delivery_schedule_item_id ?? s.delivery_schedule_id) === item.id)
               const isMissing = summary?.is_missing
@@ -170,8 +185,8 @@ export default function OrderReceiptPage(): JSX.Element {
                 <div key={item.id} className={`p-4 rounded-lg border ${isMissing ? 'bg-red-50 border-red-100' : 'bg-neutral-50 border-neutral-100'}`}>
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="font-medium text-neutral-900">{item.product_item?.name}</p>
-                      <p className="text-xs text-neutral-500">{item.product_item?.item_code}</p>
+                      <p className="font-medium text-neutral-900">{(item.product_item as { name?: string } | undefined)?.name ?? 'Item'}</p>
+                      <p className="text-xs text-neutral-500">{(item.product_item as { item_code?: string } | undefined)?.item_code}</p>
                       <p className="text-sm text-neutral-600 mt-1">
                         Ordered: {parseFloat(item.qty_ordered).toLocaleString('en-PH')} pcs
                       </p>

@@ -136,7 +136,8 @@ final class ClientOrderPolicy
             return false;
         }
 
-        return $user->hasPermissionTo('sales.order_approve');
+        return $user->hasPermissionTo('sales.order_vp_approve')
+            || $user->hasRole(['vice_president', 'executive']);
     }
 
     /**

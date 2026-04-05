@@ -45,6 +45,7 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
     Route::post('delivery-schedules/{deliverySchedule:ulid}/delivered', [DeliveryScheduleController::class, 'markDelivered'])
         ->middleware('throttle:api-action');
     Route::post('delivery-schedules/{deliverySchedule:ulid}/acknowledge', [DeliveryScheduleController::class, 'acknowledgeReceipt'])
+        ->middleware('can:respond,deliverySchedule')
         ->middleware('throttle:api-action');
     Route::post('delivery-schedules/{deliverySchedule:ulid}/notify-missing', [DeliveryScheduleController::class, 'notifyMissingItems'])
         ->middleware('throttle:api-action');
