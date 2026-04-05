@@ -639,13 +639,6 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
     Route::put('roles/{roleName}/permissions', function (Request $request, string $roleName) {
         abort_unless($request->user()->can('system.assign_roles'), 403, 'Insufficient permissions.');
 
-        // super_admin always has ALL permissions — block edits
-        if ($roleName === 'super_admin') {
-            return response()->json([
-                'message' => 'Cannot modify super_admin permissions. This role always has all permissions.',
-            ], 422);
-        }
-
         $role = Role::where('name', $roleName)->where('guard_name', 'web')->firstOrFail();
 
         $data = $request->validate([

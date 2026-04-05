@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { Shield, RotateCcw, Save, Search, ChevronDown, ChevronRight, Users, Lock, AlertTriangle, Check } from 'lucide-react'
+import { Shield, RotateCcw, Save, Search, ChevronDown, ChevronRight, Users, AlertTriangle, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRoles, usePermissionsList, useRoleDetail, useUpdateRolePermissions, useResetRolePermissions } from '@/hooks/useAdmin'
 import type { Role } from '@/hooks/useAdmin'
@@ -137,9 +137,7 @@ export default function RolesPermissionsPage() {
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${ROLE_BADGE_COLORS[role.name] ?? 'bg-neutral-100 text-neutral-600 border-neutral-200'}`}>
                           {ROLE_LABELS[role.name] ?? role.name}
                         </span>
-                        {role.name === 'super_admin' && (
-                          <Lock className="inline w-3 h-3 ml-1.5 text-neutral-400" />
-                        )}
+
                       </div>
                     </div>
                     <div className="mt-1.5 flex items-center gap-3 text-xs text-neutral-500">
@@ -183,8 +181,6 @@ function PermissionMatrix({ roleName }: { roleName: string }) {
   const [localPermissions, setLocalPermissions] = useState<Set<string>>(new Set<string>())
   const [search, setSearch] = useState<string>('')
   const [collapsedModules, setCollapsedModules] = useState<Set<string>>(new Set<string>())
-
-  const isSuperAdmin = roleName === 'super_admin'
 
   // When role detail loads, initialize local state
   const currentPermissions = useMemo(() => {
@@ -325,14 +321,10 @@ function PermissionMatrix({ roleName }: { roleName: string }) {
             <span className="text-xs text-neutral-500">
               {roleDetail.permissions.length} permissions &middot; {roleDetail.users_count} users
             </span>
-            {isSuperAdmin && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-50 text-red-600 text-xs font-medium">
-                <Lock className="w-3 h-3" /> All Permissions (Read-Only)
-              </span>
-            )}
+
           </div>
           <div className="flex items-center gap-2">
-            {!isSuperAdmin && !editMode && (
+            {!editMode && (
               <button
                 onClick={enterEditMode}
                 className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
@@ -358,7 +350,7 @@ function PermissionMatrix({ roleName }: { roleName: string }) {
                 </button>
               </>
             )}
-            {!isSuperAdmin && (
+            {(
               <ConfirmDestructiveDialog
                 title="Reset to Defaults"
                 description={`This will replace all current permissions for "${ROLE_LABELS[roleName] ?? roleName}" with the seeder baseline. Any custom changes will be lost.`}
@@ -445,7 +437,7 @@ function PermissionMatrix({ roleName }: { roleName: string }) {
                       {moduleCheckedCount}/{perms.length}
                     </span>
                   </div>
-                  {editMode && !isSuperAdmin && (
+                  {editMode && (
                     <label
                       className="flex items-center gap-1.5 text-xs text-neutral-500"
                       onClick={(e) => e.stopPropagation()}
@@ -485,12 +477,12 @@ function PermissionMatrix({ roleName }: { roleName: string }) {
                               : isRemoved
                                 ? 'bg-red-50 text-red-800'
                                 : 'hover:bg-neutral-50 text-neutral-700'
-                          } ${isSuperAdmin ? 'cursor-default' : ''}`}
+                          }`}
                         >
                           <input
                             type="checkbox"
                             checked={isChecked}
-                            disabled={isSuperAdmin || !editMode}
+                            disabled={!editMode}
                             onChange={() => togglePermission(perm)}
                             className="rounded border-neutral-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
                           />
