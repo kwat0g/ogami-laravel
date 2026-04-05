@@ -749,6 +749,139 @@ Route::middleware(['auth:sanctum', 'module_access:admin'])->group(function () {
     })->middleware('throttle:api-action')->name('roles.permissions.reset');
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Department Permission Profiles — Role + Department scoped permissions
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // GET /api/v1/admin/department-profiles — list all profiles
+    Route::get('department-profiles', function (Request $request) {
+        abort_unless(
+            $request->user()->can('system.assign_roles') || $request->user()->can('system.manage_users'),
+            403,
+            'Insufficient permissions.',
+        );
+
+        $profiles = \App\Models\DepartmentPermissionProfile::with('department:id,name,code')
+            ->orderBy('department_id')
+            ->orderBy('role')
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'department_id' => $p->department_id,
+                'department_name' => $p->department?->name ?? 'Unknown',
+                'department_code' => $p->department?->code ?? '?',
+                'role' => $p->role,
+                'profile_label' => $p->profile_label,
+                'permissions_count' => is_array($p->permissions) ? count($p->permissions) : 0,
+                'is_active' => $p->is_active,
+            ]);
+
+        return response()->json(['data' => $profiles]);
+    })->name('department-profiles.index');
+
+    // GET /api/v1/admin/department-profiles/{id} — single profile with permissions
+    Route::get('department-profiles/{profile}', function (Request $request, \App\Models\DepartmentPermissionProfile $profile) {
+        abort_unless(
+            $request->user()->can('system.assign_roles') || $request->user()->can('system.manage_users'),
+            403,
+            'Insufficient permissions.',
+        );
+
+        $profile->load('department:id,name,code');
+
+        return response()->json([
+            'data' => [
+                'id' => $profile->id,
+                'department_id' => $profile->department_id,
+                'department_name' => $profile->department?->name ?? 'Unknown',
+                'department_code' => $profile->department?->code ?? '?',
+                'role' => $profile->role,
+                'profile_label' => $profile->profile_label,
+                'permissions' => $profile->permissions ?? [],
+                'is_active' => $profile->is_active,
+            ],
+        ]);
+    })->name('department-profiles.show');
+
+    // PUT /api/v1/admin/department-profiles — upsert a profile
+    Route::put('department-profiles', function (Request $request) {
+        abort_unless($request->user()->can('system.assign_roles'), 403, 'Insufficient permissions.');
+
+        $data = $request->validate([
+            'department_id' => ['required', 'integer', 'exists:departments,id'],
+            'role' => ['required', 'string', 'in:manager,officer,head,vice_president'],
+            'permissions' => ['required', 'array'],
+            'permissions.*' => ['string', 'exists:permissions,name'],
+            'profile_label' => ['nullable', 'string', 'max:100'],
+            'is_active' => ['boolean'],
+        ]);
+
+        $profile = \App\Models\DepartmentPermissionProfile::updateOrCreate(
+            ['department_id' => $data['department_id'], 'role' => $data['role']],
+            [
+                'permissions' => $data['permissions'],
+                'profile_label' => $data['profile_label'] ?? null,
+                'is_active' => $data['is_active'] ?? true,
+            ],
+        );
+
+        // Clear department permission cache
+        \App\Services\DepartmentPermissionService::clearAllCaches();
+
+        // Audit
+        if (DB::getSchemaBuilder()->hasTable('audits')) {
+            DB::table('audits')->insert([
+                'user_type' => 'App\\Models\\User',
+                'user_id' => $request->user()->id,
+                'event' => 'department_profile_upsert',
+                'auditable_type' => 'App\\Models\\DepartmentPermissionProfile',
+                'auditable_id' => $profile->id,
+                'old_values' => '{}',
+                'new_values' => json_encode(['permissions_count' => count($data['permissions'])]),
+                'url' => $request->fullUrl(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'tags' => 'rbac,department_profile',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Department permission profile saved.',
+            'data' => [
+                'id' => $profile->id,
+                'department_id' => $profile->department_id,
+                'role' => $profile->role,
+                'permissions_count' => count($data['permissions']),
+                'is_active' => $profile->is_active,
+            ],
+        ]);
+    })->middleware('throttle:api-action')->name('department-profiles.upsert');
+
+    // PATCH /api/v1/admin/department-profiles/{profile}/toggle — toggle active
+    Route::patch('department-profiles/{profile}/toggle', function (Request $request, \App\Models\DepartmentPermissionProfile $profile) {
+        abort_unless($request->user()->can('system.assign_roles'), 403, 'Insufficient permissions.');
+
+        $profile->update(['is_active' => !$profile->is_active]);
+        \App\Services\DepartmentPermissionService::clearAllCaches();
+
+        return response()->json([
+            'message' => $profile->is_active ? 'Profile activated.' : 'Profile deactivated.',
+            'data' => ['id' => $profile->id, 'is_active' => $profile->is_active],
+        ]);
+    })->middleware('throttle:api-action')->name('department-profiles.toggle');
+
+    // DELETE /api/v1/admin/department-profiles/{profile}
+    Route::delete('department-profiles/{profile}', function (Request $request, \App\Models\DepartmentPermissionProfile $profile) {
+        abort_unless($request->user()->can('system.assign_roles'), 403, 'Insufficient permissions.');
+
+        $profile->delete();
+        \App\Services\DepartmentPermissionService::clearAllCaches();
+
+        return response()->json(['message' => 'Department permission profile deleted.']);
+    })->middleware('throttle:api-action')->name('department-profiles.destroy');
+
+    // ─────────────────────────────────────────────────────────────────────────
     // System Settings — all operations require system.edit_settings
     // ─────────────────────────────────────────────────────────────────────────
     Route::middleware('can:system.edit_settings')->group(function () {
