@@ -20,7 +20,7 @@ import PageHeader from '@/components/ui/PageHeader'
 import { ExportPdfButton } from '@/components/ui/ExportPdfButton'
 import StatusBadge from '@/components/ui/StatusBadge'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
-import { InfoRow } from '@/components/ui/InfoRow'
+import { InfoList, InfoRow } from '@/components/ui/InfoRow'
 import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import { firstErrorMessage } from '@/lib/errorHandler'
 import type { ReceivePaymentPayload, WriteOffPayload } from '@/types/ar'
@@ -291,6 +291,17 @@ function ApproveSection({ invoiceId }: { invoiceId: string }) {
   )
 }
 
+function MetricCard({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <Card>
+      <CardBody className="space-y-1.5">
+        <p className="text-xs uppercase tracking-wide text-neutral-500">{label}</p>
+        <p className="text-sm font-medium text-neutral-900 break-words">{value ?? '—'}</p>
+      </CardBody>
+    </Card>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Invoice Detail Page
 // ---------------------------------------------------------------------------
@@ -339,49 +350,20 @@ export default function CustomerInvoiceDetailPage() {
         <div className="lg:col-span-8 space-y-6">
           {/* Details grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
-              <CardBody>
-                <InfoRow label="Invoice Date" value={invoice.invoice_date} />
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <InfoRow
-                  label="Due Date"
-                  value={invoice.due_date + (invoice.is_overdue ? ' ⚠️' : '')}
-                />
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <InfoRow label="Subtotal" value={`${formatPesoAmount(invoice.subtotal)}`} />
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <InfoRow label="VAT" value={`${formatPesoAmount(invoice.vat_amount)}`} />
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <InfoRow label="Total" value={`${formatPesoAmount(invoice.total_amount)}`} />
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <InfoRow label="Total Paid" value={`${formatPesoAmount(invoice.total_paid)}`} />
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <InfoRow label="Balance Due" value={`${formatPesoAmount(invoice.balance_due)}`} />
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <InfoRow label="Fiscal Period" value={invoice.fiscal_period?.name ?? invoice.fiscal_period?.period_name ?? `Period #${invoice.fiscal_period_id}`} />
-              </CardBody>
-            </Card>
+            <MetricCard label="Invoice Date" value={invoice.invoice_date} />
+            <MetricCard
+              label="Due Date"
+              value={invoice.due_date + (invoice.is_overdue ? ' ⚠️' : '')}
+            />
+            <MetricCard label="Subtotal" value={formatPesoAmount(invoice.subtotal)} />
+            <MetricCard label="VAT" value={formatPesoAmount(invoice.vat_amount)} />
+            <MetricCard label="Total" value={formatPesoAmount(invoice.total_amount)} />
+            <MetricCard label="Total Paid" value={formatPesoAmount(invoice.total_paid)} />
+            <MetricCard label="Balance Due" value={formatPesoAmount(invoice.balance_due)} />
+            <MetricCard
+              label="Fiscal Period"
+              value={invoice.fiscal_period?.name ?? `Period #${invoice.fiscal_period_id}`}
+            />
           </div>
 
           {/* Description */}
@@ -436,7 +418,7 @@ export default function CustomerInvoiceDetailPage() {
               <InfoList columns={1}>
                 <InfoRow label="Status" value={invoice.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} />
                 <InfoRow label="Customer" value={invoice.customer?.name ?? '-'} />
-                <InfoRow label="Invoice #" value={invoice.invoice_number ?? 'Draft'} />
+                <InfoRow label="Invoice #" value={invoice.invoice_number ?? 'Pending approval'} />
                 <InfoRow label="Balance Due" value={formatPesoAmount(invoice.balance_due)} />
                 <InfoRow label="Overdue" value={invoice.is_overdue ? 'Yes' : 'No'} />
               </InfoList>

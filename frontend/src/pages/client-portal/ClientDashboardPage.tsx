@@ -82,6 +82,10 @@ const FALLBACK_STATUS = {
 }
 
 function formatStatusLabel(status: string): string {
+  if (status === 'in_production') {
+    return 'In Process of Production'
+  }
+
   return status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 

@@ -4,20 +4,27 @@ declare(strict_types=1);
 
 namespace App\Domains\Delivery\Services;
 
+use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\AR\Models\Customer;
 use App\Domains\AR\Models\CustomerCreditNote;
 use App\Domains\AR\Models\CustomerInvoice;
 use App\Domains\AR\Services\CustomerCreditNoteService;
+use App\Domains\AR\Services\CustomerInvoiceService;
+use App\Domains\CRM\Models\ClientOrderActivity;
+use App\Domains\CRM\Models\ClientOrderDeliverySchedule;
 use App\Domains\CRM\Models\ClientOrder;
 use App\Domains\CRM\Services\TicketService;
 use App\Domains\Delivery\Models\DeliveryDispute;
 use App\Domains\Delivery\Models\DeliveryDisputeItem;
 use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Domains\Production\Models\DeliverySchedule;
+use App\Domains\Production\Models\DeliveryScheduleItem;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * DeliveryDisputeService -- manages the delivery dispute lifecycle.
@@ -28,6 +35,10 @@ use Illuminate\Support\Facades\DB;
  */
 final class DeliveryDisputeService implements ServiceContract
 {
+    public function __construct(
+        private readonly CustomerInvoiceService $customerInvoiceService,
+    ) {}
+
     /**
      * List disputes with filters.
      */
@@ -148,9 +159,138 @@ final class DeliveryDisputeService implements ServiceContract
             );
         }
 
-        return DB::transaction(function () use ($dispute, $resolutionType, $resolutions, $resolver, $notes): DeliveryDispute {
+        $dispute->loadMissing('items');
+
+        $itemMap = $dispute->items->keyBy('id');
+        if (count($resolutions) !== $itemMap->count()) {
+            throw new DomainException(
+                'Resolution must include all disputed items exactly once.',
+                'INCOMPLETE_DISPUTE_RESOLUTION',
+                422,
+            );
+        }
+
+        $normalizedResolutions = [];
+        $seenItemIds = [];
+
+        foreach ($resolutions as $resolution) {
+            $itemId = (int) ($resolution['item_id'] ?? 0);
+            $action = (string) ($resolution['action'] ?? '');
+            $qty = (float) ($resolution['qty'] ?? 0);
+
+            if (in_array($itemId, $seenItemIds, true)) {
+                throw new DomainException(
+                    'Duplicate disputed item in resolution payload.',
+                    'DUPLICATE_RESOLUTION_ITEM',
+                    422,
+                );
+            }
+            $seenItemIds[] = $itemId;
+
+            /** @var DeliveryDisputeItem|null $disputeItem */
+            $disputeItem = $itemMap->get($itemId);
+            if (! $disputeItem) {
+                throw new DomainException(
+                    'Resolution item does not belong to this dispute.',
+                    'INVALID_RESOLUTION_ITEM',
+                    422,
+                );
+            }
+
+            if (! in_array($action, ['replace', 'credit', 'accept'], true)) {
+                throw new DomainException(
+                    'Invalid resolution action.',
+                    'INVALID_RESOLUTION_ACTION',
+                    422,
+                );
+            }
+
+            if ($qty < 0) {
+                throw new DomainException(
+                    'Resolution quantity cannot be negative.',
+                    'INVALID_RESOLUTION_QTY_NEGATIVE',
+                    422,
+                );
+            }
+
+            $expectedQty = (float) $disputeItem->expected_qty;
+            $receivedQty = (float) $disputeItem->received_qty;
+            $disputedQty = max(0.0, $expectedQty - $receivedQty);
+
+            if (in_array($disputeItem->condition, ['missing', 'damaged'], true) && abs($qty - $disputedQty) > 0.0001) {
+                throw new DomainException(
+                    'Resolution quantity for missing/damaged items must match disputed quantity.',
+                    'INVALID_RESOLUTION_QTY_FOR_CONDITION',
+                    422,
+                );
+            }
+
+            if (! in_array($disputeItem->condition, ['missing', 'damaged'], true) && $qty > $expectedQty) {
+                throw new DomainException(
+                    'Resolution quantity cannot exceed expected quantity.',
+                    'INVALID_RESOLUTION_QTY_EXCEEDS_EXPECTED',
+                    422,
+                );
+            }
+
+            $normalizedResolutions[] = [
+                'item_id' => $itemId,
+                'action' => $action,
+                'qty' => $qty,
+            ];
+        }
+
+        return DB::transaction(function () use ($dispute, $resolutionType, $normalizedResolutions, $resolver, $notes): DeliveryDispute {
+            $hasReplace = collect($normalizedResolutions)->contains(fn ($resolution): bool => $resolution['action'] === 'replace');
+            $hasCredit = collect($normalizedResolutions)->contains(fn ($resolution): bool => $resolution['action'] === 'credit');
+            $allReplace = collect($normalizedResolutions)->every(fn ($resolution): bool => $resolution['action'] === 'replace');
+            $allAccept = collect($normalizedResolutions)->every(fn ($resolution): bool => $resolution['action'] === 'accept');
+
+            if ($resolutionType === 'credit_note' && (! $hasCredit || $hasReplace)) {
+                throw new DomainException(
+                    'Resolution type credit_note requires credit actions only.',
+                    'RESOLUTION_TYPE_MISMATCH',
+                    422,
+                );
+            }
+
+            if ($resolutionType === 'partial_accept' && ! $allAccept) {
+                throw new DomainException(
+                    'Resolution type partial_accept requires accept actions only.',
+                    'RESOLUTION_TYPE_MISMATCH',
+                    422,
+                );
+            }
+
+            if ($resolutionType === 'replace_items' && ! $hasReplace) {
+                throw new DomainException(
+                    'Resolution type replace_items requires at least one replace action.',
+                    'RESOLUTION_TYPE_MISMATCH',
+                    422,
+                );
+            }
+
+            if ($resolutionType === 'full_replacement' && ! $allReplace) {
+                throw new DomainException(
+                    'Resolution type full_replacement requires replace action for all disputed items.',
+                    'RESOLUTION_TYPE_MISMATCH',
+                    422,
+                );
+            }
+
+            $resolvedType = $resolutionType;
+            if ($resolutionType === 'full_replacement' && $allReplace) {
+                $resolvedType = 'full_replacement';
+            } elseif ($hasReplace) {
+                $resolvedType = 'replace_items';
+            } elseif ($hasCredit) {
+                $resolvedType = 'credit_note';
+            } else {
+                $resolvedType = 'partial_accept';
+            }
+
             // Update per-item resolutions
-            foreach ($resolutions as $res) {
+            foreach ($normalizedResolutions as $res) {
                 DeliveryDisputeItem::where('delivery_dispute_id', $dispute->id)
                     ->where('id', $res['item_id'])
                     ->update([
@@ -161,27 +301,40 @@ final class DeliveryDisputeService implements ServiceContract
 
             $updateData = [
                 'status' => 'resolved',
-                'resolution_type' => $resolutionType,
+                'resolution_type' => $resolvedType,
                 'resolution_notes' => $notes,
                 'resolved_by_id' => $resolver->id,
                 'resolved_at' => now(),
             ];
 
             // Execute resolution action
-            if ($resolutionType === 'credit_note') {
-                $creditNote = $this->createCreditNote($dispute, $resolutions, $resolver);
-                if ($creditNote) {
-                    $updateData['credit_note_id'] = $creditNote->id;
+            if ($hasCredit) {
+                $creditNote = $this->createCreditNote($dispute, $normalizedResolutions, $resolver);
+                if (! $creditNote) {
+                    throw new DomainException(
+                        'Unable to create credit note for dispute resolution.',
+                        'CREDIT_NOTE_CREATION_FAILED',
+                        422,
+                    );
                 }
+
+                $updateData['credit_note_id'] = $creditNote->id;
             }
 
-            if (in_array($resolutionType, ['replace_items', 'full_replacement'], true)) {
-                $replacementSchedule = $this->createReplacementSchedule($dispute, $resolutions, $resolver);
-                if ($replacementSchedule) {
-                    $updateData['replacement_schedule_id'] = $replacementSchedule->id;
-                    // Stay pending until replacement is delivered
-                    $updateData['status'] = 'pending_resolution';
+            if ($hasReplace) {
+                $replacementSchedule = $this->createReplacementSchedule($dispute, $normalizedResolutions, $resolver);
+                if (! $replacementSchedule) {
+                    throw new DomainException(
+                        'Unable to create replacement schedule for dispute resolution.',
+                        'REPLACEMENT_SCHEDULE_CREATION_FAILED',
+                        422,
+                    );
                 }
+
+                $updateData['replacement_schedule_id'] = $replacementSchedule->id;
+                // Stay pending until replacement is delivered
+                $updateData['status'] = 'pending_resolution';
+                $updateData['resolved_at'] = null;
             }
 
             $dispute->update($updateData);
@@ -211,6 +364,27 @@ final class DeliveryDisputeService implements ServiceContract
         $dispute->update(['status' => 'closed']);
 
         return $dispute->fresh();
+    }
+
+    /**
+     * Resolve disputes waiting on replacement delivery once the linked
+     * replacement schedule is delivered.
+     */
+    public function finalizePendingReplacementForSchedule(DeliverySchedule $schedule): void
+    {
+        $pendingDisputes = DeliveryDispute::query()
+            ->where('replacement_schedule_id', $schedule->id)
+            ->where('status', 'pending_resolution')
+            ->get();
+
+        foreach ($pendingDisputes as $dispute) {
+            $dispute->update([
+                'status' => 'resolved',
+                'resolved_at' => now(),
+            ]);
+
+            $this->tryFulfillClientOrder($dispute, 'replacement_delivered');
+        }
     }
 
     /**
@@ -295,17 +469,87 @@ final class DeliveryDisputeService implements ServiceContract
             return null;
         }
 
+        $dispute->loadMissing(['items', 'deliverySchedule']);
+        $disputeItemMap = $dispute->items->keyBy('id');
+
+        $replacementLines = $replaceItems
+            ->map(function (array $resolution) use ($disputeItemMap): ?array {
+                $disputeItem = $disputeItemMap->get((int) $resolution['item_id']);
+
+                if (! $disputeItem) {
+                    return null;
+                }
+
+                $qty = (float) $resolution['qty'];
+                if ($qty <= 0) {
+                    return null;
+                }
+
+                return [
+                    'product_item_id' => (int) $disputeItem->item_master_id,
+                    'qty_ordered' => $qty,
+                    'notes' => $disputeItem->notes,
+                ];
+            })
+            ->filter()
+            ->values();
+
+        if ($replacementLines->isEmpty()) {
+            return null;
+        }
+
+        $totalQty = $replacementLines->sum('qty_ordered');
+        $sourceSchedule = $dispute->deliverySchedule;
+
         try {
             // Create a new delivery schedule linked to the same client order
             $schedule = DeliverySchedule::create([
                 'ulid' => (string) \Illuminate\Support\Str::ulid(),
-                'cds_reference' => 'RPL-'.$dispute->dispute_reference,
                 'customer_id' => $dispute->customer_id,
                 'client_order_id' => $dispute->client_order_id,
+                'product_item_id' => (int) $replacementLines->first()['product_item_id'],
+                'qty_ordered' => $totalQty,
+                'type' => $sourceSchedule?->type ?? 'local',
                 'status' => 'ready',
                 'target_delivery_date' => now()->addDays(3)->toDateString(),
+                'delivery_address' => $sourceSchedule?->delivery_address,
+                'delivery_instructions' => $sourceSchedule?->delivery_instructions,
                 'notes' => "Replacement delivery for dispute {$dispute->dispute_reference}",
+                'total_items' => $replacementLines->count(),
+                'ready_items' => $replacementLines->count(),
+                'missing_items' => 0,
+                'created_by_id' => $actor->id,
             ]);
+
+            foreach ($replacementLines as $line) {
+                DeliveryScheduleItem::create([
+                    'delivery_schedule_id' => $schedule->id,
+                    'product_item_id' => $line['product_item_id'],
+                    'qty_ordered' => $line['qty_ordered'],
+                    'status' => 'ready',
+                    'notes' => $line['notes']
+                        ? "Replacement for {$dispute->dispute_reference}: {$line['notes']}"
+                        : "Replacement for {$dispute->dispute_reference}",
+                ]);
+            }
+
+            $schedule->updateItemStatusSummary();
+
+            if ($dispute->client_order_id) {
+                ClientOrderDeliverySchedule::query()->updateOrCreate(
+                    [
+                        'client_order_id' => $dispute->client_order_id,
+                        'delivery_schedule_id' => $schedule->id,
+                    ],
+                    [
+                        'client_order_item_id' => null,
+                        'planned_qty' => (float) $totalQty,
+                        'fulfilled_qty' => 0,
+                        'status' => 'scheduled',
+                        'is_primary' => false,
+                    ]
+                );
+            }
 
             return $schedule;
         } catch (\Throwable $e) {
@@ -318,11 +562,14 @@ final class DeliveryDisputeService implements ServiceContract
         }
     }
 
-    private function tryFulfillClientOrder(DeliveryDispute $dispute): void
+    private function tryFulfillClientOrder(DeliveryDispute $dispute, string $activityEvent = 'resolved'): void
     {
         if (! $dispute->client_order_id) {
             return;
         }
+
+        $this->markScheduleDisputeResolved($dispute);
+        $this->recordDisputeResolutionActivity($dispute, $activityEvent);
 
         // Only fulfill if no other open disputes for this order
         if ($this->hasOpenDisputes($dispute->client_order_id)) {
@@ -330,9 +577,210 @@ final class DeliveryDisputeService implements ServiceContract
         }
 
         $order = ClientOrder::find($dispute->client_order_id);
-        if ($order && $order->status === 'delivered') {
+        if (! $order) {
+            return;
+        }
+
+        if ($order->status === 'delivered') {
             $order->update(['status' => 'fulfilled']);
         }
+
+        if ($order->status === 'fulfilled') {
+            $this->ensureInvoiceForFulfilledOrder($order, $dispute);
+        }
+    }
+
+    private function ensureInvoiceForFulfilledOrder(ClientOrder $order, DeliveryDispute $dispute): void
+    {
+        $existingInvoice = DB::table('customer_invoices as ci')
+            ->join('delivery_receipts as dr', 'dr.id', '=', 'ci.delivery_receipt_id')
+            ->leftJoin('delivery_schedules as ds_by_id', 'ds_by_id.id', '=', 'dr.delivery_schedule_id')
+            ->leftJoin('delivery_schedules as ds_by_dr', 'ds_by_dr.delivery_receipt_id', '=', 'dr.id')
+            ->whereNull('ci.deleted_at')
+            ->where('ci.status', '!=', 'cancelled')
+            ->where(function ($query) use ($order): void {
+                $query->where('ds_by_id.client_order_id', $order->id)
+                    ->orWhere('ds_by_dr.client_order_id', $order->id);
+            })
+            ->exists();
+
+        if ($existingInvoice) {
+            return;
+        }
+
+        $subtotal = round(((int) $order->total_amount_centavos) / 100, 2);
+        if ($subtotal <= 0) {
+            Log::warning('[DeliveryDispute] Auto-invoice skipped after fulfillment due to non-positive subtotal', [
+                'client_order_id' => $order->id,
+                'dispute_id' => $dispute->id,
+            ]);
+
+            return;
+        }
+
+        $customer = Customer::find($order->customer_id);
+        if (! $customer) {
+            Log::warning('[DeliveryDispute] Auto-invoice skipped after fulfillment due to missing customer', [
+                'client_order_id' => $order->id,
+                'customer_id' => $order->customer_id,
+                'dispute_id' => $dispute->id,
+            ]);
+
+            return;
+        }
+
+        $fiscalPeriod = FiscalPeriod::open()
+            ->where('date_from', '<=', now()->toDateString())
+            ->where('date_to', '>=', now()->toDateString())
+            ->latest('date_from')
+            ->first() ?? FiscalPeriod::open()->latest('date_from')->first();
+
+        if (! $fiscalPeriod) {
+            Log::warning('[DeliveryDispute] Auto-invoice skipped after fulfillment due to missing open fiscal period', [
+                'client_order_id' => $order->id,
+                'dispute_id' => $dispute->id,
+            ]);
+
+            return;
+        }
+
+        $arAccountId = (int) json_decode(
+            DB::table('system_settings')->where('key', 'default_ar_account_id')->value('value') ?? 'null'
+        );
+        $revenueAccountId = (int) json_decode(
+            DB::table('system_settings')->where('key', 'default_revenue_account_id')->value('value') ?? 'null'
+        );
+
+        if (! $arAccountId) {
+            $arAccountId = (int) (DB::table('chart_of_accounts')
+                ->where('code', '3001')
+                ->where('is_active', true)
+                ->value('id') ?? 0);
+        }
+
+        if (! $revenueAccountId) {
+            $revenueAccountId = (int) (DB::table('chart_of_accounts')
+                ->where('code', '4001')
+                ->where('is_active', true)
+                ->value('id') ?? 0);
+        }
+
+        if (! $arAccountId || ! $revenueAccountId) {
+            Log::warning('[DeliveryDispute] Auto-invoice skipped after fulfillment due to missing AR/revenue account', [
+                'client_order_id' => $order->id,
+                'ar_account_id' => $arAccountId,
+                'revenue_account_id' => $revenueAccountId,
+                'dispute_id' => $dispute->id,
+            ]);
+
+            return;
+        }
+
+        $deliveryReceiptId = DB::table('delivery_receipts as dr')
+            ->leftJoin('delivery_schedules as ds_by_id', 'ds_by_id.id', '=', 'dr.delivery_schedule_id')
+            ->leftJoin('delivery_schedules as ds_by_dr', 'ds_by_dr.delivery_receipt_id', '=', 'dr.id')
+            ->where('dr.status', 'delivered')
+            ->where(function ($query) use ($order): void {
+                $query->where('ds_by_id.client_order_id', $order->id)
+                    ->orWhere('ds_by_dr.client_order_id', $order->id);
+            })
+            ->orderByDesc('dr.id')
+            ->value('dr.id');
+
+        $invoiceDate = $this->clampDateToFiscalPeriod($fiscalPeriod);
+        $dueDate = Carbon::parse($invoiceDate)->addDays(30)->toDateString();
+
+        try {
+            $this->customerInvoiceService->create(
+                customer: $customer,
+                data: [
+                    'fiscal_period_id' => (int) $fiscalPeriod->id,
+                    'ar_account_id' => $arAccountId,
+                    'revenue_account_id' => $revenueAccountId,
+                    'invoice_date' => $invoiceDate,
+                    'due_date' => $dueDate,
+                    'subtotal' => $subtotal,
+                    'vat_amount' => 0,
+                    'description' => "Auto-created after dispute {$dispute->dispute_reference} resolution for {$order->order_reference}",
+                    'bypass_credit_check' => true,
+                    'delivery_receipt_id' => $deliveryReceiptId ? (int) $deliveryReceiptId : null,
+                ],
+                userId: $dispute->resolved_by_id ?? 1,
+            );
+        } catch (\Throwable $e) {
+            Log::warning('[DeliveryDispute] Auto-invoice creation failed after dispute fulfillment', [
+                'client_order_id' => $order->id,
+                'dispute_id' => $dispute->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function clampDateToFiscalPeriod(FiscalPeriod $period): string
+    {
+        $today = now();
+        $periodStart = Carbon::parse((string) $period->date_from);
+        $periodEnd = Carbon::parse((string) $period->date_to);
+
+        if ($today->lt($periodStart)) {
+            return $periodStart->toDateString();
+        }
+
+        if ($today->gt($periodEnd)) {
+            return $periodEnd->toDateString();
+        }
+
+        return $today->toDateString();
+    }
+
+    private function markScheduleDisputeResolved(DeliveryDispute $dispute): void
+    {
+        if (! $dispute->delivery_schedule_id) {
+            return;
+        }
+
+        $hasOtherOpenScheduleDisputes = DeliveryDispute::query()
+            ->where('delivery_schedule_id', $dispute->delivery_schedule_id)
+            ->where('id', '!=', $dispute->id)
+            ->whereIn('status', ['open', 'investigating', 'pending_resolution'])
+            ->exists();
+
+        if ($hasOtherOpenScheduleDisputes) {
+            return;
+        }
+
+        DeliverySchedule::query()
+            ->where('id', $dispute->delivery_schedule_id)
+            ->update([
+                'has_dispute' => false,
+                'dispute_resolved_at' => now(),
+            ]);
+    }
+
+    private function recordDisputeResolutionActivity(DeliveryDispute $dispute, string $event): void
+    {
+        if (! $dispute->client_order_id) {
+            return;
+        }
+
+        $metadata = [
+            'delivery_dispute_id' => $dispute->id,
+            'delivery_dispute_reference' => $dispute->dispute_reference,
+            'event' => $event,
+        ];
+
+        if ($dispute->replacement_schedule_id) {
+            $metadata['replacement_schedule_id'] = $dispute->replacement_schedule_id;
+        }
+
+        ClientOrderActivity::query()->create([
+            'client_order_id' => $dispute->client_order_id,
+            'user_id' => $dispute->resolved_by_id,
+            'user_type' => 'system',
+            'action' => ClientOrderActivity::ACTION_NOTE_ADDED,
+            'comment' => "Delivery dispute {$dispute->dispute_reference} {$event}.",
+            'metadata' => $metadata,
+        ]);
     }
 
     private function getItemUnitPrice(DeliveryDispute $dispute, int $itemMasterId): int

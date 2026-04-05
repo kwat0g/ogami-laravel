@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { AlertCircle } from 'lucide-react'
 
 /**
@@ -20,7 +20,7 @@ import { AlertCircle } from 'lucide-react'
 
 export interface ConfirmDialogProps {
   title: string
-  description: string
+  description: ReactNode
   confirmLabel?: string
   cancelLabel?: string
   variant?: 'default' | 'danger' | 'warning' | 'primary'
@@ -106,7 +106,7 @@ export default function ConfirmDialog({
                 <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{title}</h3>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{description}</p>
+                  <div className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{description}</div>
                 </div>
               </div>
             </div>

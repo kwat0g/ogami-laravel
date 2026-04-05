@@ -4,10 +4,12 @@ import { toast } from 'sonner'
 import { AlertTriangle, CheckCircle2, Send, XCircle, PackageCheck, Calendar, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react'
 import {
   usePurchaseOrder,
+  useUpdatePurchaseOrder,
   useSendPurchaseOrder,
   useAcceptChanges,
   useRejectChanges,
 } from '@/hooks/usePurchaseOrders'
+import { useVendors } from '@/hooks/useAP'
 import { useAuthStore } from '@/stores/authStore'
 import { PERMISSIONS } from '@/lib/permissions'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
@@ -41,15 +43,25 @@ const statusLabel: Record<PurchaseOrderStatus, string> = {
 // ── Send to Vendor modal (delivery date) ─────────────────────────────────────
 
 function SendToVendorModal({
+  po,
+  vendors,
+  requiresVendor,
+  requiresPaymentTerms,
   onConfirm,
   onClose,
   loading,
 }: {
-  onConfirm: (deliveryDate: string) => void
+  po: PurchaseOrder
+  vendors: Array<{ id: number; name: string; payment_terms: string | null }>
+  requiresVendor: boolean
+  requiresPaymentTerms: boolean
+  onConfirm: (payload: { deliveryDate: string; vendorId: number | null; paymentTerms: string }) => void
   onClose: () => void
   loading: boolean
 }): React.ReactElement {
   const [deliveryDate, setDeliveryDate] = useState('')
+  const [vendorId, setVendorId] = useState<number | null>(po.vendor?.id ?? null)
+  const [paymentTerms, setPaymentTerms] = useState(po.payment_terms ?? '')
   const today = new Date().toISOString().split('T')[0]
 
   return (
@@ -60,6 +72,48 @@ function SendToVendorModal({
           Please specify the expected delivery date before sending this Purchase Order to the vendor.
         </p>
         <div className="mb-4">
+          {requiresVendor && (
+            <>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
+                Vendor <span className="text-red-500">*</span>
+              </label>
+              <select
+                className="w-full border border-neutral-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                value={vendorId ?? ''}
+                onChange={(e) => {
+                  const selected = e.target.value === '' ? null : Number(e.target.value)
+                  setVendorId(selected)
+                  const vendor = vendors.find((v) => v.id === selected)
+                  if (vendor?.payment_terms && !paymentTerms.trim()) {
+                    setPaymentTerms(vendor.payment_terms)
+                  }
+                }}
+              >
+                <option value="">Select vendor...</option>
+                {vendors.map((vendor) => (
+                  <option key={vendor.id} value={vendor.id}>
+                    {vendor.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
+          {requiresPaymentTerms && (
+            <>
+              <label className="block text-sm font-medium text-neutral-700 mb-1 mt-4">
+                Payment Terms <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                className="w-full border border-neutral-300 rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                value={paymentTerms}
+                onChange={(e) => setPaymentTerms(e.target.value)}
+                placeholder="e.g. Net 30"
+              />
+            </>
+          )}
+
           <label className="block text-sm font-medium text-neutral-700 mb-1">
             Delivery Date <span className="text-red-500">*</span>
           </label>
@@ -84,8 +138,13 @@ function SendToVendorModal({
           </button>
           <button
             type="button"
-            disabled={!deliveryDate || loading}
-            onClick={() => onConfirm(deliveryDate)}
+            disabled={
+              !deliveryDate
+              || loading
+              || (requiresVendor && vendorId === null)
+              || (requiresPaymentTerms && paymentTerms.trim() === '')
+            }
+            onClick={() => onConfirm({ deliveryDate, vendorId, paymentTerms })}
             className="px-4 py-2 rounded text-sm font-medium bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Sending…' : 'Send to Vendor'}
@@ -207,7 +266,9 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
   const { hasPermission } = useAuthStore()
 
   const { data: po, isLoading, isError } = usePurchaseOrder(ulid ?? null)
+  const { data: vendorsData } = useVendors({ is_active: true, accreditation_status: 'accredited', per_page: 200 })
 
+  const updatePoMutation = useUpdatePurchaseOrder()
   const sendMutation = useSendPurchaseOrder()
   const acceptChangesMutation = useAcceptChanges()
   const rejectChangesMutation = useRejectChanges()
@@ -221,20 +282,38 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
     setShowSendModal(true)
   }
 
-  function handleSendConfirm(deliveryDate: string): void {
+  async function handleSendConfirm(payload: { deliveryDate: string; vendorId: number | null; paymentTerms: string }): Promise<void> {
     if (!po) return
-    sendMutation.mutate(
-      { ulid: po.ulid, delivery_date: deliveryDate },
-      {
-        onSuccess: () => {
-          toast.success('Purchase Order sent to vendor.')
-          setShowSendModal(false)
-        },
-        onError: (err) => {
-          const message = firstErrorMessage(err)
-        },
+
+    const requiresVendor = po.vendor_id === null || po.vendor === null
+    const requiresPaymentTerms = po.payment_terms === null || po.payment_terms.trim() === ''
+
+    try {
+      if (requiresVendor || requiresPaymentTerms) {
+        const updatePayload: {
+          vendor_id?: number
+          payment_terms?: string
+        } = {}
+
+        if (requiresVendor && payload.vendorId !== null) {
+          updatePayload.vendor_id = payload.vendorId
+        }
+
+        if (requiresPaymentTerms && payload.paymentTerms.trim() !== '') {
+          updatePayload.payment_terms = payload.paymentTerms.trim()
+        }
+
+        if (Object.keys(updatePayload).length > 0) {
+          await updatePoMutation.mutateAsync({ ulid: po.ulid, payload: updatePayload })
+        }
       }
-    )
+
+      await sendMutation.mutateAsync({ ulid: po.ulid, delivery_date: payload.deliveryDate })
+      toast.success('Purchase Order sent to vendor.')
+      setShowSendModal(false)
+    } catch (err) {
+      toast.error(firstErrorMessage(err) ?? 'Failed to send Purchase Order.')
+    }
   }
 
   function handleAcceptChanges(remarks: string): void {
@@ -300,6 +379,10 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
 
   const negoBusy = acceptChangesMutation.isPending || rejectChangesMutation.isPending
 
+  const missingSendFields: string[] = []
+  if (po.vendor_id === null || po.vendor === null) missingSendFields.push('Vendor')
+  if (po.payment_terms === null || po.payment_terms.trim() === '') missingSendFields.push('Payment Terms')
+
   const actions = (
     <div className="flex flex-wrap items-center gap-2">
       {canSend && (
@@ -334,9 +417,13 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
     <>
       {showSendModal && (
         <SendToVendorModal
+          po={po}
+          vendors={(vendorsData?.data ?? []).map((v) => ({ id: v.id, name: v.name, payment_terms: v.payment_terms }))}
+          requiresVendor={po.vendor_id === null || po.vendor === null}
+          requiresPaymentTerms={po.payment_terms === null || po.payment_terms.trim() === ''}
           onConfirm={handleSendConfirm}
           onClose={() => setShowSendModal(false)}
-          loading={sendMutation.isPending}
+          loading={sendMutation.isPending || updatePoMutation.isPending}
         />
       )}
       {showNegotiationModal && (
@@ -358,6 +445,18 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
           status={<StatusBadge status={po.status}>{statusLabel[po.status]}</StatusBadge>}
           actions={actions}
         />
+
+        {po.status === 'draft' && missingSendFields.length > 0 && (
+          <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded p-4">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-amber-800">Unaligned PO information</p>
+              <p className="text-sm text-amber-700 mt-0.5">
+                Missing required field(s) before sending: {missingSendFields.join(', ')}.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ── Workflow Timeline ─────────────────────────────────────────────── */}
         <div className="bg-white border border-neutral-200 rounded p-4">
@@ -404,7 +503,7 @@ export default function PurchaseOrderDetailPage(): React.ReactElement {
               />
               <InfoRow 
                 label="Delivery Date" 
-                value={new Date(po.delivery_date).toLocaleDateString('en-PH')} 
+                value={po.delivery_date ? new Date(po.delivery_date).toLocaleDateString('en-PH') : '—'} 
               />
               <InfoRow label="Payment Terms" value={po.payment_terms} />
               <InfoRow 

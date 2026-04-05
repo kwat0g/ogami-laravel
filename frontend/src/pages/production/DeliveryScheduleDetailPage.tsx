@@ -20,7 +20,7 @@ interface CreateWOModalProps {
     ulid: string
     ds_reference: string
     product_item_id: number
-    qty_ordered: string
+    qty_ordered: string | null
     target_delivery_date: string
   } | null
 }
@@ -34,6 +34,8 @@ function CreateWOModal({ isOpen, onClose, schedule }: CreateWOModalProps): JSX.E
   // Always fetch BOMs if we have a schedule, modal visibility controls rendering not hook calls
   const { data: bomsData } = useBoms({ 
     product_item_id: schedule?.product_item_id 
+  }, {
+    enabled: isOpen && !!schedule?.product_item_id,
   })
   const createWOMutation = useCreateProductionOrder()
 
@@ -77,7 +79,7 @@ function CreateWOModal({ isOpen, onClose, schedule }: CreateWOModalProps): JSX.E
         product_item_id: schedule.product_item_id,
         bom_id: Number(selectedBomId),
         delivery_schedule_id: schedule.id,
-        qty_required: parseFloat(schedule.qty_ordered),
+        qty_required: Number(schedule.qty_ordered ?? 0),
         target_start_date: targetStartDate,
         target_end_date: targetEndDate,
         notes: `Created from Delivery Schedule ${schedule.ds_reference}`,
@@ -129,7 +131,7 @@ function CreateWOModal({ isOpen, onClose, schedule }: CreateWOModalProps): JSX.E
             </label>
             <input
               type="text"
-              value={parseFloat(schedule.qty_ordered).toLocaleString('en-PH')}
+              value={Number(schedule.qty_ordered ?? 0).toLocaleString('en-PH')}
               disabled
               className="w-full border border-neutral-200 bg-neutral-50 rounded-lg px-3 py-2 text-sm text-neutral-500"
             />
@@ -428,6 +430,25 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
   }
 
   const status = schedule.status as keyof typeof STATUS_COLORS
+  const scheduleItems = schedule.items ?? []
+  const totalItemQty = scheduleItems.reduce((sum, item) => {
+    const qty = Number(item.qty_ordered)
+    return Number.isFinite(qty) ? sum + qty : sum
+  }, 0)
+  const legacyQty = Number(schedule.qty_ordered)
+  const hasLegacyQty = Number.isFinite(legacyQty) && legacyQty > 0
+  const displayQty = scheduleItems.length > 0 ? totalItemQty : (hasLegacyQty ? legacyQty : null)
+  const hasDeliverableItems = scheduleItems.length > 0
+    ? scheduleItems.some((item) => Number(item.qty_ordered) > 0)
+    : Boolean(schedule.product_item && hasLegacyQty)
+  const primaryProductName = schedule.product_item?.name
+    ?? (scheduleItems.length === 1
+      ? (scheduleItems[0]?.product_item?.name ?? `Item #${scheduleItems[0]?.product_item_id ?? ''}`)
+      : scheduleItems.length > 1
+        ? `Multiple items (${scheduleItems.length})`
+        : '—')
+  const primaryUom = schedule.product_item?.unit_of_measure
+    ?? (scheduleItems.length === 1 ? (scheduleItems[0]?.product_item?.unit_of_measure ?? 'pcs') : undefined)
 
   return (
     <div className="space-y-5 max-w-6xl mx-auto">
@@ -461,8 +482,9 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
             ) : (
               <button
                 onClick={() => setShowCreateDRModal(true)}
-                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors"
-                title="Create a delivery receipt for this schedule"
+                disabled={!hasDeliverableItems}
+                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={hasDeliverableItems ? 'Create a delivery receipt for this schedule' : 'Cannot create delivery receipt: schedule has no deliverable items'}
               >
                 <Truck className="w-4 h-4" />
                 Create Delivery Receipt
@@ -525,8 +547,10 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
                 </div>
                 <div>
                   <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Product</p>
-                  <p className="font-medium text-neutral-900">{schedule.product_item?.name || '—'}</p>
-                  <p className="text-xs text-neutral-400 font-mono">{schedule.product_item?.item_code}</p>
+                  <p className="font-medium text-neutral-900">{primaryProductName}</p>
+                  {schedule.product_item?.item_code && (
+                    <p className="text-xs text-neutral-400 font-mono">{schedule.product_item.item_code}</p>
+                  )}
                 </div>
               </div>
 
@@ -535,9 +559,11 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
                   <div>
                     <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Quantity Ordered</p>
                     <p className="text-lg font-semibold text-neutral-900">
-                      {parseFloat(schedule.qty_ordered).toLocaleString('en-PH', { maximumFractionDigits: 2 })}
+                      {displayQty === null
+                        ? '—'
+                        : displayQty.toLocaleString('en-PH', { maximumFractionDigits: 2 })}
                     </p>
-                    <p className="text-xs text-neutral-400">{schedule.product_item?.unit_of_measure}</p>
+                    <p className="text-xs text-neutral-400">{primaryUom ?? '—'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Target Delivery</p>
@@ -791,7 +817,7 @@ export default function DeliveryScheduleDetailPage(): JSX.Element {
                 <div className="flex justify-between text-sm mt-2">
                   <span className="text-neutral-500">Quantity:</span>
                   <span className="font-medium text-neutral-900">
-                    {parseFloat(schedule.qty_ordered).toLocaleString('en-PH')}
+                    {(displayQty ?? 0).toLocaleString('en-PH', { maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>

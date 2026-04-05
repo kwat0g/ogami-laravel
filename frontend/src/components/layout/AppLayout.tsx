@@ -150,7 +150,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Journal Entries', href: '/accounting/journal-entries', permission: 'journal_entries.view' },
       // ── Accounts Payable ────────────────────────────────────────────────────
       { divider: true, label: 'Accounts Payable' },
-      { label: 'Vendors', href: '/accounting/vendors', permission: 'vendors.view' },
+      { label: 'Vendors', href: '/accounting/vendors', permission: 'vendors.view', departments: ['ACCTG', 'PURCH'] },
       { label: 'Vendor Invoices', href: '/accounting/ap/invoices', permission: 'vendor_invoices.view', departments: ['ACCTG'] },
       // ── Accounts Receivable ─────────────────────────────────────────────────
       { divider: true, label: 'Accounts Receivable' },

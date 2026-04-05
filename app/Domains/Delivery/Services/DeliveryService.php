@@ -6,6 +6,7 @@ namespace App\Domains\Delivery\Services;
 
 use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Domains\Delivery\Models\Shipment;
+use App\Domains\Delivery\Services\DeliveryDisputeService;
 use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Models\WarehouseLocation;
 use App\Domains\Inventory\Services\StockService;
@@ -22,6 +23,7 @@ final class DeliveryService implements ServiceContract
 {
     public function __construct(
         private readonly StockService $stockService,
+        private readonly DeliveryDisputeService $disputeService,
     ) {}
 
     // ── Delivery Receipts ─────────────────────────────────────────────────
@@ -493,7 +495,12 @@ final class DeliveryService implements ServiceContract
                 ->whereNotIn('status', ['delivered', 'cancelled'])
                 ->exists();
 
-            $schedule->update(['status' => $pending ? 'dispatched' : 'delivered']);
+            $resolvedStatus = $pending ? 'dispatched' : 'delivered';
+            $schedule->update(['status' => $resolvedStatus]);
+
+            if ($resolvedStatus === 'delivered') {
+                $this->disputeService->finalizePendingReplacementForSchedule($schedule);
+            }
         }
     }
 

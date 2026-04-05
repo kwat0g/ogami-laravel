@@ -59,6 +59,38 @@ export function useCreatePurchaseOrder() {
   })
 }
 
+// ── Update ───────────────────────────────────────────────────────────────────
+
+export function useUpdatePurchaseOrder() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      ulid,
+      payload,
+    }: {
+      ulid: string
+      payload: {
+        vendor_id?: number
+        delivery_date?: string
+        payment_terms?: string
+        delivery_address?: string
+        notes?: string
+      }
+    }) => {
+      const res = await api.patch<{ data: PurchaseOrder }>(
+        `/procurement/purchase-orders/${ulid}`,
+        payload,
+      )
+      return res.data.data
+    },
+    onSuccess: (po, { ulid }) => {
+      void qc.invalidateQueries({ queryKey: ['purchase-orders'] })
+      void qc.invalidateQueries({ queryKey: ['purchase-orders', ulid] })
+      qc.setQueryData(['purchase-orders', ulid], po)
+    },
+  })
+}
+
 // ── Send to Vendor ────────────────────────────────────────────────────────────
 
 export function useSendPurchaseOrder() {

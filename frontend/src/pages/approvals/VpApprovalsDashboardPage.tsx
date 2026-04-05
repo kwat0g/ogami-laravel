@@ -154,7 +154,16 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
   const { user, hasPermission } = useAuthStore()
   const _currentUserId = user?.id ?? null
 
-  const canLeaveApprove   = hasPermission(PERMISSIONS.leaves.executive_approve) || hasPermission(PERMISSIONS.leaves.ga_process) || hasPermission(PERMISSIONS.leaves.vp_note)
+  // List visibility (used to avoid calling endpoints that will 403 for approve-only accounts)
+  const canPrList = hasPermission(PERMISSIONS.procurement.purchase_request.view)
+  const canLoanList = hasPermission(PERMISSIONS.loans.view) || hasPermission(PERMISSIONS.loans.view_department)
+  const canMrqList = hasPermission(PERMISSIONS.inventory.mrq.view)
+  const canPayrollList = hasPermission(PERMISSIONS.payroll.view_runs)
+  const canLeaveList = hasPermission(PERMISSIONS.leaves.view_team)
+  const canOvertimeList = hasPermission(PERMISSIONS.overtime.view)
+
+  // Action permissions
+  const canLeaveApprove = hasPermission(PERMISSIONS.leaves.executive_approve) || hasPermission(PERMISSIONS.leaves.ga_process) || hasPermission(PERMISSIONS.leaves.vp_note)
   const canOvertimeApprove = hasPermission(PERMISSIONS.overtime.executive_approve)
   const canPrApprove = hasPermission(PERMISSIONS.procurement.purchase_request.view)
   const canLoanApprove = hasPermission(PERMISSIONS.loans.vp_approve)
@@ -214,29 +223,29 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
     search:  debouncedSearch || undefined,
     urgency: tabFilters['purchase-requests'].urgency || undefined,
     page:    tabFilters['purchase-requests'].page,
-  }, canPrApprove)
+  }, canPrList)
   const loanQuery = useVpLoans({
     status: tabFilters['loans'].status,
     search: debouncedSearch || undefined,
     page:   tabFilters['loans'].page,
-  }, canLoanApprove)
+  }, canLoanList)
   const mrqQuery = useVpMrqs({
     status: tabFilters['mrq'].status,
     search: debouncedSearch || undefined,
     page:   tabFilters['mrq'].page,
-  }, canMrqApprove)
+  }, canMrqList)
   const payrollQuery = useVpPayrollRuns({
     status: tabFilters['payroll'].status,
     search: debouncedSearch || undefined,
     page:   tabFilters['payroll'].page,
-  }, canPayrollApprove)
+  }, canPayrollList)
   const leaveQuery = useTeamLeaveRequests({
     status:   tabFilters['leave'].status as string | undefined,
     search:   debouncedSearch || undefined,
     per_page: 25,
     page:     tabFilters['leave'].page,
-  } as Parameters<typeof useTeamLeaveRequests>[0], canLeaveApprove)
-  const otQuery = usePendingExecutiveOvertimeRequests(overtimeFilters, canOvertimeApprove)
+  } as Parameters<typeof useTeamLeaveRequests>[0], canLeaveList)
+  const otQuery = usePendingExecutiveOvertimeRequests(overtimeFilters, canOvertimeList)
 
   // ── Mutations ────────────────────────────────────────────────────────────────
   const gaProcess   = useGaProcessLeaveRequest()
@@ -247,10 +256,10 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
 
   // ── Counts (always pending-approval status, independent of filter selection) ──
   const pendingCounts = useVpPendingCounts({
-    pr: canPrApprove,
-    loan: canLoanApprove,
-    mrq: canMrqApprove,
-    payroll: canPayrollApprove,
+    pr: canPrList,
+    loan: canLoanList,
+    mrq: canMrqList,
+    payroll: canPayrollList,
   })
   const otCount = otQuery.data?.meta?.total ?? 0
 
@@ -279,12 +288,12 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
 
   // ── Tab definitions ──────────────────────────────────────────────────────────
   const tabs: { id: TabId; label: string; count?: number; show: boolean }[] = [
-    { id: 'purchase-requests', label: 'Purchase Requests', count: pendingCounts.pr,      show: canPrApprove },
-    { id: 'loans',             label: 'Loans',             count: pendingCounts.loan,    show: canLoanApprove },
-    { id: 'mrq',               label: 'Requisitions',      count: pendingCounts.mrq,     show: canMrqApprove },
-    { id: 'payroll',           label: 'Payroll',           count: pendingCounts.payroll, show: canPayrollApprove },
-    { id: 'leave',             label: 'Leave',                                           show: canLeaveApprove },
-    { id: 'overtime',          label: 'Overtime',          count: otCount,               show: canOvertimeApprove },
+    { id: 'purchase-requests', label: 'Purchase Requests', count: pendingCounts.pr,      show: canPrList },
+    { id: 'loans',             label: 'Loans',             count: pendingCounts.loan,    show: canLoanList },
+    { id: 'mrq',               label: 'Requisitions',      count: pendingCounts.mrq,     show: canMrqList },
+    { id: 'payroll',           label: 'Payroll',           count: pendingCounts.payroll, show: canPayrollList },
+    { id: 'leave',             label: 'Leave',                                           show: canLeaveList },
+    { id: 'overtime',          label: 'Overtime',          count: otCount,               show: canOvertimeList },
   ].filter((t) => t.show)
 
   // Ensure activeTab is valid after filtering

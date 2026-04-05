@@ -61,7 +61,7 @@ class ModuleAccessMiddleware
         'loans' => ['HR', 'ACCTG', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'IT'],
 
         'ap' => ['ACCTG', 'PURCH'],
-        'vendors' => ['ACCTG', 'PURCH'],
+        'vendors' => ['HR', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'ACCTG', 'IT'],
         'vendor_invoices' => ['ACCTG'],
         'vendor_payments' => ['ACCTG'],
 
@@ -155,11 +155,12 @@ class ModuleAccessMiddleware
         }
 
         // Client portal delivery acknowledgment flow lives under production routes.
-        // Allow only delivery-schedule endpoints needed by clients, then rely on
+        // Routes may be gated by either production or delivery module access;
+        // allow only delivery-schedule endpoints for clients, then rely on
         // route/controller policies for ownership checks.
         if (
             $user->hasRole('client')
-            && $module === 'production'
+            && in_array($module, ['production', 'delivery'], true)
             && (
                 $request->is('api/v1/production/delivery-schedules/*')
                 || $request->is('api/v1/production/combined-delivery-schedules/*')

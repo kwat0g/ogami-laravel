@@ -53,6 +53,7 @@ export default function InspectionDetailPage(): React.ReactElement {
   const [rows, setRows]      = useState<ResultRow[]>([])
   const [formInit, setFormInit] = useState(false)
   const [touchedQty, setTouchedQty] = useState(false)
+  const [touchedRows, setTouchedRows] = useState(false)
 
   // ── Cancel-results form state ─────────────────────────────────────────────
   const [showCancelForm, setShowCancelForm] = useState(false)
@@ -108,10 +109,18 @@ export default function InspectionDetailPage(): React.ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [touchedQty, qtyPassed, qtyInspected])
 
+  const rowsError = useMemo(() => {
+    if (!touchedRows) return undefined
+    if (rows.length === 0) return 'At least one inspection criterion is required.'
+    if (rows.some(r => !r.criterion.trim())) return 'Criterion is required for all rows.'
+    return undefined
+  }, [touchedRows, rows])
+
   function closeForm() {
     setShowForm(false)
     setQtyPassed('')
     setTouchedQty(false)
+    setTouchedRows(false)
   }
 
   function openForm() {
@@ -150,6 +159,7 @@ export default function InspectionDetailPage(): React.ReactElement {
   function handleSubmitResults(e: React.FormEvent) {
     e.preventDefault()
     setTouchedQty(true)
+    setTouchedRows(true)
     const passed = Number(qtyPassed)
     const _failed = Number(qtyFailed)
 
@@ -324,6 +334,8 @@ export default function InspectionDetailPage(): React.ReactElement {
           description={`You are about to cancel the inspection results. This will permanently reset the inspection status to 'open' and clear all recorded data.\n\nReason: "${cancelReason.trim()}"`}
           confirmWord="CONFIRM"
           confirmLabel="Yes, Cancel Results"
+          open={showCancelConfirm}
+          onClose={() => setShowCancelConfirm(false)}
           onConfirm={executeCancelResults}
         >
           <span />
@@ -381,7 +393,11 @@ export default function InspectionDetailPage(): React.ReactElement {
                 {rows.map((row, idx) => (
                   <div key={idx} className="grid grid-cols-12 gap-2 items-center">
                     <input
-                      className="col-span-3 border border-neutral-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-neutral-400 outline-none disabled:bg-neutral-50"
+                      className={`col-span-3 border rounded px-2 py-1.5 text-sm focus:ring-1 outline-none disabled:bg-neutral-50 ${
+                        touchedRows && !row.criterion.trim()
+                          ? 'border-red-400 focus:ring-red-400'
+                          : 'border-neutral-300 focus:ring-neutral-400'
+                      }`}
                       value={row.criterion}
                       onChange={e => updateRow(idx, 'criterion', e.target.value)}
                       placeholder="e.g. Visual appearance"
@@ -438,6 +454,8 @@ export default function InspectionDetailPage(): React.ReactElement {
                 ))}
               </div>
 
+              {rowsError && <p className="mt-2 text-xs text-red-600">{rowsError}</p>}
+
               {!hasTemplate && (
                 <button
                   type="button"
@@ -477,6 +495,8 @@ export default function InspectionDetailPage(): React.ReactElement {
           title="Submit Inspection Results?"
           description={`You are about to record inspection results:\n• Units Passed: ${qtyPassed}\n• Units Failed: ${qtyFailed}\n\nThis will update the inspection status based on the results. Are you sure?`}
           confirmLabel="Submit Results"
+          open={showSubmitConfirm}
+          onClose={() => setShowSubmitConfirm(false)}
           onConfirm={executeSubmitResults}
         >
           <span />

@@ -9,7 +9,8 @@ import {
   Store,
   PlusCircle,
   ClipboardList,
-  MessageSquare
+  MessageSquare,
+  CreditCard
 } from 'lucide-react'
 import { useState } from 'react'
 import api from '@/lib/api'
@@ -127,6 +128,26 @@ export default function ClientPortalLayout() {
             >
               <ClipboardList className="h-4 w-4" />
               My Orders
+            </NavLink>
+          </div>
+
+          <div className="pt-2">
+            <p className="px-3 text-xs font-medium text-neutral-400 uppercase tracking-wider mb-2">
+              Billing
+            </p>
+
+            <NavLink
+              to="/client-portal/billing"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-neutral-900 text-white'
+                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                }`
+              }
+            >
+              <CreditCard className="h-4 w-4" />
+              Billing
             </NavLink>
           </div>
 

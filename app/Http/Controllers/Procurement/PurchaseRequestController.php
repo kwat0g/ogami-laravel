@@ -37,8 +37,10 @@ final class PurchaseRequestController extends Controller
 
         // Dept heads (create-dept only) are automatically scoped to their own department(s).
         // Full-access roles (VP, Purchasing, admin) see all PRs.
+        // Accounting budget verifiers must also see cross-department PRs at review stage.
         $isDeptHeadScope = $user->hasPermissionTo('procurement.purchase-request.create-dept')
             && ! $user->hasPermissionTo('procurement.purchase-request.create')
+            && ! $user->hasPermissionTo('procurement.purchase-request.budget-check')
             && ! $user->hasAnyRole(['executive', 'vice_president', 'admin', 'super_admin']);
 
         $query = PurchaseRequest::with(['requestedBy', 'submittedBy', 'reviewedBy', 'department', 'items'])

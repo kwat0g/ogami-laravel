@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
 import type { LeaveRequest, Loan, OvertimeRequest } from '@/types/hr'
 import type { PayrollRun } from '@/types/payroll'
 
@@ -261,7 +262,8 @@ export interface HeadDashboardStats {
 // Dashboard Hooks
 // ============================================================================
 
-export function useManagerDashboardStats(departmentId: number | null) {
+export function useManagerDashboardStats(departmentId: number | null, enabled = true) {
+  const isAuthenticated = useAuthStore((s) => !!s.user)
   return useQuery({
     queryKey: ['manager-dashboard', departmentId],
     queryFn: async () => {
@@ -270,40 +272,47 @@ export function useManagerDashboardStats(departmentId: number | null) {
       })
       return res.data
     },
-    enabled: departmentId !== null,
+    enabled: enabled && isAuthenticated && departmentId !== null,
+    retry: false,
     staleTime: 60_000,
   })
 }
 
 export function useHrDashboardStats(enabled = false) {
+  const isAuthenticated = useAuthStore((s) => !!s.user)
   return useQuery({
     queryKey: ['hr-dashboard'],
     queryFn: async () => {
       const res = await api.get<HrDashboardStats>('/dashboard/hr')
       return res.data
     },
+    enabled: enabled && isAuthenticated,
     staleTime: 60_000,
   })
 }
 
 export function useAccountingDashboardStats(enabled = false) {
+  const isAuthenticated = useAuthStore((s) => !!s.user)
   return useQuery({
     queryKey: ['accounting-dashboard'],
     queryFn: async () => {
       const res = await api.get<AccountingDashboardStats>('/dashboard/accounting')
       return res.data
     },
+    enabled: enabled && isAuthenticated,
     staleTime: 60_000,
   })
 }
 
 export function useAdminDashboardStats(enabled = false) {
+  const isAuthenticated = useAuthStore((s) => !!s.user)
   return useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: async () => {
       const res = await api.get<AdminDashboardStats>('/dashboard/admin')
       return res.data
     },
+    enabled: enabled && isAuthenticated,
     staleTime: 30_000,
     refetchInterval: 60_000,
     refetchIntervalInBackground: false,
@@ -311,34 +320,40 @@ export function useAdminDashboardStats(enabled = false) {
 }
 
 export function useStaffDashboardStats(enabled = false) {
+  const isAuthenticated = useAuthStore((s) => !!s.user)
   return useQuery({
     queryKey: ['staff-dashboard'],
     queryFn: async () => {
       const res = await api.get<StaffDashboardStats>('/dashboard/staff')
       return res.data
     },
+    enabled: enabled && isAuthenticated,
     staleTime: 60_000,
   })
 }
 
 export function useExecutiveDashboardStats(enabled = false) {
+  const isAuthenticated = useAuthStore((s) => !!s.user)
   return useQuery({
     queryKey: ['executive-dashboard'],
     queryFn: async () => {
       const res = await api.get<ExecutiveDashboardStats>('/dashboard/executive')
       return res.data
     },
+    enabled: enabled && isAuthenticated,
     staleTime: 120_000,
   })
 }
 
 export function useHeadDashboardStats(enabled = false) {
+  const isAuthenticated = useAuthStore((s) => !!s.user)
   return useQuery({
     queryKey: ['head-dashboard'],
     queryFn: async () => {
       const res = await api.get<HeadDashboardStats>('/dashboard/head')
       return res.data
     },
+    enabled: enabled && isAuthenticated,
     staleTime: 60_000,
   })
 }
@@ -375,12 +390,14 @@ export interface VicePresidentDashboardStats {
 }
 
 export function useVicePresidentDashboardStats(enabled = false) {
+  const isAuthenticated = useAuthStore((s) => !!s.user)
   return useQuery({
     queryKey: ['vp-dashboard'],
     queryFn: async () => {
       const res = await api.get<VicePresidentDashboardStats>('/dashboard/vp')
       return res.data
     },
+    enabled: enabled && isAuthenticated,
     staleTime: 60_000,
   })
 }
@@ -413,12 +430,14 @@ export interface OfficerDashboardStats {
 }
 
 export function useOfficerDashboardStats(enabled = false) {
+  const isAuthenticated = useAuthStore((s) => !!s.user)
   return useQuery({
     queryKey: ['officer-dashboard'],
     queryFn: async () => {
       const res = await api.get<OfficerDashboardStats>('/dashboard/officer')
       return res.data
     },
+    enabled: enabled && isAuthenticated,
     staleTime: 60_000,
   })
 }

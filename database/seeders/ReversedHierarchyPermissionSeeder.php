@@ -80,6 +80,9 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'employees.create', 'employees.update',
             'employees.upload_documents', 'employees.download_documents',
             'payroll.initiate_run', 'payroll.compute', 'payroll.publish', 'payroll.download_reports',
+            'vendors.view',
+            'procurement.purchase-request.view',
+            'procurement.purchase-request.create-dept',
         ];
 
         $head = array_merge($staffBase, $headAdds);
@@ -168,6 +171,7 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'budget.create', 'budget.edit',
             'fiscal_periods.manage',
             'accounting.full_access',
+            'procurement.purchase-request.create-dept',
         ];
 
         $head = array_merge($staffBase, $headAdds);
@@ -214,6 +218,7 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'leaves.view_team', 'leaves.file_on_behalf',
             'leaves.head_approve',
             'loans.view_department',
+            'vendors.view',
             'inventory.mrq.create',
             'procurement.purchase-request.view',
             'procurement.purchase-request.create-dept',
@@ -387,6 +392,9 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'inventory.adjustments.create',
             'procurement.goods-receipt.post',
             'delivery.manage',
+            'vendors.view',
+            'procurement.purchase-request.view',
+            'procurement.purchase-request.create-dept',
         ];
 
         $head = array_merge($staffBase, $headAdds);
@@ -428,6 +436,7 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'leaves.head_approve',
             'loans.view_department',
             'customer_invoices.view',
+            'inventory.stock.view',
             'crm.tickets.create',
             'delivery.view',
             // Client Orders
@@ -450,10 +459,12 @@ class ReversedHierarchyPermissionSeeder extends Seeder
         $managerAdds = [
             'employees.view_full_record', 'employees.view_masked_gov_ids',
             'customers.create', 'customers.edit',
-            'customer_invoices.create',
             'crm.tickets.assign', 'crm.tickets.close',
             // Client Orders (full access for Sales Manager)
             'sales.order_approve', 'sales.order_reject',
+            'vendors.view',
+            'procurement.purchase-request.view',
+            'procurement.purchase-request.create-dept',
         ];
 
         $head = array_merge($staffBase, $headAdds);
@@ -510,6 +521,9 @@ class ReversedHierarchyPermissionSeeder extends Seeder
             'iso.audit',
             'maintenance.manage',
             'system.settings.manage',
+            'vendors.view',
+            'procurement.purchase-request.view',
+            'procurement.purchase-request.create-dept',
         ];
 
         $head = array_merge($staffBase, $headAdds);

@@ -84,7 +84,7 @@
   <div class="two-col" style="border:1px solid #c9d8e8;margin-bottom:14px;">
     <div class="col-left" style="padding:12px 14px;border-right:1px solid #c9d8e8;">
       <div class="client-label">Bill To</div>
-      <div class="client-name">{{ $invoice->customer?->company_name ?? '—' }}</div>
+      <div class="client-name">{{ $invoice->customer?->company_name ?? $invoice->customer?->name ?? '—' }}</div>
       @if($invoice->customer?->contact_person)
         <div class="client-detail">Attn: {{ $invoice->customer->contact_person }}</div>
       @endif
@@ -117,6 +117,10 @@
   </div>
 
   {{-- Line Items --}}
+    @php
+    $linesWithAmounts = collect($pdfLines ?? []);
+    @endphp
+
   <div class="section-title">Items / Services</div>
   <table>
     <thead>
@@ -130,15 +134,15 @@
       </tr>
     </thead>
     <tbody>
-      @if($invoice->items && $invoice->items->count() > 0)
-        @foreach($invoice->items as $item)
+      @if($linesWithAmounts->count() > 0)
+        @foreach($linesWithAmounts as $item)
         <tr>
           <td>{{ $loop->iteration }}</td>
-          <td>{{ $item->description ?? $item->item_description ?? '—' }}</td>
-          <td>{{ $item->unit_of_measure ?? 'pcs' }}</td>
-          <td class="right">{{ number_format($item->quantity ?? 1, 2) }}</td>
-          <td class="right">{{ number_format($item->unit_price ?? $item->unit_amount ?? 0, 2) }}</td>
-          <td class="right">{{ number_format($item->total_amount ?? ($item->quantity * $item->unit_price), 2) }}</td>
+          <td>{{ $item->description ?? '—' }}</td>
+          <td>{{ $item->uom ?? 'pcs' }}</td>
+          <td class="right">{{ number_format((float) ($item->qty ?? 1), 2) }}</td>
+          <td class="right">{{ number_format((float) ($item->unit_price ?? 0), 2) }}</td>
+          <td class="right">{{ number_format((float) ($item->amount ?? 0), 2) }}</td>
         </tr>
         @endforeach
       @else

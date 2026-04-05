@@ -22,6 +22,8 @@ import StatusTimeline from '@/components/ui/StatusTimeline'
 import ChainRecordTimeline from '@/components/ui/ChainRecordTimeline'
 import { getClientOrderSteps, isRejectedStatus } from '@/lib/workflowSteps'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import { NEGOTIATION_REASONS, REJECTION_REASONS } from '@/types/client-order'
 import type { ClientOrder } from '@/types/client-order'
 
@@ -157,6 +159,8 @@ export default function ClientOrderDetailPage(): JSX.Element {
   const salesRespondMutation = useSalesRespondToCounter()
   const vpApproveMutation = useVpApproveClientOrder()
   const forceProductionMutation = useForceProductionClientOrder()
+  const hasPermission = useAuthStore((s) => s.hasPermission)
+  const canViewStock = hasPermission(PERMISSIONS.inventory.stock.view)
 
   // Stock preview: fetch stock balances for all items in this order
   const itemIds = order?.items?.map((i: { item_master_id: number }) => i.item_master_id).filter(Boolean) ?? []
@@ -172,7 +176,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
       }
       return balances
     },
-    enabled: itemIds.length > 0,
+    enabled: canViewStock && itemIds.length > 0,
     staleTime: 30_000,
   })
   const stockMap: Record<number, number> = stockData ?? {}

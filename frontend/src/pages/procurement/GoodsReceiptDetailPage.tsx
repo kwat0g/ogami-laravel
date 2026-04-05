@@ -131,6 +131,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
   const isQcFailed = gr.status === 'qc_failed'
   const isPartialAccept = gr.status === 'partial_accept'
   const isConfirmed = gr.status === 'confirmed'
+  const canReturnToSupplier = isConfirmed && !gr.three_way_match_passed
   const canConfirm = isQcPassed || isPartialAccept
   const canReject = isDraft || isPendingQc || isQcFailed
   const anyPending = confirmMutation.isPending || deleteMutation.isPending || rejectMutation.isPending || submitForQcMutation.isPending || acceptWithDefectsMutation.isPending || returnToSupplierMutation.isPending || resubmitForQcMutation.isPending
@@ -262,8 +263,8 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
             </button>
           )}
 
-          {/* Return to Supplier: only when confirmed */}
-          {isConfirmed && (
+          {/* Return to Supplier: only before successful three-way match */}
+          {canReturnToSupplier && (
             <button
               type="button"
               disabled={anyPending}
@@ -480,7 +481,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
               <thead className="bg-neutral-50 border-b border-neutral-200">
                 <tr>
                   <th className="text-left px-4 py-3 font-medium text-neutral-600">#</th>
-                  <th className="text-left px-4 py-3 font-medium text-neutral-600">PO Item ID</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Item</th>
                   <th className="text-right px-4 py-3 font-medium text-neutral-600">Qty Received</th>
                   {!isDraft && <th className="text-right px-4 py-3 font-medium text-neutral-600">Qty Accepted</th>}
                   {!isDraft && <th className="text-right px-4 py-3 font-medium text-neutral-600">Qty Rejected</th>}
@@ -495,7 +496,7 @@ export default function GoodsReceiptDetailPage(): React.ReactElement {
                 {gr.items.map((item: any, idx: number) => (
                   <tr key={item.id} className="even:bg-neutral-50/50 hover:bg-neutral-50">
                     <td className="px-4 py-3 text-neutral-400">{idx + 1}</td>
-                    <td className="px-4 py-3 text-neutral-600 font-mono text-xs">{item.po_item_id}</td>
+                    <td className="px-4 py-3 text-neutral-700">{item.po_item?.item_description ?? `PO Item #${item.po_item_id}`}</td>
                     <td className="px-4 py-3 text-right text-neutral-800 font-medium">
                       {item.quantity_received}
                     </td>

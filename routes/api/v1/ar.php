@@ -78,7 +78,7 @@ Route::middleware(['auth:sanctum', 'module_access:ar'])->group(function () {
 
     // AR-003: approve draft → generate INV number + auto-post JE
     Route::patch('invoices/{customerInvoice}/approve', [CustomerInvoiceController::class, 'approve'])
-        ->middleware(['sod:customer_invoices,approve', 'throttle:api-action'])
+        ->middleware(['throttle:api-action'])
         ->name('ar-invoices.approve');
 
     Route::patch('invoices/{customerInvoice}/cancel', [CustomerInvoiceController::class, 'cancel'])

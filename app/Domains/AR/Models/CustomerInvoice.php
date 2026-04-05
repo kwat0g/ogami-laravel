@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\AR\Models;
 
+use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Shared\Traits\HasPublicUlid;
 use Carbon\Carbon;
@@ -91,6 +92,11 @@ class CustomerInvoice extends Model implements Auditable
     public function deliveryReceipt(): BelongsTo
     {
         return $this->belongsTo(DeliveryReceipt::class);
+    }
+
+    public function fiscalPeriod(): BelongsTo
+    {
+        return $this->belongsTo(FiscalPeriod::class);
     }
 
     public function payments(): HasMany

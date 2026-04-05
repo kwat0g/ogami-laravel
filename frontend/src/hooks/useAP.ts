@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import type {
   Vendor,
   VendorInvoice,
@@ -37,12 +39,18 @@ export function useVendors(
     page?: number
   } = {},
 ) {
+  const hasPermission = useAuthStore((s) => s.hasPermission)
+  const canViewVendors = hasPermission(
+    `${PERMISSIONS.vendors.view}|${PERMISSIONS.vendors.manage}`,
+  )
+
   return useQuery({
     queryKey: ['vendors', params],
     queryFn: async () => {
       const res = await api.get<Paginated<Vendor>>('/accounting/vendors', { params })
       return res.data
     },
+    enabled: canViewVendors,
     staleTime: 30_000,
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: true,

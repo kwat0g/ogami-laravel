@@ -18,7 +18,7 @@ use Illuminate\Auth\Access\HandlesAuthorization;
  * Permissions (registered in RolePermissionSeeder):
  *   procurement.purchase-request.view
  *   procurement.purchase-request.create
- *   procurement.purchase-request.create-dept  (Dept Head — own dept only)
+ *   procurement.purchase-request.create-dept  (Dept Head/Manager — own dept only)
  *   procurement.purchase-request.review       (Purchasing Officer)
  *   procurement.purchase-request.budget-check (Accounting Officer)
  *   approvals.vp.approve                      (VP — shared with loans)
@@ -82,9 +82,9 @@ final class PurchaseRequestPolicy
             return true;
         }
 
-        // Department heads can create PRs for their own department
+        // Department-scoped heads/managers can create PRs for their own department
         if ($user->hasPermissionTo('procurement.purchase-request.create-dept')
-            && $user->hasRole('head')) {
+            && $user->hasAnyRole(['head', 'manager'])) {
             return true;
         }
 
@@ -108,9 +108,9 @@ final class PurchaseRequestPolicy
             return true;
         }
 
-        // Department heads can only create for their own department(s)
+        // Department-scoped heads/managers can only create for their own department(s)
         if ($user->hasPermissionTo('procurement.purchase-request.create-dept')
-            && $user->hasRole('head')) {
+            && $user->hasAnyRole(['head', 'manager'])) {
             // Check primary department
             $primaryDept = $user->relationLoaded('primaryDepartment')
                 ? $user->getRelation('primaryDepartment')
@@ -129,7 +129,7 @@ final class PurchaseRequestPolicy
 
     /**
      * Create PR from approved Material Requisition (when stock is insufficient).
-     * Only Purchasing department can convert MRQs to PRs.
+     * Purchasing users and warehouse managers can convert MRQs to PRs.
      */
     public function createFromMrq(User $user, MaterialRequisition $mrq): bool
     {
@@ -143,8 +143,14 @@ final class PurchaseRequestPolicy
             return true;
         }
 
-        // Only Purchasing department users can convert MRQs.
-        return $this->isInPurchasingDepartment($user);
+        // Purchasing users can convert MRQs.
+        if ($this->isInPurchasingDepartment($user)) {
+            return true;
+        }
+
+        // Warehouse Manager is the final MRQ approver and can initiate PR conversion
+        // when fulfillment is blocked by stock shortages.
+        return $this->isWarehouseManager($user);
     }
 
     /**
@@ -158,6 +164,7 @@ final class PurchaseRequestPolicy
     {
         return $user->hasPermissionTo('procurement.purchase-request.create-dept')
             && ! $user->hasPermissionTo('procurement.purchase-request.create')
+            && ! $user->hasPermissionTo('procurement.purchase-request.budget-check')
             && ! $user->hasAnyRole(['executive', 'vice_president']);
     }
 
@@ -175,6 +182,38 @@ final class PurchaseRequestPolicy
 
         // Check additional departments (via pivot)
         return $user->departments()->where('code', 'PURCH')->exists();
+    }
+
+    private function isInAccountingDepartment(User $user): bool
+    {
+        /** @var Department|null $primaryDept */
+        $primaryDept = $user->relationLoaded('primaryDepartment')
+            ? $user->getRelation('primaryDepartment')
+            : $user->primaryDepartment;
+
+        if ($primaryDept?->code === 'ACCTG') {
+            return true;
+        }
+
+        return $user->departments()->where('code', 'ACCTG')->exists();
+    }
+
+    private function isWarehouseManager(User $user): bool
+    {
+        if (! $user->hasRole('manager')) {
+            return false;
+        }
+
+        /** @var Department|null $primaryDept */
+        $primaryDept = $user->relationLoaded('primaryDepartment')
+            ? $user->getRelation('primaryDepartment')
+            : $user->primaryDepartment;
+
+        if ($primaryDept?->code === 'WH') {
+            return true;
+        }
+
+        return $user->departments()->where('code', 'WH')->exists();
     }
 
     public function update(User $user, PurchaseRequest $pr): bool
@@ -266,6 +305,7 @@ final class PurchaseRequestPolicy
     public function budgetCheck(User $user, PurchaseRequest $pr): bool
     {
         return $user->hasPermissionTo('procurement.purchase-request.budget-check')
+            && $this->isInAccountingDepartment($user)
             && $pr->status === 'reviewed';
     }
 
@@ -281,7 +321,8 @@ final class PurchaseRequestPolicy
 
         // Accounting can return at reviewed stage
         if ($pr->status === 'reviewed') {
-            return $user->hasPermissionTo('procurement.purchase-request.budget-check');
+            return $user->hasPermissionTo('procurement.purchase-request.budget-check')
+                && $this->isInAccountingDepartment($user);
         }
 
         return false;
@@ -304,7 +345,8 @@ final class PurchaseRequestPolicy
     {
         return match ($pr->status) {
             'pending_review' => $user->hasPermissionTo('procurement.purchase-request.review'),
-            'reviewed' => $user->hasPermissionTo('procurement.purchase-request.budget-check'),
+            'reviewed' => $user->hasPermissionTo('procurement.purchase-request.budget-check')
+                && $this->isInAccountingDepartment($user),
             'budget_verified' => $user->hasPermissionTo('approvals.vp.approve'),
             default => false,
         };

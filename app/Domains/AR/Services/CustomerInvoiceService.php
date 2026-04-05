@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\AR\Services;
 
+use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\Accounting\Services\JournalEntryService;
 use App\Domains\AR\Models\Customer;
 use App\Domains\AR\Models\CustomerAdvancePayment;
@@ -15,8 +16,10 @@ use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use App\Shared\Exceptions\SodViolationException;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Customer Invoice Service — AR-001 through AR-006 enforcement.
@@ -223,8 +226,15 @@ final class CustomerInvoiceService implements ServiceContract
         }
 
         return DB::transaction(function () use ($invoice, $actor) {
+            $effectiveInvoiceDate = $this->alignInvoiceDateToOpenFiscalPeriod($invoice);
+
+            if ($effectiveInvoiceDate !== $invoice->invoice_date->toDateString()) {
+                $invoice->update(['invoice_date' => $effectiveInvoiceDate]);
+                $invoice->refresh();
+            }
+
             // AR-003: generate invoice number
-            $invoiceNumber = $this->generateInvoiceNumber($invoice->invoice_date);
+            $invoiceNumber = $this->generateInvoiceNumber($effectiveInvoiceDate);
 
             $invoice->update([
                 'status' => 'approved',
@@ -446,8 +456,40 @@ final class CustomerInvoiceService implements ServiceContract
     }
 
     /**
-     * Auto-post journal entry for an approved invoice.
-     * DR Accounts Receivable / CR Revenue (+ VAT output to VAT clearing if applicable).
+     * Keep invoice_date inside the selected open fiscal period when approving.
+     * This preserves strict posting rules while unblocking system-generated drafts
+     * created when "today" is outside the selected open period.
+     */
+    private function alignInvoiceDateToOpenFiscalPeriod(CustomerInvoice $invoice): string
+    {
+        if ($invoice->fiscal_period_id === null) {
+            return $invoice->invoice_date->toDateString();
+        }
+
+        $period = FiscalPeriod::query()->find($invoice->fiscal_period_id);
+        if ($period === null || $period->status !== 'open') {
+            return $invoice->invoice_date->toDateString();
+        }
+
+        $invoiceDate = Carbon::parse($invoice->invoice_date->toDateString());
+        $periodStart = Carbon::parse((string) $period->date_from);
+        $periodEnd = Carbon::parse((string) $period->date_to);
+
+        if ($invoiceDate->lt($periodStart)) {
+            return $periodStart->toDateString();
+        }
+
+        if ($invoiceDate->gt($periodEnd)) {
+            return $periodEnd->toDateString();
+        }
+
+        return $invoiceDate->toDateString();
+    }
+
+    /**
+     * Create and post JE for approved invoice.
+     * If posting is blocked by DB SoD constraint (poster == creator), keep JE as draft
+     * and link it to the invoice for a different user to post later.
      */
     private function autoPostJournalEntry(CustomerInvoice $invoice): void
     {
@@ -477,9 +519,23 @@ final class CustomerInvoiceService implements ServiceContract
             'lines' => $lines,
         ]);
 
-        $this->jeService->post($je);
-
         $invoice->update(['journal_entry_id' => $je->id]);
+
+        try {
+            $this->jeService->post($je);
+        } catch (QueryException $e) {
+            $isSodConstraint = $e->getCode() === '23514' && str_contains($e->getMessage(), 'chk_je_sod_poster');
+            if (! $isSodConstraint) {
+                throw $e;
+            }
+
+            Log::warning('AR invoice JE kept as draft due to SoD poster constraint', [
+                'invoice_id' => $invoice->id,
+                'journal_entry_id' => $je->id,
+                'created_by' => $je->created_by,
+                'attempted_posted_by' => auth()->id(),
+            ]);
+        }
     }
 
     /** VAT-002: reads vat_rate from system_settings; never hardcodes 12%. */

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Production\Policies;
 
+use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Production\Models\ProductionOrder;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
@@ -60,14 +61,28 @@ final class ProductionOrderPolicy
 
     public function start(User $user, ProductionOrder $order): bool
     {
-        return $user->hasPermissionTo('production.orders.release')
-            && $order->status === 'released';
+        if (! $user->hasPermissionTo('production.orders.release') || $order->status !== 'released') {
+            return false;
+        }
+
+        $hasPendingMrq = MaterialRequisition::query()
+            ->where('production_order_id', $order->id)
+            ->whereNotIn('status', ['fulfilled', 'cancelled', 'rejected'])
+            ->exists();
+
+        return ! $hasPendingMrq;
     }
 
     public function complete(User $user, ProductionOrder $order): bool
     {
         return $user->hasPermissionTo('production.orders.complete')
             && $order->status === 'in_progress';
+    }
+
+    public function createOqcInspection(User $user, ProductionOrder $order): bool
+    {
+        return $user->hasPermissionTo('production.orders.complete')
+            && $order->status === 'completed';
     }
 
     public function cancel(User $user, ProductionOrder $order): bool

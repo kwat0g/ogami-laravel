@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import type {
   Bom,
   BomMaterialCostSnapshot,
@@ -15,26 +17,40 @@ import type {
 
 // ── Bill of Materials ────────────────────────────────────────────────────────
 
-export function useBoms(params: { product_item_id?: number; is_active?: boolean; per_page?: number; with_archived?: boolean } = {}) {
+export function useBoms(
+  params: { product_item_id?: number; is_active?: boolean; per_page?: number; with_archived?: boolean } = {},
+  options: { enabled?: boolean } = {},
+) {
+  const hasPermission = useAuthStore((s) => s.hasPermission)
+  const canViewBoms = hasPermission(
+    `${PERMISSIONS.production.bom.view}|${PERMISSIONS.production.bom.manage}`,
+  )
+
   return useQuery({
     queryKey: ['boms', params],
     queryFn: async () => {
       const res = await api.get<Paginated<Bom>>('/production/boms', { params })
       return res.data
     },
+    enabled: canViewBoms && (options.enabled ?? true),
     staleTime: 30_000,
     placeholderData: keepPreviousData,
   })
 }
 
-export function useBom(ulid: string | null) {
+export function useBom(ulid: string | null, options: { enabled?: boolean } = {}) {
+  const hasPermission = useAuthStore((s) => s.hasPermission)
+  const canViewBom = hasPermission(
+    `${PERMISSIONS.production.bom.view}|${PERMISSIONS.production.bom.manage}`,
+  )
+
   return useQuery({
     queryKey: ['boms', ulid],
     queryFn: async () => {
       const res = await api.get<{ data: Bom }>(`/production/boms/${ulid}`)
       return res.data.data
     },
-    enabled: ulid !== null,
+    enabled: canViewBom && ulid !== null && (options.enabled ?? true),
   })
 }
 
@@ -200,6 +216,7 @@ function orderAction(ulid: string, action: string, qc: ReturnType<typeof useQuer
   return () =>
     api.patch(`/production/orders/${ulid}/${action}`).then(() => {
       void qc.invalidateQueries({ queryKey: ['production-orders'] })
+      void qc.invalidateQueries({ queryKey: ['production-orders', ulid] })
       void qc.invalidateQueries({ queryKey: ['production-order', ulid] })
     })
 }
@@ -252,6 +269,28 @@ export function useLogOutput(ulid: string) {
 export function useCloseOrder(ulid: string) {
   const qc = useQueryClient()
   return useMutation({ mutationFn: orderAction(ulid, 'close', qc) })
+}
+
+export interface CreateOqcInspectionResult {
+  ulid: string
+  inspection_reference: string
+  status: string
+  created_new: boolean
+}
+
+export function useCreateOqcInspection(ulid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.post<{ data: CreateOqcInspectionResult }>(`/production/orders/${ulid}/create-oqc-inspection`)
+      return res.data.data
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['production-orders'] })
+      void qc.invalidateQueries({ queryKey: ['production-orders', ulid] })
+      void qc.invalidateQueries({ queryKey: ['qc', 'inspections'] })
+    },
+  })
 }
 
 export function useHoldOrder(ulid: string) {

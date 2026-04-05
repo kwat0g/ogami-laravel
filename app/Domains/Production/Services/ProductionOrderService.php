@@ -18,6 +18,7 @@ use App\Domains\Production\Models\ProductionOrder;
 use App\Domains\Production\Services\CostingService;
 use App\Domains\Production\Models\ProductionOutputLog;
 use App\Domains\QC\Models\Inspection;
+use App\Domains\QC\Models\InspectionTemplate;
 use App\Events\Production\ProductionOrderCompleted;
 use App\Models\User;
 use App\Shared\Contracts\ServiceContract;
@@ -457,12 +458,153 @@ final class ProductionOrderService implements ServiceContract
      */
     public function close(ProductionOrder $order): ProductionOrder
     {
+        $oqcQuery = Inspection::query()
+            ->where('production_order_id', $order->id)
+            ->where('stage', 'oqc');
+
+        $hasPassedOqc = (clone $oqcQuery)
+            ->where('status', 'passed')
+            ->exists();
+
+        if (! $hasPassedOqc) {
+            throw new DomainException(
+                'Cannot close: a passed OQC inspection is required first.',
+                'PROD_OQC_REQUIRED',
+                422,
+            );
+        }
+
+        $hasPendingOrFailedOqc = (clone $oqcQuery)
+            ->whereIn('status', ['open', 'failed'])
+            ->exists();
+
+        if ($hasPendingOrFailedOqc) {
+            throw new DomainException(
+                'Cannot close: resolve open/failed OQC inspections first.',
+                'PROD_OQC_PENDING',
+                422,
+            );
+        }
+
         $stateMachine = new ProductionOrderStateMachine();
         $stateMachine->transition($order, 'closed');
 
-        $order->update(['status' => 'closed']);
+        DB::transaction(function () use ($order): void {
+            // Receive finished goods only after OQC has passed.
+            $alreadyReceived = StockLedger::query()
+                ->where('reference_type', 'production_orders')
+                ->where('reference_id', $order->id)
+                ->where('transaction_type', 'receive')
+                ->exists();
+
+            if (! $alreadyReceived) {
+                $location = WarehouseLocation::where('is_active', true)->first();
+                if ($location === null) {
+                    throw new DomainException(
+                        'Cannot close: no active warehouse location configured.',
+                        'PROD_NO_WAREHOUSE',
+                        422,
+                    );
+                }
+
+                $actor = auth()->user() ?? User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
+                if (! $actor instanceof User) {
+                    throw new DomainException(
+                        'Cannot close: no authenticated user or system user available for stock receipt.',
+                        'PROD_NO_ACTOR',
+                        500,
+                    );
+                }
+
+                $qtyToReceive = (float) (Inspection::query()
+                    ->where('production_order_id', $order->id)
+                    ->where('stage', 'oqc')
+                    ->where('status', 'passed')
+                    ->orderByDesc('inspection_date')
+                    ->orderByDesc('id')
+                    ->value('qty_passed') ?? 0.0);
+
+                if ($qtyToReceive > 0) {
+                    $this->stockService->receive(
+                        itemId: $order->product_item_id,
+                        locationId: $location->id,
+                        quantity: $qtyToReceive,
+                        referenceType: 'production_orders',
+                        referenceId: $order->id,
+                        actor: $actor,
+                        remarks: "Auto-receive from OQC pass — WO {$order->po_reference}",
+                    );
+                }
+            }
+
+            $order->update(['status' => 'closed']);
+        });
 
         return $order->refresh();
+    }
+
+    /**
+     * Auto-create an OQC inspection for a completed production order.
+     *
+     * @return array{inspection: Inspection, created_new: bool}
+     */
+    public function createOqcInspection(ProductionOrder $order, User $actor): array
+    {
+        if ($order->status !== 'completed') {
+            throw new DomainException(
+                "OQC inspection can only be created for completed work orders (current: {$order->status}).",
+                'PROD_OQC_INVALID_STATUS',
+                422,
+            );
+        }
+
+        $existingOpen = Inspection::query()
+            ->where('production_order_id', $order->id)
+            ->where('stage', 'oqc')
+            ->where('status', 'open')
+            ->first();
+
+        if ($existingOpen !== null) {
+            return [
+                'inspection' => $existingOpen,
+                'created_new' => false,
+            ];
+        }
+
+        $qtyInspected = max(0.0, (float) $order->qty_produced - (float) $order->qty_rejected);
+        if ($qtyInspected <= 0) {
+            throw new DomainException(
+                'Cannot create OQC inspection: no net producible quantity found.',
+                'PROD_OQC_QTY_REQUIRED',
+                422,
+            );
+        }
+
+        $templateId = InspectionTemplate::query()
+            ->where('stage', 'oqc')
+            ->where('is_active', true)
+            ->orderByDesc('id')
+            ->value('id');
+
+        $inspection = Inspection::create([
+            'stage' => 'oqc',
+            'status' => 'open',
+            'inspection_template_id' => $templateId,
+            'production_order_id' => $order->id,
+            'item_master_id' => $order->product_item_id,
+            'qty_inspected' => $qtyInspected,
+            'qty_passed' => 0,
+            'qty_failed' => 0,
+            'inspection_date' => now()->toDateString(),
+            'inspector_id' => $actor->employee_id,
+            'remarks' => "Auto-created OQC for WO {$order->po_reference}",
+            'created_by_id' => $actor->id,
+        ]);
+
+        return [
+            'inspection' => $inspection,
+            'created_new' => true,
+        ];
     }
 
     /**
@@ -750,70 +892,16 @@ final class ProductionOrderService implements ServiceContract
             );
         }
 
-        // ── FQC Gate: Check for passed final QC inspection ──────────────
-        // If there are any open or failed inspections linked to this order,
-        // block completion. Only proceed if no inspections exist (no FQC
-        // required) or all inspections have passed.
-        $openOrFailed = Inspection::where('production_order_id', $order->id)
-            ->whereIn('status', ['open', 'failed'])
-            ->exists();
-
-        if ($openOrFailed) {
-            $failedIds = Inspection::where('production_order_id', $order->id)
-                ->whereIn('status', ['open', 'failed'])
-                ->pluck('id')
-                ->implode(', ');
-
-            throw new DomainException(
-                "Cannot complete: QC inspection(s) #{$failedIds} are open or failed. Resolve all inspections before completing the order.",
-                'PROD_FQC_GATE_BLOCKED',
-                422,
-            );
-        }
-
         return DB::transaction(function () use ($order): ProductionOrder {
             $order->update(['status' => 'completed']);
-
-            // Move finished goods into stock
-            $location = WarehouseLocation::where('is_active', true)->first();
-            if ($location === null) {
-                throw new DomainException(
-                    'Cannot complete: no active warehouse location configured.',
-                    'PROD_NO_WAREHOUSE',
-                    422,
-                );
-            }
-
-            $actor = auth()->user() ?? User::where('email', config('ogami.system_user_email', 'admin@ogamierp.local'))->first();
-            if (! $actor instanceof User) {
-                throw new DomainException(
-                    'Cannot complete: no authenticated user or system user available for stock receipt.',
-                    'PROD_NO_ACTOR',
-                    500,
-                );
-            }
-
-            $netQty = (float) $order->qty_produced - (float) $order->qty_rejected;
-            if ($netQty > 0) {
-                $this->stockService->receive(
-                    itemId: $order->product_item_id,
-                    locationId: $location->id,
-                    quantity: $netQty,
-                    referenceType: 'production_orders',
-                    referenceId: $order->id,
-                    actor: $actor,
-                    remarks: "Auto-receive from WO {$order->po_reference}",
-                );
-            }
-
             $completedOrder = $order->refresh();
-            $actorId = $actor->id;
+            $actorId = auth()->id();
             // Run side effects after commit so DB failures do not poison the main transaction.
             DB::afterCommit(function () use ($completedOrder, $actorId): void {
                 if (! app()->environment('testing')) {
                     try {
                         $costPostingService = app(ProductionCostPostingService::class);
-                        $postingActor = User::find($actorId);
+                        $postingActor = $actorId !== null ? User::find($actorId) : null;
                         if ($postingActor !== null) {
                             $costPostingService->postCostVariance($completedOrder, $postingActor);
                         }

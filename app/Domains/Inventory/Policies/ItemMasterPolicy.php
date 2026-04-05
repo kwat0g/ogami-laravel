@@ -37,6 +37,11 @@ final class ItemMasterPolicy
         return $user->can('inventory.adjustments.create');
     }
 
+    public function viewStock(User $user): bool
+    {
+        return $user->can('inventory.stock.view');
+    }
+
     /**
      * Determine whether the user can restore the model.
      */

@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Domains\Production\Services;
 
 use App\Domains\AR\Models\CustomerInvoice;
-use App\Domains\AR\Models\FiscalPeriod;
+use App\Domains\Accounting\Models\FiscalPeriod;
 use App\Domains\CRM\Models\ClientOrder;
 use App\Domains\Delivery\Models\DeliveryReceipt;
 use App\Domains\Delivery\Models\DeliveryReceiptItem;
+use App\Domains\Delivery\Services\DeliveryDisputeService;
 use App\Domains\Inventory\Models\StockBalance;
 use App\Domains\Inventory\Services\StockService;
 use App\Domains\Production\Models\BillOfMaterials;
@@ -20,6 +21,7 @@ use App\Notifications\Delivery\DeliveryDisputeNotification;
 use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -28,6 +30,7 @@ final class DeliveryScheduleService implements ServiceContract
     public function __construct(
         private readonly ProductionOrderService $poService,
         private readonly StockService $stockService,
+        private readonly DeliveryDisputeService $disputeService,
     ) {}
 
     /**
@@ -448,6 +451,8 @@ final class DeliveryScheduleService implements ServiceContract
                 }
             }
 
+            $this->disputeService->finalizePendingReplacementForSchedule($ds);
+
             return $ds->fresh();
         });
     }
@@ -489,7 +494,7 @@ final class DeliveryScheduleService implements ServiceContract
             );
         }
 
-        return DB::transaction(function () use ($ds, $itemAcknowledgments, $userId): DeliverySchedule {
+        return DB::transaction(function () use ($ds, $itemAcknowledgments, $generalNotes, $userId): DeliverySchedule {
             $hasIssues = false;
             $disputeItems = [];
 
@@ -499,26 +504,77 @@ final class DeliveryScheduleService implements ServiceContract
                     continue;
                 }
 
+                $receivedQty = (float) $ack['received_qty'];
+                $orderedQty = (float) $item->qty_ordered;
+                $condition = (string) $ack['condition'];
+                $photoUrls = array_values(array_filter(
+                    is_array($ack['photo_urls'] ?? null) ? $ack['photo_urls'] : [],
+                    static fn ($url): bool => is_string($url) && trim($url) !== ''
+                ));
+
+                if ($receivedQty > $orderedQty) {
+                    throw new DomainException(
+                        'Received quantity cannot be greater than ordered quantity.',
+                        'INVALID_ACKNOWLEDGMENT_QTY_EXCEEDS_ORDERED',
+                        422
+                    );
+                }
+
+                if ($condition === 'missing' && abs($receivedQty - $orderedQty) < 0.0001) {
+                    throw new DomainException(
+                        'Missing condition requires received quantity lower than ordered quantity.',
+                        'INVALID_ACKNOWLEDGMENT_MISSING_QTY',
+                        422
+                    );
+                }
+
+                if ($condition === 'good' && abs($receivedQty - $orderedQty) > 0.0001) {
+                    throw new DomainException(
+                        'Good condition requires received quantity to match ordered quantity.',
+                        'INVALID_ACKNOWLEDGMENT_GOOD_QTY',
+                        422
+                    );
+                }
+
+                if ($condition === 'damaged' && abs($receivedQty - $orderedQty) < 0.0001) {
+                    throw new DomainException(
+                        'Damaged condition requires received quantity lower than ordered quantity.',
+                        'INVALID_ACKNOWLEDGMENT_DAMAGED_QTY',
+                        422
+                    );
+                }
+
+                if (in_array($condition, ['damaged', 'missing'], true) && count($photoUrls) < 1) {
+                    throw new DomainException(
+                        'Photo evidence is required for damaged or missing items.',
+                        'PHOTO_EVIDENCE_REQUIRED',
+                        422
+                    );
+                }
+
                 // Store on parent DS client_acknowledgment JSON
                 $existingAck = $ds->client_acknowledgment ?? [];
                 $existingAck[] = [
                     'item_id' => $item->id,
-                    'received_qty' => $ack['received_qty'],
-                    'condition' => $ack['condition'],
+                    'received_qty' => $receivedQty,
+                    'condition' => $condition,
                     'notes' => $ack['notes'] ?? null,
+                    'photo_urls' => $photoUrls,
                     'acknowledged_at' => now()->toIso8601String(),
                     'acknowledged_by' => $userId,
                 ];
                 $ds->update(['client_acknowledgment' => $existingAck]);
 
-                if ($ack['condition'] !== 'good') {
+                if ($condition !== 'good') {
                     $hasIssues = true;
                     $disputeItems[] = [
                         'delivery_schedule_item_id' => $item->id,
                         'item_master_id' => $item->product_item_id,
-                        'condition' => $ack['condition'],
-                        'received_qty' => $ack['received_qty'],
+                        'expected_qty' => $orderedQty,
+                        'condition' => $condition,
+                        'received_qty' => $receivedQty,
                         'notes' => $ack['notes'] ?? null,
+                        'photo_urls' => $photoUrls,
                     ];
                 }
             }
@@ -529,9 +585,28 @@ final class DeliveryScheduleService implements ServiceContract
                     'dispute_summary' => $disputeItems,
                 ]);
 
+                // Auto-create a formal DeliveryDispute record for operational handling.
+                try {
+                    $reporter = User::find($userId);
+                    if ($reporter) {
+                        $disputeService = app(\App\Domains\Delivery\Services\DeliveryDisputeService::class);
+                        $disputeService->createFromAcknowledgment($ds, $disputeItems, $reporter, $generalNotes);
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('[DS] Failed to auto-create delivery dispute', [
+                        'schedule_id' => $ds->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
                 DB::afterCommit(function () use ($ds): void {
-                    User::permission('sales.order_review')
-                        ->each(fn (User $u) => $u->notify(DeliveryDisputeNotification::fromModel($ds->combinedDeliverySchedule ?? $ds)));
+                    $recipients = User::permission('sales.order_review')->get()
+                        ->merge(User::permission('delivery.view')->get())
+                        ->unique('id');
+
+                    $recipients->each(
+                        fn (User $u) => $u->notify(DeliveryDisputeNotification::fromModel($ds->combinedDeliverySchedule ?? $ds))
+                    );
                 });
             }
 
@@ -539,7 +614,9 @@ final class DeliveryScheduleService implements ServiceContract
             if ($ds->client_order_id) {
                 $co = ClientOrder::find($ds->client_order_id);
                 if ($co && in_array($co->status, ['delivered', 'dispatched', 'ready_for_delivery'], true)) {
-                    $co->update(['status' => 'fulfilled']);
+                    if (! $hasIssues) {
+                        $co->update(['status' => 'fulfilled']);
+                    }
 
                     // GAP-P8: Auto-create draft Customer Invoice on successful acknowledgment
                     if (! $hasIssues) {
@@ -624,8 +701,26 @@ final class DeliveryScheduleService implements ServiceContract
      */
     private function autoCreateCustomerInvoice(ClientOrder $co, DeliverySchedule $ds, int $userId): void
     {
-        // Guard: don't create duplicate invoices
-        $existingInvoice = CustomerInvoice::where('client_order_id', $co->id)->exists();
+        $co->loadMissing('customer');
+
+        // Guard: customer invoices require positive subtotal.
+        if ((int) $co->total_amount_centavos <= 0) {
+            Log::warning("[DS] Auto-invoice skipped: non-positive order total for CO #{$co->id}");
+
+            return;
+        }
+
+        // Guard: don't create duplicate invoices for the same delivery context.
+        $existingInvoice = CustomerInvoice::query()
+            ->when(
+                $ds->delivery_receipt_id !== null,
+                fn ($query) => $query->where('delivery_receipt_id', $ds->delivery_receipt_id),
+                fn ($query) => $query->where('description', 'LIKE', "%{$ds->ds_reference}%")
+            )
+            ->where('customer_id', $co->customer_id)
+            ->whereNotIn('status', ['cancelled'])
+            ->exists();
+
         if ($existingInvoice) {
             Log::info("[DS] Auto-invoice skipped: invoice already exists for CO #{$co->id}");
 
@@ -634,9 +729,10 @@ final class DeliveryScheduleService implements ServiceContract
 
         // Find the current open fiscal period
         $currentPeriod = FiscalPeriod::where('status', 'open')
-            ->where('start_date', '<=', now()->toDateString())
-            ->where('end_date', '>=', now()->toDateString())
-            ->first();
+            ->where('date_from', '<=', now()->toDateString())
+            ->where('date_to', '>=', now()->toDateString())
+            ->first()
+            ?? FiscalPeriod::where('status', 'open')->latest('date_from')->first();
 
         if ($currentPeriod === null) {
             Log::warning("[DS] Auto-invoice skipped: no open fiscal period for CO #{$co->id}");
@@ -644,24 +740,80 @@ final class DeliveryScheduleService implements ServiceContract
             return;
         }
 
-        $co->loadMissing('items.itemMaster', 'customer');
+        // Resolve AR/Revenue accounts from settings, with chart fallback.
+        $arAccountId = (int) json_decode(
+            DB::table('system_settings')->where('key', 'default_ar_account_id')->value('value') ?? 'null'
+        );
+        $revenueAccountId = (int) json_decode(
+            DB::table('system_settings')->where('key', 'default_revenue_account_id')->value('value') ?? 'null'
+        );
+
+        if (! $arAccountId) {
+            $arAccountId = (int) (DB::table('chart_of_accounts')
+                ->where('code', 'like', '3001%')
+                ->where('is_active', true)
+                ->value('id') ?? 0);
+        }
+
+        if (! $revenueAccountId) {
+            $revenueAccountId = (int) (DB::table('chart_of_accounts')
+                ->where('code', 'like', '4001%')
+                ->where('is_active', true)
+                ->orderBy('code')
+                ->value('id') ?? 0);
+        }
+
+        if (! $arAccountId || ! $revenueAccountId) {
+            Log::warning("[DS] Auto-invoice skipped: missing AR/revenue GL account for CO #{$co->id}", [
+                'ar_account_id' => $arAccountId,
+                'revenue_account_id' => $revenueAccountId,
+            ]);
+
+            return;
+        }
+
+        $subtotal = round(((int) $co->total_amount_centavos) / 100, 2);
+        $vatAmount = 0.00;
+        $paymentTermsDays = (int) ($co->customer?->payment_terms_days ?? 30);
+        if ($paymentTermsDays <= 0) {
+            $paymentTermsDays = 30;
+        }
+
+        $invoiceDate = $this->clampDateToFiscalPeriod($currentPeriod);
+        $dueDate = Carbon::parse($invoiceDate)->addDays($paymentTermsDays)->toDateString();
 
         $invoice = CustomerInvoice::create([
             'customer_id' => $co->customer_id,
-            'client_order_id' => $co->id,
-            'delivery_schedule_id' => $ds->id,
+            'delivery_receipt_id' => $ds->delivery_receipt_id,
             'fiscal_period_id' => $currentPeriod->id,
-            'invoice_date' => now()->toDateString(),
-            'due_date' => now()->addDays($co->customer->payment_terms_days ?? 30)->toDateString(),
+            'ar_account_id' => $arAccountId,
+            'revenue_account_id' => $revenueAccountId,
+            'invoice_date' => $invoiceDate,
+            'due_date' => $dueDate,
             'status' => 'draft',
-            'subtotal_centavos' => $co->total_amount_centavos,
-            'tax_centavos' => 0,
-            'total_centavos' => $co->total_amount_centavos,
-            'balance_due_centavos' => $co->total_amount_centavos,
-            'notes' => "Auto-generated from Client Order {$co->order_reference}, Delivery Schedule {$ds->ds_reference}",
-            'created_by_id' => $userId,
+            'subtotal' => $subtotal,
+            'vat_amount' => $vatAmount,
+            'description' => "Auto-generated from Client Order {$co->order_reference}, Delivery Schedule {$ds->ds_reference}",
+            'created_by' => $userId,
         ]);
 
         Log::info("[DS] Auto-created draft Customer Invoice #{$invoice->id} for CO #{$co->id}");
+    }
+
+    private function clampDateToFiscalPeriod(FiscalPeriod $period): string
+    {
+        $today = now();
+        $periodStart = Carbon::parse((string) $period->date_from);
+        $periodEnd = Carbon::parse((string) $period->date_to);
+
+        if ($today->lt($periodStart)) {
+            return $periodStart->toDateString();
+        }
+
+        if ($today->gt($periodEnd)) {
+            return $periodEnd->toDateString();
+        }
+
+        return $today->toDateString();
     }
 }

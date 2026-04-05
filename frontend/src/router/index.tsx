@@ -370,6 +370,7 @@ const ClientShopPage            = lazyWithRetry(() => import('@/pages/client-por
 const ClientOrdersPage = lazyWithRetry(() => import('@/pages/client-portal/ClientOrdersPage'))
 const ClientOrderDetailPage = lazyWithRetry(() => import('@/pages/client-portal/ClientOrderDetailPage'))
 const OrderReceiptPage = lazyWithRetry(() => import('@/pages/client-portal/OrderReceiptPage'))
+const ClientBillingPage = lazyWithRetry(() => import('@/pages/client-portal/ClientBillingPage'))
 const ClientOrdersReviewPage    = lazyWithRetry(() => import('@/pages/sales/ClientOrdersReviewPage'))
 const ClientOrderReviewDetailPage = lazyWithRetry(() => import('@/pages/sales/ClientOrderDetailPage'))
 
@@ -713,6 +714,7 @@ const router = createBrowserRouter([
       { path: 'orders', element: withSuspense(guard('client_portal.view_orders', <ClientOrdersPage />)) },
       { path: 'orders/:ulid', element: withSuspense(guard('client_portal.view_orders', <ClientOrderDetailPage />)) },
       { path: 'deliveries/:ulid', element: withSuspense(guard('client_portal.view_orders', <OrderReceiptPage />)) },
+      { path: 'billing', element: withSuspense(guard('client_portal.view_orders', <ClientBillingPage />)) },
       { path: 'tickets',         element: withSuspense(guard('crm.tickets.view', <ClientTicketsPage />)) },
       { path: 'change-password', element: withSuspense(<ChangePasswordPage />) },
       { path: 'tickets/new',     element: withSuspense(guard('crm.tickets.create', <ClientNewTicketPage />)) },

@@ -4,7 +4,6 @@ import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import {
   useBoms,
-  useDeliverySchedules,
   useCreateProductionOrder,
   useCreateReplenishmentOrder,
   useProductionSmartDefaults,
@@ -56,13 +55,9 @@ export default function CreateProductionOrderPage(): React.ReactElement {
     }
   }, [smartDefaults?.calculated_end_date, targetStartDate])
 
-  const { data: dsData } = useDeliverySchedules({ status: 'open', per_page: 200 })
-  const deliverySchedules = dsData?.data ?? []
-
   const [form, setForm] = useState({
     product_item_id: 0,
     bom_id: 0,
-    delivery_schedule_id: '' as number | '',
     qty_required: '',
     target_stock_level: '',
     min_batch_size: '',
@@ -78,13 +73,6 @@ export default function CreateProductionOrderPage(): React.ReactElement {
       setTargetStartDate(v as string)
     }
   }
-
-  const selectedDs = deliverySchedules.find(d => d.id === form.delivery_schedule_id)
-  const dsDueDate  = selectedDs?.target_delivery_date ?? null
-  const lateDateWarning =
-    dsDueDate && form.target_end_date && form.target_end_date > dsDueDate
-      ? `Target end date is after the delivery schedule due date (${new Date(dsDueDate + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}).`
-      : null
 
   const [touched, setTouched] = useState<Set<string>>(new Set())
   const touch = (k: string) => setTouched(prev => new Set([...prev, k]))
@@ -160,7 +148,6 @@ export default function CreateProductionOrderPage(): React.ReactElement {
         ? await createMut.mutateAsync({
             product_item_id: form.product_item_id,
             bom_id: form.bom_id,
-            delivery_schedule_id: form.delivery_schedule_id !== '' ? Number(form.delivery_schedule_id) : undefined,
             qty_required: Number(form.qty_required),
             target_start_date: form.target_start_date,
             target_end_date: form.target_end_date,
@@ -251,34 +238,6 @@ export default function CreateProductionOrderPage(): React.ReactElement {
           )}
         </div>
 
-        {/* Delivery Schedule (optional) */}
-        {creationMode === 'manual' && (
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Delivery Schedule <span className="text-neutral-400 font-normal">(optional)</span>
-          </label>
-          <select
-            className="w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white"
-            value={form.delivery_schedule_id}
-            onChange={e => {
-              const id = e.target.value ? Number(e.target.value) : ''
-              set('delivery_schedule_id', id)
-              if (id) {
-                const ds = deliverySchedules.find(d => d.id === id)
-                if (ds?.qty_ordered) set('qty_required', String(Math.round(ds.qty_ordered)))
-              }
-            }}
-          >
-            <option value="">— None —</option>
-            {deliverySchedules.map(ds => (
-              <option key={ds.id} value={ds.id}>
-                {ds.ds_reference} — {ds.customer?.name ?? 'N/A'} · Due {new Date(ds.target_delivery_date + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}
-              </option>
-            ))}
-          </select>
-        </div>
-        )}
-
         {/* Qty */}
         {creationMode === 'manual' && (
         <div>
@@ -355,9 +314,6 @@ export default function CreateProductionOrderPage(): React.ReactElement {
               required
             />
             {fe('target_end_date') && <p className="mt-1 text-xs text-red-600">{fe('target_end_date')}</p>}
-            {!fe('target_end_date') && lateDateWarning && (
-              <p className="mt-1 text-xs text-amber-600">⚠ {lateDateWarning}</p>
-            )}
             {!fe('target_end_date') && smartDefaults?.calculated_end_date && (
               <p className="mt-1 text-xs text-green-600">
                 ✓ Auto-calculated based on BOM production days

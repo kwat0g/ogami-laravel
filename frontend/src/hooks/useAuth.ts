@@ -26,11 +26,14 @@ export function useAuth() {
     staleTime: 5 * 60 * 1000, // 5 minutes - data considered fresh
     gcTime: 10 * 60 * 1000,   // 10 minutes - keep in garbage collection cache
     retry: (failureCount, err) => {
-      const status = (err as { status?: number }).status
-      if (status === 401) return false
+      const status = (err as { status?: number; response?: { status?: number } }).status
+        ?? (err as { response?: { status?: number } }).response?.status
+      // Occasionally /auth/me returns a transient 401 during session bootstrap.
+      // Retry once before treating the user as logged out.
+      if (status === 401) return failureCount < 1
       return false
     },
-    retryDelay: 500,
+    retryDelay: 300,
     // Prevent re-fetching when components mount/unmount
     refetchOnMount: false,
     // Avoid repeated unauthenticated probes from focus events.

@@ -489,6 +489,14 @@ final class GoodsReceiptService implements ServiceContract
             );
         }
 
+        if ($gr->three_way_match_passed) {
+            throw new DomainException(
+                message: 'Cannot return goods after a successful three-way match. Create a supplier return adjustment workflow instead.',
+                errorCode: 'GR_ALREADY_MATCHED',
+                httpStatus: 422,
+            );
+        }
+
         // C4 FIX: Idempotency guard — prevent double-return which would
         // double-reverse stock and permanently desync inventory.
         if ($gr->returned_at !== null || $gr->status === 'returned') {

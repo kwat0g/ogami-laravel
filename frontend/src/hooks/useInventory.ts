@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import type {
   ItemCategory,
   ItemMaster,
@@ -116,12 +118,18 @@ export function useWarehouseLocations(params: {
   is_active?: boolean
   search?: string
 } = {}) {
+  const hasPermission = useAuthStore((s) => s.hasPermission)
+  const canViewLocations = hasPermission(
+    `${PERMISSIONS.inventory.locations.view}|${PERMISSIONS.inventory.locations.manage}`,
+  )
+
   return useQuery({
     queryKey: ['warehouse-locations', params],
     queryFn: async () => {
       const res = await api.get<{ data: WarehouseLocation[] }>('/inventory/locations', { params })
       return res.data.data
     },
+    enabled: canViewLocations,
     staleTime: 60_000,
   })
 }

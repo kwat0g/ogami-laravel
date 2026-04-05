@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Middleware;
 
+use App\Domains\Accounting\Models\JournalEntry;
 use App\Shared\Exceptions\SodViolationException;
 use Closure;
 use Illuminate\Http\Request;
@@ -52,6 +53,18 @@ class SodMiddleware
 
         if (! $user || $user->hasAnyRole(['admin', 'super_admin'])) {
             return $next($request);
+        }
+
+        if ($process === 'journal_entries' && $action === 'post') {
+            $journalEntry = $request->route('journalEntry');
+
+            if (
+                $journalEntry instanceof JournalEntry
+                && $journalEntry->source_type !== 'manual'
+                && $user->hasRole('accounting_manager')
+            ) {
+                return $next($request);
+            }
         }
 
         $matrix = $this->loadMatrix();

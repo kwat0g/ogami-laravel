@@ -96,6 +96,13 @@ export interface CustomerInvoice {
   updated_at: string
   // Eager-loaded
   customer?: Customer
+  fiscal_period?: {
+    id: number
+    name: string
+    date_from: string
+    date_to: string
+    status: string
+  }
   payments?: CustomerPayment[]
 }
 

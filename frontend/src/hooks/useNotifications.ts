@@ -40,6 +40,7 @@ export function useNotifications(page = 1, unreadOnly = false, enabled = true) {
       return res.data
     },
     enabled,
+    retry: false,
     // Keep data fresh for the full polling cycle — prevents stale-on-mount
     // refetches in the 5min window between polls.
     staleTime: 5 * 60_000,
@@ -59,6 +60,7 @@ export function useUnreadCount(enabled = true) {
       return res.data
     },
     enabled,
+    retry: false,
     // Keep data fresh for the poll cycle.
     staleTime: 60_000,
     // WS push handles real-time updates; this is a 60s backstop if WS drops.

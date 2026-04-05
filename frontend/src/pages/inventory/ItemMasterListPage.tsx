@@ -26,7 +26,7 @@ function ItemCategoriesModal({ onClose }: { onClose: () => void }) {
   const { data: categories, isLoading, refetch } = useItemCategories()
   const { mutate: create, isPending } = useCreateItemCategory()
   const canCreate = useAuthStore(s => s.hasPermission(PERMISSIONS.inventory.items.create))
-  const canDelete = useAuthStore(s => s.hasPermission(PERMISSIONS.inventory.items.delete))
+  const canDelete = useAuthStore(s => s.hasPermission(PERMISSIONS.inventory.items.edit))
   const [form, setForm] = useState({ code: '', name: '', description: '' })
   const [showForm, setShowForm] = useState(false)
 

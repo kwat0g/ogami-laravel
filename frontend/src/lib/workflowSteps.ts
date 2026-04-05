@@ -178,8 +178,8 @@ export function getMaterialRequisitionSteps(_mrq: {
   return [
     { label: 'Draft', status: 'draft' },
     { label: 'Submitted', status: 'submitted' },
-    { label: 'Picked', status: 'picked' },
-    { label: 'Issued', status: 'issued' },
+    { label: 'Approved', status: 'approved' },
+    { label: 'Fulfilled', status: 'fulfilled' },
   ]
 }
 

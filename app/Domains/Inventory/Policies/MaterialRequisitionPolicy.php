@@ -12,6 +12,12 @@ final class MaterialRequisitionPolicy
 {
     use HandlesAuthorization;
 
+    private function isWarehouseManager(User $user): bool
+    {
+        return $user->hasRole('manager')
+            && $user->departments()->where('departments.code', 'WH')->exists();
+    }
+
     public function viewAny(User $user): bool
     {
         return $user->can('inventory.mrq.view');
@@ -34,47 +40,43 @@ final class MaterialRequisitionPolicy
 
     public function note(User $user, MaterialRequisition $mrq): bool
     {
-        return $user->can('inventory.mrq.note')
-            && $mrq->status === 'submitted'
-            && $user->id !== $mrq->requested_by_id;
+        return false;
     }
 
     public function check(User $user, MaterialRequisition $mrq): bool
     {
-        return $user->can('inventory.mrq.check')
-            && $mrq->status === 'noted'
-            && $user->id !== $mrq->noted_by_id;
+        return false;
     }
 
     public function review(User $user, MaterialRequisition $mrq): bool
     {
-        return $user->can('inventory.mrq.review')
-            && $mrq->status === 'checked'
-            && $user->id !== $mrq->checked_by_id;
+        return $this->isWarehouseManager($user)
+            && $mrq->status === 'submitted'
+            && $user->id !== $mrq->submitted_by_id;
     }
 
     public function vpApprove(User $user, MaterialRequisition $mrq): bool
     {
-        return $user->can('inventory.mrq.vp_approve')
-            && $mrq->status === 'reviewed'
-            && $user->id !== $mrq->reviewed_by_id;
+        return false;
     }
 
     public function reject(User $user, MaterialRequisition $mrq): bool
     {
-        return $user->can('inventory.mrq.note')
-            && ! in_array($mrq->status, ['draft', 'cancelled', 'fulfilled', 'rejected'], true);
+        return $this->isWarehouseManager($user)
+            && $mrq->status === 'submitted'
+            && $user->id !== $mrq->submitted_by_id;
     }
 
     public function cancel(User $user, MaterialRequisition $mrq): bool
     {
         return $mrq->isCancellable()
-            && ($user->id === $mrq->requested_by_id || $user->can('inventory.mrq.view'));
+            && $user->id === $mrq->requested_by_id;
     }
 
     public function fulfill(User $user, MaterialRequisition $mrq): bool
     {
-        return $user->can('inventory.mrq.fulfill') && $mrq->status === 'approved';
+        return $user->can('inventory.mrq.fulfill')
+            && in_array($mrq->status, ['approved', 'converted_to_pr'], true);
     }
 
     /**

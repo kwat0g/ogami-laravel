@@ -123,7 +123,10 @@ final class CombinedDeliveryScheduleController extends Controller
             'item_acknowledgments.*.received_qty' => 'required|numeric|min:0',
             'item_acknowledgments.*.condition' => 'required|string|in:good,damaged,missing',
             'item_acknowledgments.*.notes' => 'nullable|string|max:500',
-            'item_acknowledgments.*.photo_url' => 'nullable|string|max:5000',
+            // Backward-compatible single-photo field may also contain base64 data URLs.
+            'item_acknowledgments.*.photo_url' => 'nullable|string|max:2000000',
+            'item_acknowledgments.*.photo_urls' => 'nullable|array|max:3',
+            'item_acknowledgments.*.photo_urls.*' => 'string|max:2000000',
             'general_notes' => 'nullable|string|max:2000',
         ]);
 

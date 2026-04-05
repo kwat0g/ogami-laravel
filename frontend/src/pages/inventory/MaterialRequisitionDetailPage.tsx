@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { AlertTriangle, AlertCircle, ShoppingCart } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -9,10 +9,7 @@ import { getMaterialRequisitionSteps, isRejectedStatus } from '@/lib/workflowSte
 import {
   useMaterialRequisition,
   useSubmitMRQ,
-  useNoteMRQ,
-  useCheckMRQ,
   useReviewMRQ,
-  useVpApproveMRQ,
   useRejectMRQ,
   useCancelMRQ,
   useFulfillMRQ,
@@ -22,6 +19,7 @@ import {
 import { useConvertMrqToPr } from '@/hooks/usePurchaseRequests'
 import { usePermission } from '@/hooks/usePermission'
 import { PERMISSIONS } from '@/lib/permissions'
+import { useAuthStore } from '@/stores/authStore'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import ConfirmDestructiveDialog from '@/components/ui/ConfirmDestructiveDialog'
@@ -49,6 +47,22 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
+function formatQty(value: number | string | null | undefined): string {
+  const numeric = typeof value === 'number' ? value : parseFloat(String(value ?? '0'))
+  if (!Number.isFinite(numeric)) return '0'
+
+  if (Number.isInteger(numeric)) {
+    return numeric.toLocaleString('en-PH')
+  }
+
+  const nearestInt = Math.round(numeric)
+  if (Math.abs(numeric - nearestInt) <= 0.001) {
+    return nearestInt.toLocaleString('en-PH')
+  }
+
+  return numeric.toLocaleString('en-PH', { minimumFractionDigits: 3, maximumFractionDigits: 4 })
+}
+
 export default function MaterialRequisitionDetailPage(): React.ReactElement {
   const { ulid }   = useParams<{ ulid: string }>()
   const navigate   = useNavigate()
@@ -59,6 +73,8 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
   const [stockWarnings, setStockWarnings] = useState<string[]>([])
   const [showStockWarning, setShowStockWarning] = useState(false)
   const [stockOverrideReason, setStockOverrideReason] = useState('')
+  const [allLocationShortages, setAllLocationShortages] = useState<string[]>([])
+  const [isCheckingAllLocationStock, setIsCheckingAllLocationStock] = useState(false)
 
   const { data: locationsData } = useWarehouseLocations({})
 
@@ -72,20 +88,18 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
   )
 
   const { data: mrq, isLoading, isError } = useMaterialRequisition(ulid ?? null)
+  const userId = useAuthStore((s) => s.user?.id ?? null)
+  const isManager = useAuthStore((s) => s.hasRole('manager'))
+  const primaryDepartmentCode = useAuthStore((s) => s.primaryDepartmentCode())
+  const isWarehouseManager = isManager && primaryDepartmentCode === 'WH'
 
-  const canNote           = usePermission(PERMISSIONS.inventory.mrq.note)
-  const canCheck          = usePermission(PERMISSIONS.inventory.mrq.check)
-  const canReview         = usePermission(PERMISSIONS.inventory.mrq.review)
-  const canVpApprove      = usePermission(PERMISSIONS.inventory.mrq.vp_approve)
   const canFulfill        = usePermission(PERMISSIONS.inventory.mrq.fulfill)
   const canCreate         = usePermission(PERMISSIONS.inventory.mrq.create)
-  const canCreatePr       = usePermission(PERMISSIONS.procurement.purchase_request.create)
+  const canCreatePrPermission = usePermission(PERMISSIONS.procurement.purchase_request.create)
+  const canCreatePr = canCreatePrPermission || isWarehouseManager
   
   const submitMut      = useSubmitMRQ(ulid ?? '')
-  const noteMut        = useNoteMRQ(ulid ?? '')
-  const checkMut       = useCheckMRQ(ulid ?? '')
   const reviewMut      = useReviewMRQ(ulid ?? '')
-  const vpMut          = useVpApproveMRQ(ulid ?? '')
   const rejectMut      = useRejectMRQ(ulid ?? '')
   const cancelMut      = useCancelMRQ(ulid ?? '')
   const fulfillMut     = useFulfillMRQ(ulid ?? '')
@@ -123,10 +137,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
     try {
       switch (action) {
         case 'submit':  await submitMut.mutateAsync(stockOverrideReason ? { stock_override_reason: stockOverrideReason } : undefined); break
-        case 'note':    await noteMut.mutateAsync({ comments });         break
-        case 'check':   await checkMut.mutateAsync({ comments });        break
         case 'review':  await reviewMut.mutateAsync({ comments });       break
-        case 'approve': await vpMut.mutateAsync({ comments });           break
         case 'reject':  await rejectMut.mutateAsync({ reason });         break
         case 'cancel':  await cancelMut.mutateAsync();                   break
         case 'fulfill': await fulfillMut.mutateAsync({ location_id: locationId as number }); break
@@ -138,9 +149,60 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
       setStockOverrideReason('')
     } catch (err) {
       if (isHandledApiError(err)) return
-      const msg = (err as { message?: string })?.message
     }
   }
+
+  const mrqItemSignature = (mrq?.items ?? [])
+    .map((line) => `${line.item_id}:${line.qty_requested}`)
+    .join('|')
+
+  useEffect(() => {
+    if (!mrq || mrq.status !== 'approved') {
+      setAllLocationShortages([])
+      setIsCheckingAllLocationStock(false)
+      return
+    }
+
+    let cancelled = false
+
+    const checkAllLocationStock = async () => {
+      setIsCheckingAllLocationStock(true)
+      try {
+        const res = await api.get<{ data: { item_id: number; quantity_on_hand: string }[] }>(
+          '/inventory/stock-balances',
+          { params: { per_page: 500 } },
+        )
+
+        const totals = new Map<number, number>()
+        for (const sb of res.data.data) {
+          const prev = totals.get(sb.item_id) ?? 0
+          totals.set(sb.item_id, prev + parseFloat(sb.quantity_on_hand))
+        }
+
+        const shortages = (mrq.items ?? [])
+          .filter((line) => (totals.get(line.item_id) ?? 0) < parseFloat(line.qty_requested))
+          .map((line) => line.item?.name ?? `Item #${line.item_id}`)
+
+        if (!cancelled) {
+          setAllLocationShortages(shortages)
+        }
+      } catch {
+        if (!cancelled) {
+          setAllLocationShortages([])
+        }
+      } finally {
+        if (!cancelled) {
+          setIsCheckingAllLocationStock(false)
+        }
+      }
+    }
+
+    void checkAllLocationStock()
+
+    return () => {
+      cancelled = true
+    }
+  }, [mrq?.ulid, mrq?.status, mrq?.converted_to_pr, mrqItemSignature])
 
   if (isLoading) return <SkeletonLoader rows={8} />
   if (isError || !mrq) return (
@@ -150,6 +212,8 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
   )
 
   const status = mrq.status
+  const canReject = status === 'submitted' && isWarehouseManager
+  const canCancel = mrq.is_cancellable && userId !== null && userId === mrq.requested_by?.id
 
   // Check for stock availability when fulfilling
   const getStockShortages = (): string[] => {
@@ -158,6 +222,10 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
       (line) => (stockMap.get(line.item_id) ?? 0) < parseFloat(line.qty_requested)
     ).map((line) => line.item?.name ?? `Item #${line.item_id}`)
   }
+
+  const stockShortages = getStockShortages()
+  const hasStockShortage = stockShortages.length > 0
+  const hasAllLocationStockShortage = allLocationShortages.length > 0
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -207,7 +275,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
           <InfoRow label="Created"       value={mrq.created_at ? new Date(mrq.created_at).toLocaleString('en-PH') : '—'} />
           {mrq.noted_at && <InfoRow label="Noted By" value={`${mrq.noted_by?.name} — ${mrq.noted_comments ?? ''}`} />}
           {mrq.checked_at && <InfoRow label="Checked By" value={`${mrq.checked_by?.name} — ${mrq.checked_comments ?? ''}`} />}
-          {mrq.reviewed_at && <InfoRow label="Reviewed By" value={`${mrq.reviewed_by?.name} — ${mrq.reviewed_comments ?? ''}`} />}
+          {mrq.reviewed_at && <InfoRow label="Warehouse Approved By" value={`${mrq.reviewed_by?.name} — ${mrq.reviewed_comments ?? ''}`} />}
           {mrq.vp_approved_at && <InfoRow label="VP Approved" value={`${mrq.vp_approved_by?.name} — ${mrq.vp_comments ?? ''}`} />}
           {mrq.rejected_at && <InfoRow label="Rejected By" value={`${mrq.rejected_by?.name} — ${mrq.rejection_reason ?? ''}`} />}
           {mrq.fulfilled_at && <InfoRow label="Fulfilled By" value={`${mrq.fulfilled_by?.name} on ${new Date(mrq.fulfilled_at).toLocaleDateString('en-PH')}`} />}
@@ -267,13 +335,13 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
                   <td className="px-3 py-2 font-mono text-neutral-900 font-medium text-xs">{line.item?.item_code ?? `#${line.item_id}`}</td>
                   <td className="px-3 py-2 text-neutral-800">{line.item?.name ?? '—'}</td>
                   <td className="px-3 py-2 text-neutral-400 text-xs">{line.item?.unit_of_measure}</td>
-                  <td className="px-3 py-2 tabular-nums font-medium">{parseFloat(line.qty_requested).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
+                  <td className="px-3 py-2 tabular-nums font-medium">{formatQty(line.qty_requested)}</td>
                   <td className="px-3 py-2 tabular-nums text-neutral-700">
-                    {line.qty_issued !== null ? parseFloat(line.qty_issued).toLocaleString('en-PH', { maximumFractionDigits: 4 }) : '—'}
+                    {line.qty_issued !== null ? formatQty(line.qty_issued) : '—'}
                   </td>
                   {locationId ? (
                     <td className={`px-3 py-2 tabular-nums font-semibold ${isShort ? 'text-red-600' : 'text-green-700'}`}>
-                      {available !== null ? available.toLocaleString('en-PH', { maximumFractionDigits: 4 }) : '—'}
+                      {available !== null ? formatQty(available) : '—'}
                       {isShort && <span className="ml-1 text-xs font-normal">(short)</span>}
                     </td>
                   ) : null}
@@ -290,7 +358,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
         <h2 className="text-sm font-medium text-neutral-700 mb-4">Actions</h2>
 
         {/* Comment / reason textarea */}
-        {(activeAction === 'note' || activeAction === 'check' || activeAction === 'review' || activeAction === 'approve') && (
+        {activeAction === 'review' && (
           <div className="mb-4">
             <label className="block text-sm font-medium text-neutral-700 mb-1">Comments (optional)</label>
             <textarea
@@ -334,6 +402,11 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
             {!locationId && (
               <p className="text-xs text-red-500 mt-1">Location is required to fulfill.</p>
             )}
+            {locationId && hasStockShortage && (
+              <p className="text-xs text-red-600 mt-1">
+                Cannot fulfill: insufficient stock for {stockShortages.join(', ')}.
+              </p>
+            )}
           </div>
         )}
 
@@ -353,45 +426,15 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
               </button>
             </ConfirmDialog>
           )}
-          {status === 'submitted' && canNote && (
-            <button
-              onClick={() => activeAction === 'note' ? handleAction('note') : setAction('note')}
-              className="px-4 py-2 text-sm font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded"
-            >
-              {activeAction === 'note' ? 'Confirm Note' : 'Note'}
-            </button>
-          )}
-          {status === 'noted' && canCheck && (
-            <button
-              onClick={() => activeAction === 'check' ? handleAction('check') : setAction('check')}
-              className="px-4 py-2 text-sm font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded"
-            >
-              {activeAction === 'check' ? 'Confirm Check' : 'Check'}
-            </button>
-          )}
-          {status === 'checked' && canReview && (
+          {status === 'submitted' && isWarehouseManager && (
             <button
               onClick={() => activeAction === 'review' ? handleAction('review') : setAction('review')}
               className="px-4 py-2 text-sm font-medium bg-neutral-800 hover:bg-neutral-700 text-white rounded"
             >
-              {activeAction === 'review' ? 'Confirm Review' : 'Review'}
+              {activeAction === 'review' ? 'Confirm Approval' : 'Approve'}
             </button>
           )}
-          {status === 'reviewed' && canVpApprove && (
-            <ConfirmDialog
-              title="Approve Requisition?"
-              description="This will approve the requisition for fulfillment. Stock will be reserved."
-              confirmLabel="Approve"
-              onConfirm={() => handleAction('approve')}
-            >
-              <button
-                className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded"
-              >
-                VP Approve
-              </button>
-            </ConfirmDialog>
-          )}
-          {status === 'approved' && canFulfill && (
+          {(status === 'approved' || status === 'converted_to_pr') && canFulfill && (
             <>
               {activeAction === 'fulfill' ? (
                 <ConfirmDialog
@@ -399,13 +442,13 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
                   description={
                     <div className="space-y-2">
                       <p>You are about to issue stock from the selected location.</p>
-                      {getStockShortages().length > 0 && (
+                      {hasStockShortage && (
                         <div className="bg-red-50 border border-red-200 rounded p-2 text-sm text-red-700">
                           <div className="flex items-start gap-2">
                             <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                             <div>
                               <p className="font-medium">Stock shortage detected:</p>
-                              <p>{getStockShortages().join(', ')}</p>
+                              <p>{stockShortages.join(', ')}</p>
                             </div>
                           </div>
                         </div>
@@ -417,7 +460,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
                   onConfirm={() => handleAction('fulfill')}
                 >
                   <button
-                    disabled={fulfillMut.isPending || !locationId}
+                    disabled={fulfillMut.isPending || !locationId || hasStockShortage}
                     className="px-4 py-2 text-sm font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {fulfillMut.isPending ? 'Processing…' : 'Confirm Fulfill'}
@@ -433,8 +476,8 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
               )}
             </>
           )}
-          {/* Convert to PR — visible when approved, not yet converted, and user has PR create permission */}
-          {status === 'approved' && !mrq.converted_to_pr && canCreatePr && (
+          {/* Convert to PR — visible only when approved MRQ has shortage across all locations */}
+          {status === 'approved' && !mrq.converted_to_pr && canCreatePr && hasAllLocationStockShortage && (
             <ConfirmDialog
               title="Convert to Purchase Request?"
               description="This will create a draft Purchase Request with all items from this requisition pre-filled. You'll be redirected to the new PR to add pricing and vendor details."
@@ -458,13 +501,23 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
               </button>
             </ConfirmDialog>
           )}
+          {status === 'approved' && !mrq.converted_to_pr && canCreatePr && isCheckingAllLocationStock && (
+            <div className="flex items-center gap-1.5 px-4 py-2 text-sm text-neutral-500 border border-neutral-200 rounded bg-neutral-50">
+              Checking stock across all locations...
+            </div>
+          )}
+          {status === 'approved' && !mrq.converted_to_pr && canCreatePr && !isCheckingAllLocationStock && !hasAllLocationStockShortage && (
+            <div className="flex items-center gap-1.5 px-4 py-2 text-sm text-green-700 border border-green-200 rounded bg-green-50">
+              Stock is sufficient across all locations. No PR conversion needed.
+            </div>
+          )}
           {status === 'approved' && mrq.converted_to_pr && (
             <div className="flex items-center gap-1.5 px-4 py-2 text-sm text-neutral-500 border border-neutral-200 rounded bg-neutral-50">
               <ShoppingCart className="w-4 h-4" />
               Already converted to PR
             </div>
           )}
-          {['submitted', 'noted', 'checked', 'reviewed'].includes(status) && (
+          {status === 'submitted' && canReject && (
             <>
               {activeAction === 'reject' ? (
                 <ConfirmDestructiveDialog
@@ -491,7 +544,7 @@ export default function MaterialRequisitionDetailPage(): React.ReactElement {
               )}
             </>
           )}
-          {mrq.is_cancellable && (
+          {canCancel && (
             <ConfirmDestructiveDialog
               title="Cancel Requisition?"
               description="This will cancel the requisition. This action cannot be undone."

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Procurement\Services;
 
+use App\Domains\AP\Models\VendorItem;
 use App\Domains\HR\Models\Department;
 use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Domains\Procurement\Models\PurchaseRequest;
@@ -289,6 +290,14 @@ final class PurchaseRequestService implements ServiceContract
     {
         $this->assertStatus($pr, 'reviewed', 'PR_NOT_REVIEWED');
 
+        if (! $this->isInAccountingDepartment($actor) && ! $actor->hasRole('super_admin')) {
+            throw new DomainException(
+                message: 'Only Accounting personnel can perform budget verification.',
+                errorCode: 'PR_BUDGET_CHECK_ACCTG_ONLY',
+                httpStatus: 403,
+            );
+        }
+
         // SoD: Budget verifier cannot be creator
         if ($pr->requested_by_id === $actor->id && ! $actor->hasRole('super_admin')) {
             throw new SodViolationException(
@@ -328,6 +337,19 @@ final class PurchaseRequestService implements ServiceContract
             ));
 
         return $refreshed;
+    }
+
+    private function isInAccountingDepartment(User $actor): bool
+    {
+        $primaryDept = $actor->relationLoaded('primaryDepartment')
+            ? $actor->getRelation('primaryDepartment')
+            : $actor->primaryDepartment;
+
+        if ($primaryDept?->code === 'ACCTG') {
+            return true;
+        }
+
+        return $actor->departments()->where('code', 'ACCTG')->exists();
     }
 
     // ── Return for revision ──────────────────────────────────────────────────
@@ -378,6 +400,14 @@ final class PurchaseRequestService implements ServiceContract
     public function vpApprove(PurchaseRequest $pr, User $actor, string $comments = ''): PurchaseRequest
     {
         $this->assertStatus($pr, 'budget_verified', 'PR_NOT_BUDGET_VERIFIED');
+
+        if ($pr->vendor_id === null) {
+            throw new DomainException(
+                message: 'Cannot approve PR — Vendor is required before VP approval.',
+                errorCode: 'PR_VENDOR_REQUIRED',
+                httpStatus: 422,
+            );
+        }
 
         // SoD: VP cannot be creator
         if ($pr->requested_by_id === $actor->id && ! $actor->hasRole('super_admin')) {
@@ -667,24 +697,40 @@ final class PurchaseRequestService implements ServiceContract
             );
         }
 
-        return DB::transaction(function () use ($mrq, $actor, $justification): PurchaseRequest {
+        $mrq->loadMissing('requestedBy');
+
+        $departmentId = $mrq->department_id
+            ?? $mrq->requestedBy?->department_id
+            ?? $actor->department_id;
+
+        if ($departmentId === null) {
+            throw new DomainException(
+                message: 'Cannot convert MRQ to PR because no department could be resolved from the requisition or requester.',
+                errorCode: 'MRQ_DEPARTMENT_REQUIRED',
+                httpStatus: 422,
+            );
+        }
+
+        return DB::transaction(function () use ($mrq, $actor, $justification, $departmentId): PurchaseRequest {
             $reference = $this->generateReference();
 
             $pr = PurchaseRequest::create([
                 'pr_reference' => $reference,
-                'department_id' => $mrq->department_id,
+                'department_id' => $departmentId,
                 'requested_by_id' => $actor->id,
                 'vendor_id' => null,
                 'urgency' => 'normal',
-                'justification' => $justification ?? "Created from Material Requisition {$mrq->mrq_reference}",
-                'notes' => "Source MRQ: {$mrq->mrq_reference}",
+                'justification' => $justification ?? "Created from Material Requisition {$mrq->mr_reference}",
+                'notes' => "Source MRQ: {$mrq->mr_reference}",
                 'status' => 'draft',
                 'total_estimated_cost' => 0,
                 'material_requisition_id' => $mrq->id,
             ]);
 
-            // Convert MRQ items to PR items, preserving item_master_id linkage
+            // Convert MRQ items to PR items, preserving item_master_id linkage.
+            // Prefer active vendor-catalog pricing when an item-code/name match exists.
             $mrq->loadMissing('items.item');
+            $resolvedVendorIds = [];
             foreach ($mrq->items as $mrqItem) {
                 $itemMaster = $mrqItem->item;
                 $outstandingQty = (float) $mrqItem->qty_requested - (float) ($mrqItem->qty_issued ?? 0);
@@ -692,14 +738,42 @@ final class PurchaseRequestService implements ServiceContract
                     continue;
                 }
 
+                $itemCode = $itemMaster?->item_code;
+                $itemName = $itemMaster?->name;
+
+                $vendorItem = VendorItem::query()
+                    ->where('is_active', true)
+                    ->when(
+                        $itemCode !== null && $itemCode !== '',
+                        fn ($q) => $q->where('item_code', $itemCode),
+                        fn ($q) => $q->where('item_name', $itemName ?? '')
+                    )
+                    ->orderByDesc('id')
+                    ->first();
+
+                $estimatedUnitCost = $vendorItem !== null
+                    ? $vendorItem->unit_price / 100
+                    : ($itemMaster?->standard_price_centavos ?? 0) / 100;
+
+                if ($vendorItem !== null) {
+                    $resolvedVendorIds[] = (int) $vendorItem->vendor_id;
+                }
+
                 PurchaseRequestItem::create([
                     'purchase_request_id' => $pr->id,
+                    'vendor_item_id' => $vendorItem?->id,
                     'item_master_id' => $mrqItem->item_id,
                     'item_description' => $itemMaster?->name ?? 'Unknown item',
                     'quantity' => $outstandingQty,
                     'unit_of_measure' => $itemMaster?->unit_of_measure ?? 'pcs',
-                    'estimated_unit_cost' => ($itemMaster?->standard_price_centavos ?? 0) / 100,
+                    'estimated_unit_cost' => $estimatedUnitCost,
                 ]);
+            }
+
+            // If all resolved catalog items point to one vendor, prefill PR vendor.
+            $uniqueVendorIds = array_values(array_unique($resolvedVendorIds));
+            if (count($uniqueVendorIds) === 1) {
+                $pr->update(['vendor_id' => $uniqueVendorIds[0]]);
             }
 
             // Recalculate total

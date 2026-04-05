@@ -80,7 +80,8 @@ final class GoodsReceiptPolicy
     public function returnToSupplier(User $user, GoodsReceipt $gr): bool
     {
         return $user->hasPermissionTo('procurement.goods-receipt.confirm')
-            && $gr->status === 'confirmed';
+            && $gr->status === 'confirmed'
+            && ! $gr->three_way_match_passed;
     }
 
     public function delete(User $user, GoodsReceipt $gr): bool

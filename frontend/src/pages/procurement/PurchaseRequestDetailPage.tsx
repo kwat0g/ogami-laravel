@@ -235,18 +235,20 @@ export default function PurchaseRequestDetailPage(): React.ReactElement {
   const isVp           = user?.roles?.includes('vice_president') ?? false
   const canReview      = (isSuperAdmin || (hasPermission(PERMISSIONS.procurement.purchase_request.review) && !isVp)) &&
                           pr.status === 'pending_review'
-  const canBudgetCheck = (isSuperAdmin || hasPermission(PERMISSIONS.procurement.purchase_request['budget-check'])) &&
+  const isAccountingUser = user?.primary_department_code === 'ACCTG'
+  const canAccountingReviewedActions = hasPermission(PERMISSIONS.procurement.purchase_request['budget-check']) && isAccountingUser
+  const canBudgetCheck = (isSuperAdmin || canAccountingReviewedActions) &&
                           pr.status === 'reviewed'
   const canVpApprove   = (isSuperAdmin || hasPermission(PERMISSIONS.approvals.vp.approve)) &&
                           pr.status === 'budget_verified'
   const canCancel      = pr.status === 'draft' && (isSuperAdmin || isOwner)
   // Return: Purchasing can return at pending_review, Accounting at reviewed (mirrors policy)
   const canReturn      = (hasPermission(PERMISSIONS.procurement.purchase_request.review) && !isVp && pr.status === 'pending_review') ||
-                          (hasPermission(PERMISSIONS.procurement.purchase_request['budget-check']) && pr.status === 'reviewed') ||
+                          (canAccountingReviewedActions && pr.status === 'reviewed') ||
                           (isSuperAdmin && ['pending_review', 'reviewed'].includes(pr.status))
   // Reject: scoped to the stage the user is responsible for (mirrors policy)
   const canReject      = (hasPermission(PERMISSIONS.procurement.purchase_request.review) && !isVp && pr.status === 'pending_review') ||
-                          (hasPermission(PERMISSIONS.procurement.purchase_request['budget-check']) && pr.status === 'reviewed') ||
+                          (canAccountingReviewedActions && pr.status === 'reviewed') ||
                           (hasPermission(PERMISSIONS.approvals.vp.approve) && pr.status === 'budget_verified') ||
                           (isSuperAdmin && ['pending_review', 'reviewed', 'budget_verified'].includes(pr.status))
 

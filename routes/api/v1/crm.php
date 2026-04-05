@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\CRM\Models\ClientOrder;
+use App\Http\Controllers\CRM\ClientBillingController;
 use App\Http\Controllers\CRM\ClientOrderController;
 // TODO: Phase 2 — Lead and Opportunity domain models/services not yet implemented
 // use App\Http\Controllers\CRM\LeadController;
@@ -150,5 +151,15 @@ Route::middleware(['auth:sanctum', 'module_access:crm'])->group(function () {
                 return response()->json(['data' => $service->track($order)]);
             })->name('tracking');
         });
+    });
+
+    // ── Client Portal Billing ───────────────────────────────────────────────
+    Route::prefix('client-billing')->name('client-billing.')->group(function () {
+        Route::get('/summary', [ClientBillingController::class, 'summary'])
+            ->middleware('permission:client_portal.view_orders')
+            ->name('summary');
+        Route::get('/statement/pdf', [ClientBillingController::class, 'statementPdf'])
+            ->middleware('permission:client_portal.view_orders')
+            ->name('statement-pdf');
     });
 });

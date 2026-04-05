@@ -43,19 +43,36 @@ function ResolutionForm({
   onSubmit: (payload: ResolutionPayload) => void
   isLoading: boolean
 }) {
-  const [resolutionType, setResolutionType] = useState<ResolutionPayload['resolution_type']>('replace_items')
+  const getDisputedQty = (item: DisputeItem): number => {
+    const expected = Number(item.expected_qty)
+    const received = Number(item.received_qty)
+    return Math.max(0, expected - received)
+  }
+
   const [notes, setNotes] = useState('')
   const [itemActions, setItemActions] = useState<Record<number, { action: string; qty: number }>>(
     () => Object.fromEntries(items.map(i => [i.id, {
       action: i.condition === 'missing' ? 'replace' : i.condition === 'damaged' ? 'replace' : 'accept',
-      qty: Math.max(0, Number(i.expected_qty) - Number(i.received_qty)),
+      qty: getDisputedQty(i),
     }]))
   )
 
   const updateItemAction = (itemId: number, field: string, value: string | number) => {
+    const item = items.find((i) => i.id === itemId)
+    const isLockedQtyItem = item?.condition === 'missing' || item?.condition === 'damaged'
+
     setItemActions(prev => ({
       ...prev,
-      [itemId]: { ...prev[itemId], [field]: value },
+      [itemId]: {
+        ...prev[itemId],
+        [field]: value,
+        ...(field === 'action' && item
+          ? {
+              // For missing/damaged disputes, resolution qty is fixed to disputed qty.
+              qty: isLockedQtyItem ? getDisputedQty(item) : (prev[itemId]?.qty ?? getDisputedQty(item)),
+            }
+          : {}),
+      },
     }))
   }
 
@@ -66,15 +83,13 @@ function ResolutionForm({
       qty: itemActions[i.id]?.qty ?? 0,
     }))
 
-    // Auto-determine resolution type from item actions
+    // Overall type is derived from item actions to avoid redundant manual selection.
     const hasReplace = resolutions.some(r => r.action === 'replace')
     const hasCredit = resolutions.some(r => r.action === 'credit')
-    const allAccept = resolutions.every(r => r.action === 'accept')
 
-    let autoType = resolutionType
-    if (allAccept) autoType = 'partial_accept'
-    else if (hasReplace && !hasCredit) autoType = 'replace_items'
-    else if (hasCredit && !hasReplace) autoType = 'credit_note'
+    let autoType: ResolutionPayload['resolution_type'] = 'partial_accept'
+    if (hasReplace) autoType = 'replace_items'
+    else if (hasCredit) autoType = 'credit_note'
 
     onSubmit({
       resolution_type: autoType,
@@ -82,6 +97,16 @@ function ResolutionForm({
       resolutions,
     })
   }
+
+  const hasReplaceAction = items.some((item) => (itemActions[item.id]?.action ?? 'accept') === 'replace')
+  const hasCreditAction = items.some((item) => (itemActions[item.id]?.action ?? 'accept') === 'credit')
+  const autoResolutionLabel = hasReplaceAction && hasCreditAction
+    ? 'Auto: Replacement + Credit Note (mixed)'
+    : hasReplaceAction
+      ? 'Auto: Replace Items'
+      : hasCreditAction
+        ? 'Auto: Credit Note'
+        : 'Auto: Partial Accept'
 
   return (
     <Card>
@@ -98,65 +123,80 @@ function ResolutionForm({
           <div className="space-y-3">
             {items.map(item => (
               <div key={item.id} className="border border-neutral-200 rounded-lg p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-neutral-900">
-                      {item.item_master?.name ?? `Item #${item.item_master_id}`}
-                    </p>
-                    <p className="text-xs text-neutral-500 mt-0.5">
-                      Expected: {item.expected_qty} | Received: {item.received_qty} |{' '}
-                      <span className={CONDITION_COLORS[item.condition] ?? ''}>
-                        {item.condition.replace('_', ' ')}
-                      </span>
-                    </p>
-                    {item.notes && <p className="text-xs text-neutral-400 mt-1 italic">"{item.notes}"</p>}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  <div>
-                    <label className="block text-xs text-neutral-500 mb-1">Action</label>
-                    <select
-                      value={itemActions[item.id]?.action ?? 'accept'}
-                      onChange={e => updateItemAction(item.id, 'action', e.target.value)}
-                      className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm bg-white"
-                    >
-                      <option value="replace">Replace -- send new items</option>
-                      <option value="credit">Credit -- issue credit note</option>
-                      <option value="accept">Accept -- client keeps as-is</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-neutral-500 mb-1">
-                      {itemActions[item.id]?.action === 'replace' ? 'Qty to Replace' :
-                       itemActions[item.id]?.action === 'credit' ? 'Qty to Credit' : 'Accepted Qty'}
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={itemActions[item.id]?.qty ?? 0}
-                      onChange={e => updateItemAction(item.id, 'qty', Number(e.target.value))}
-                      className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
-                    />
-                  </div>
-                </div>
+                {(() => {
+                  const disputedQty = getDisputedQty(item)
+                  const isLockedQtyItem = item.condition === 'missing' || item.condition === 'damaged'
+
+                  return (
+                    <>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-neutral-900">
+                            {item.item_master?.name ?? `Item #${item.item_master_id}`}
+                          </p>
+                          <p className="text-xs text-neutral-500 mt-0.5">
+                            Expected: {item.expected_qty} | Received: {item.received_qty} |{' '}
+                            <span className={CONDITION_COLORS[item.condition] ?? ''}>
+                              {item.condition.replace('_', ' ')}
+                            </span>
+                          </p>
+                          {item.notes && <p className="text-xs text-neutral-400 mt-1 italic">"{item.notes}"</p>}
+                          <p className="text-xs text-neutral-500 mt-1">
+                            Disputed Qty: <span className="font-medium text-neutral-700">{disputedQty}</span>
+                            {isLockedQtyItem ? ' (locked for missing/damaged)' : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        <div>
+                          <label className="block text-xs text-neutral-500 mb-1">Action</label>
+                          <select
+                            value={itemActions[item.id]?.action ?? 'accept'}
+                            onChange={e => updateItemAction(item.id, 'action', e.target.value)}
+                            className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm bg-white"
+                          >
+                            <option value="replace">Replace -- send new items</option>
+                            <option value="credit">Credit -- issue credit note</option>
+                            <option value="accept">Accept -- client keeps as-is</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-neutral-500 mb-1">
+                            {itemActions[item.id]?.action === 'replace' ? 'Qty to Replace' :
+                              itemActions[item.id]?.action === 'credit' ? 'Qty to Credit' : 'Accepted Qty'}
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={itemActions[item.id]?.qty ?? 0}
+                            onChange={e => updateItemAction(item.id, 'qty', Number(e.target.value))}
+                            disabled={isLockedQtyItem}
+                            className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm disabled:bg-neutral-100 disabled:text-neutral-500"
+                          />
+                          {isLockedQtyItem && (
+                            <p className="text-[11px] text-neutral-400 mt-1">
+                              Quantity is fixed to disputed qty for missing/damaged items.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )
+                })()}
               </div>
             ))}
           </div>
 
-          {/* Overall resolution type */}
+          {/* Auto-derived resolution type */}
           <div>
-            <label className="block text-xs text-neutral-500 mb-1">Overall Resolution Type</label>
-            <select
-              value={resolutionType}
-              onChange={e => setResolutionType(e.target.value as ResolutionPayload['resolution_type'])}
-              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm bg-white"
-            >
-              <option value="replace_items">Replace Items -- send replacement delivery</option>
-              <option value="credit_note">Credit Note -- issue credit to customer</option>
-              <option value="partial_accept">Partial Accept -- client keeps partial delivery</option>
-              <option value="full_replacement">Full Replacement -- redo entire delivery</option>
-            </select>
+            <label className="block text-xs text-neutral-500 mb-1">Resolution Flow</label>
+            <div className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm bg-neutral-50 text-neutral-700">
+              {autoResolutionLabel}
+            </div>
+            <p className="text-[11px] text-neutral-400 mt-1">
+              Determined automatically from item actions to keep processing consistent.
+            </p>
           </div>
 
           {/* Resolution notes */}
@@ -202,6 +242,7 @@ export default function DeliveryDisputeDetailPage() {
   const isOpen = ['open', 'investigating'].includes(dispute.status)
   const isPending = dispute.status === 'pending_resolution'
   const isResolved = dispute.status === 'resolved'
+  const isClosed = dispute.status === 'closed'
   const ResIcon = RESOLUTION_ICONS[dispute.resolution_type ?? ''] ?? AlertTriangle
 
   return (
@@ -272,10 +313,10 @@ export default function DeliveryDisputeDetailPage() {
                 <User className="h-3 w-3 text-neutral-400" />
                 Assigned to: {dispute.assigned_to?.name ?? <span className="text-amber-500">Unassigned</span>}
               </p>
-              {dispute.resolved_by && (
+              {dispute.resolved_by && (isPending || isResolved || isClosed) && (
                 <p className="flex items-center gap-1.5">
                   <CheckCircle className="h-3 w-3 text-green-500" />
-                  Resolved by: {dispute.resolved_by.name}
+                  {isPending ? 'Processed by:' : 'Resolved by:'} {dispute.resolved_by.name}
                 </p>
               )}
             </div>
@@ -380,7 +421,7 @@ export default function DeliveryDisputeDetailPage() {
                   <RefreshCw className="h-4 w-4 text-blue-600" />
                   Replacement:
                   <Link to={`/production/delivery-schedules/${dispute.replacement_schedule.ulid}`} className="text-blue-600 hover:underline font-medium">
-                    {dispute.replacement_schedule.cds_reference}
+                    {dispute.replacement_schedule.ds_reference ?? dispute.replacement_schedule.cds_reference ?? dispute.replacement_schedule.ulid}
                   </Link>
                   <span className={`px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-700`}>
                     {dispute.replacement_schedule.status}

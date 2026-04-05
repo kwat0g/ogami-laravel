@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
 import type {
   AttendanceLog,
   AttendanceFilters,
@@ -413,13 +414,16 @@ interface TimeClockPayload {
   override_reason?: string
 }
 
-export function useAttendanceToday() {
+export function useAttendanceToday(enabled = true) {
+  const isAuthenticated = useAuthStore((s) => !!s.user)
   return useQuery({
     queryKey: ['attendance', 'today'],
     queryFn: async () => {
       const res = await api.get<{ data: AttendanceLog | null }>('/attendance/today')
       return res.data.data
     },
+    enabled: enabled && isAuthenticated,
+    retry: false,
     refetchInterval: 60_000,
     staleTime: 15_000,
   })

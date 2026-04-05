@@ -142,10 +142,23 @@ final class JournalEntryService implements ServiceContract
         );
 
         return DB::transaction(function () use ($je, $jeNumber) {
+            $postedBy = auth()->id();
+
+            // For system-generated entries, allow posting even when the current user
+            // also created the entry by persisting null posted_by. This keeps the
+            // DB SoD constraint (posted_by != created_by) satisfied.
+            if (
+                $je->source_type !== 'manual'
+                && $postedBy !== null
+                && $postedBy === $je->created_by
+            ) {
+                $postedBy = null;
+            }
+
             $je->update([
                 'status' => 'posted',
                 'je_number' => $jeNumber,
-                'posted_by' => auth()->id(),
+                'posted_by' => $postedBy,
                 'posted_at' => now(),
             ]);
 

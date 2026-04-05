@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import axios from 'axios'
 import { useQueryClient } from '@tanstack/react-query'
+import type { AxiosRequestConfig } from 'axios'
 import api from '@/lib/api'
 import { getLandingPath } from '@/lib/roleLanding'
 import { setLoginGrace } from '@/lib/authEpoch'
@@ -48,17 +49,41 @@ export default function LoginPage() {
       const result = res.data.data
 
       if (result.user) {
+        // Verify the new session cookie is readable before bootstrapping the app.
+        // This avoids immediate post-login 401 bursts from auth-dependent queries.
+        let authMeUser = result.user
+        let authMeOk = false
+        for (let i = 0; i < 3; i += 1) {
+          try {
+            const me = await api.get<ApiSuccess<LoginResult['user']>>(
+              '/auth/me',
+              { __skipAuthRedirect: true } as AxiosRequestConfig,
+            )
+            authMeUser = me.data.data
+            authMeOk = true
+            break
+          } catch {
+            if (i < 2) {
+              await new Promise((resolve) => setTimeout(resolve, 200))
+            }
+          }
+        }
+
+        if (!authMeOk) {
+          throw new Error('Login session is not ready yet. Please try again.')
+        }
+
         // Ensure stale in-flight requests from a prior session cannot affect
         // the newly authenticated user context.
         await queryClient.cancelQueries()
         queryClient.clear()
-        queryClient.setQueryData(['auth', 'me'], result.user)
-        setAuth(result.user)
+        queryClient.setQueryData(['auth', 'me'], authMeUser)
+        setAuth(authMeUser)
         // Fence off any 401 handlers spawned during login transition.
         bumpAuthEpoch()
         // Suppress 401s for 3s while session cookie propagates to concurrent requests.
-        setLoginGrace(3000)
-        navigate(getLandingPath(result.user))
+        setLoginGrace(3500)
+        navigate(getLandingPath(authMeUser))
       }
     } catch (err: unknown) {
       // M12 FIX: Properly type the error response from the API interceptor.

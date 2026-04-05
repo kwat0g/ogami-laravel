@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import type {
   CapaAction,
   CreateInspectionPayload,
@@ -23,6 +25,11 @@ const KEYS = {
 type TemplateParams = { stage?: string; is_active?: boolean; per_page?: number; with_archived?: boolean }
 
 export function useInspectionTemplates(params?: TemplateParams) {
+  const hasPermission = useAuthStore((s) => s.hasPermission)
+  const canViewTemplates = hasPermission(
+    `${PERMISSIONS.qc.templates.view}|${PERMISSIONS.qc.templates.manage}`,
+  )
+
   return useQuery({
     queryKey: [...KEYS.templates, params],
     queryFn: async () => {
@@ -31,6 +38,7 @@ export function useInspectionTemplates(params?: TemplateParams) {
       )
       return res.data
     },
+    enabled: canViewTemplates,
     placeholderData: keepPreviousData,
   })
 }

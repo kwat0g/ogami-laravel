@@ -47,15 +47,40 @@ final class PurchaseOrderService implements ServiceContract
         return DB::transaction(function () use ($pr): PurchaseOrder {
             $reference = $this->generateReference();
 
+            $pr->loadMissing('items');
+
+            $resolvedVendorId = $pr->vendor_id;
+            if ($resolvedVendorId === null) {
+                $vendorItemIds = $pr->items
+                    ->pluck('vendor_item_id')
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                if ($vendorItemIds->count() === 1) {
+                    $resolvedVendorId = VendorItem::query()
+                        ->whereKey((int) $vendorItemIds->first())
+                        ->value('vendor_id');
+                }
+            }
+
+            if ($resolvedVendorId === null) {
+                throw new DomainException(
+                    message: 'Cannot auto-create PO — Vendor is required on the source PR.',
+                    errorCode: 'PO_VENDOR_REQUIRED',
+                    httpStatus: 422,
+                );
+            }
+
             // Try to resolve vendor default payment terms
-            $vendor = Vendor::find($pr->vendor_id);
+            $vendor = Vendor::find($resolvedVendorId);
             $paymentTerms = $vendor?->payment_terms ?? null;
 
             $po = PurchaseOrder::create([
                 'ulid' => (string) Str::ulid(),
                 'po_reference' => $reference,
                 'purchase_request_id' => $pr->id,
-                'vendor_id' => $pr->vendor_id,
+                'vendor_id' => $resolvedVendorId,
                 'po_date' => now()->toDateString(),
                 'delivery_date' => null, // To be filled by Purchasing Officer
                 'payment_terms' => $paymentTerms, // Default or null
@@ -72,16 +97,25 @@ final class PurchaseOrderService implements ServiceContract
             ]);
 
             // Pre-load vendor catalog for this vendor (centavos, keyed by normalised item_name)
-            $catalogPrices = $pr->vendor_id
-                ? VendorItem::where('vendor_id', $pr->vendor_id)
-                    ->where('is_active', true)
-                    ->get(['item_name', 'unit_price'])
-                    ->keyBy(fn ($vi) => mb_strtolower(trim($vi->item_name)))
-                : collect();
+            $catalogPrices = VendorItem::where('vendor_id', $resolvedVendorId)
+                ->where('is_active', true)
+                ->get(['id', 'item_name', 'unit_price'])
+                ->keyBy(fn ($vi) => mb_strtolower(trim($vi->item_name)));
+
+            $vendorItemsById = VendorItem::where('vendor_id', $resolvedVendorId)
+                ->whereIn('id', $pr->items->pluck('vendor_item_id')->filter()->all())
+                ->get(['id', 'unit_price'])
+                ->keyBy('id');
 
             foreach ($pr->items as $index => $item) {
-                $normalised = mb_strtolower(trim($item->item_description));
-                $catalogEntry = $catalogPrices->get($normalised);
+                $catalogEntry = $item->vendor_item_id
+                    ? $vendorItemsById->get($item->vendor_item_id)
+                    : null;
+
+                if ($catalogEntry === null) {
+                    $normalised = mb_strtolower(trim($item->item_description));
+                    $catalogEntry = $catalogPrices->get($normalised);
+                }
 
                 // Use catalog price (centavos → PHP) if an exact match exists; fall back to PR estimate
                 $agreedCost = $catalogEntry

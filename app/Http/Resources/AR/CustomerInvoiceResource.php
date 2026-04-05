@@ -27,6 +27,13 @@ final class CustomerInvoiceResource extends JsonResource
             'customer_id' => $inv->customer_id,
             'customer' => $this->whenLoaded('customer', fn () => new CustomerResource($inv->customer)),
             'fiscal_period_id' => $inv->fiscal_period_id,
+            'fiscal_period' => $this->whenLoaded('fiscalPeriod', fn () => [
+                'id' => $inv->fiscalPeriod?->id,
+                'name' => $inv->fiscalPeriod?->name,
+                'date_from' => $inv->fiscalPeriod?->date_from?->toDateString(),
+                'date_to' => $inv->fiscalPeriod?->date_to?->toDateString(),
+                'status' => $inv->fiscalPeriod?->status,
+            ]),
             'ar_account_id' => $inv->ar_account_id,
             'revenue_account_id' => $inv->revenue_account_id,
             'invoice_date' => $inv->invoice_date->toDateString(),

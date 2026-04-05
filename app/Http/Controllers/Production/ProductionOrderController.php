@@ -142,6 +142,23 @@ final class ProductionOrderController extends Controller
         return new ProductionOrderResource($this->service->complete($productionOrder));
     }
 
+    public function createOqcInspection(Request $request, ProductionOrder $productionOrder): JsonResponse
+    {
+        $this->authorize('createOqcInspection', $productionOrder);
+
+        $result = $this->service->createOqcInspection($productionOrder, $request->user());
+        $inspection = $result['inspection'];
+
+        return response()->json([
+            'data' => [
+                'ulid' => $inspection->ulid,
+                'inspection_reference' => $inspection->inspection_reference,
+                'status' => $inspection->status,
+                'created_new' => $result['created_new'],
+            ],
+        ]);
+    }
+
     public function cancel(ProductionOrder $productionOrder): ProductionOrderResource
     {
         $this->authorize('cancel', $productionOrder);

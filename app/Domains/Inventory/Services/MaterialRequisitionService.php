@@ -179,14 +179,15 @@ final class MaterialRequisitionService implements ServiceContract
 
     public function review(MaterialRequisition $mrq, User $actor, ?string $comments): MaterialRequisition
     {
-        $this->assertStatus($mrq, 'checked');
+        $this->assertStatus($mrq, 'submitted');
 
-        // SoD: the person who checked cannot be the one who reviews it
-        if (! $actor->hasRole('super_admin') && (int) $mrq->checked_by_id === (int) $actor->id) {
+        // SoD: the person who submitted cannot be the one who gives final approval.
+        if (! $actor->hasRole('super_admin') && (int) $mrq->submitted_by_id === (int) $actor->id) {
             throw new SodViolationException('material_requisition', 'review');
         }
 
-        $mrq->update(['status' => 'reviewed', 'reviewed_by_id' => $actor->id, 'reviewed_at' => now(), 'reviewed_comments' => $comments]);
+        // Single-step workflow: Warehouse Manager review is the final approval gate.
+        $mrq->update(['status' => 'approved', 'reviewed_by_id' => $actor->id, 'reviewed_at' => now(), 'reviewed_comments' => $comments]);
 
         return $mrq->refresh();
     }
@@ -249,7 +250,13 @@ final class MaterialRequisitionService implements ServiceContract
      */
     public function fulfill(MaterialRequisition $mrq, User $actor, int $defaultLocationId): MaterialRequisition
     {
-        $this->assertStatus($mrq, 'approved');
+        if (! in_array($mrq->status, ['approved', 'converted_to_pr'], true)) {
+            throw new DomainException(
+                "Expected status 'approved' or 'converted_to_pr', got '{$mrq->status}'.",
+                'MRQ_INVALID_STATUS',
+                422,
+            );
+        }
 
         $mrq->load('items.item');
 

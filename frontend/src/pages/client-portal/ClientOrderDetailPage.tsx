@@ -63,7 +63,7 @@ const STATUS_CONFIG: Record<string, {
   in_production: {
     status: 'in_progress',
     icon: <Package className="h-4 w-4" />,
-    label: 'In Production',
+    label: 'In Process of Production',
     description: 'Your order is currently being manufactured.'
   },
   ready_for_delivery: {
@@ -183,7 +183,6 @@ export default function ClientOrderDetailPage(): JSX.Element {
     )
   }
 
-  const status = STATUS_CONFIG[order.status] ?? FALLBACK_STATUS
   // API payloads can arrive in either camelCase or snake_case relation keys.
   const deliveryScheduleRows = ((order.deliverySchedules ?? (order as { delivery_schedules?: unknown[] }).delivery_schedules) ?? []) as Array<Record<string, unknown>>
   const deliverySchedules = deliveryScheduleRows
@@ -197,10 +196,49 @@ export default function ClientOrderDetailPage(): JSX.Element {
       }
     })
     .filter((row): row is { id: number; schedule: Record<string, unknown> } => row !== null)
+  const hasAnyAcknowledgment = deliverySchedules.some((ds) => {
+    const schedule = ds.schedule as {
+      client_acknowledgment?: unknown
+      item_status_summary?: Array<{ client_acknowledgment?: unknown; is_missing?: boolean }> | null
+    }
+
+    const hasStoredAck = Array.isArray(schedule.client_acknowledgment) && schedule.client_acknowledgment.length > 0
+    const actionableSummaries = Array.isArray(schedule.item_status_summary)
+      ? schedule.item_status_summary.filter((summary) => !summary?.is_missing)
+      : []
+    const hasSummaryAck = actionableSummaries.length > 0
+      && actionableSummaries.every((summary) => Boolean(summary?.client_acknowledgment))
+
+    return hasStoredAck || hasSummaryAck
+  })
+  const hasAnyDispute = deliverySchedules.some((ds) => Boolean(ds.schedule.has_dispute))
   const firstDeliveryScheduleUlid = (
     deliverySchedules.find((ds) => ds.schedule.status === 'delivered' && typeof ds.schedule.ulid === 'string')
     ?? deliverySchedules.find((ds) => typeof ds.schedule.ulid === 'string')
   )?.schedule.ulid as string | undefined
+  const shouldShowAcknowledgeAction = order.status === 'delivered' && !hasAnyAcknowledgment && Boolean(firstDeliveryScheduleUlid)
+
+  const status = (() => {
+    if (order.status === 'delivered' && hasAnyAcknowledgment && hasAnyDispute) {
+      return {
+        status: 'in_progress',
+        icon: <AlertTriangle className="h-4 w-4" />,
+        label: 'Issue Reported',
+        description: 'You acknowledged delivery and reported an issue. Our team is currently reviewing your dispute.'
+      }
+    }
+
+    if (order.status === 'delivered' && hasAnyAcknowledgment) {
+      return {
+        status: 'approved',
+        icon: <CheckCircle className="h-4 w-4" />,
+        label: 'Receipt Acknowledged',
+        description: 'Your receipt acknowledgment was submitted successfully.'
+      }
+    }
+
+    return STATUS_CONFIG[order.status] ?? FALLBACK_STATUS
+  })()
 
   return (
     <div className="space-y-5 max-w-5xl mx-auto">
@@ -489,6 +527,8 @@ export default function ClientOrderDetailPage(): JSX.Element {
               <CardBody className="space-y-3">
                 <p className="text-xs text-neutral-500">
                   {order.status === 'dispatched' ? 'Your order is on its way!' :
+                   (order.status === 'delivered' && hasAnyAcknowledgment && hasAnyDispute) ? 'Issue reported and under review by our team.' :
+                   (order.status === 'delivered' && hasAnyAcknowledgment) ? 'Receipt acknowledgment submitted. Processing update shortly.' :
                    order.status === 'delivered' ? 'Delivered by our team. Client confirmation is still required to complete this order.' :
                    order.status === 'fulfilled' || order.status === 'completed' ? 'Delivery complete.' :
                    'Your order is being prepared for delivery.'}
@@ -522,7 +562,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
                   }
                   const schedStatusLabels: Record<string, string> = {
                     open: 'Pending',
-                    in_production: 'In Production',
+                    in_production: 'In Process of Production',
                     partially_ready: 'Partially Ready',
                     ready: 'Ready to Ship',
                     dispatched: 'In Transit',
@@ -580,7 +620,7 @@ export default function ClientOrderDetailPage(): JSX.Element {
                 })}
 
                 {/* Acknowledge delivery button for delivered orders */}
-                {order.status === 'delivered' && firstDeliveryScheduleUlid && (
+                {shouldShowAcknowledgeAction && firstDeliveryScheduleUlid && (
                   <button
                     onClick={() => {
                       if (firstDeliveryScheduleUlid) {

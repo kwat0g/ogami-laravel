@@ -332,25 +332,78 @@ final class CombinedDeliveryScheduleService implements ServiceContract
                     continue;
                 }
 
+                $receivedQty = (float) $ack['received_qty'];
+                $orderedQty = (float) $itemSchedule->qty_ordered;
+                $condition = (string) $ack['condition'];
+                $photoUrls = array_values(array_filter(
+                    is_array($ack['photo_urls'] ?? null) ? $ack['photo_urls'] : [],
+                    static fn ($url): bool => is_string($url) && trim($url) !== ''
+                ));
+                if ($photoUrls === [] && ! empty($ack['photo_url']) && is_string($ack['photo_url'])) {
+                    $photoUrls = [trim($ack['photo_url'])];
+                }
+
+                if ($receivedQty > $orderedQty) {
+                    throw new DomainException(
+                        'Received quantity cannot be greater than ordered quantity.',
+                        'INVALID_ACKNOWLEDGMENT_QTY_EXCEEDS_ORDERED',
+                        422
+                    );
+                }
+
+                if ($condition === 'missing' && abs($receivedQty - $orderedQty) < 0.0001) {
+                    throw new DomainException(
+                        'Missing condition requires received quantity lower than ordered quantity.',
+                        'INVALID_ACKNOWLEDGMENT_MISSING_QTY',
+                        422
+                    );
+                }
+
+                if ($condition === 'good' && abs($receivedQty - $orderedQty) > 0.0001) {
+                    throw new DomainException(
+                        'Good condition requires received quantity to match ordered quantity.',
+                        'INVALID_ACKNOWLEDGMENT_GOOD_QTY',
+                        422
+                    );
+                }
+
+                if ($condition === 'damaged' && abs($receivedQty - $orderedQty) < 0.0001) {
+                    throw new DomainException(
+                        'Damaged condition requires received quantity lower than ordered quantity.',
+                        'INVALID_ACKNOWLEDGMENT_DAMAGED_QTY',
+                        422
+                    );
+                }
+
+                if (in_array($condition, ['damaged', 'missing'], true) && count($photoUrls) < 1) {
+                    throw new DomainException(
+                        'Photo evidence is required for damaged or missing items.',
+                        'PHOTO_EVIDENCE_REQUIRED',
+                        422
+                    );
+                }
+
                 // Store acknowledgment details
                 $itemSchedule->update([
                     'client_acknowledgment' => [
-                        'received_qty' => $ack['received_qty'],
-                        'condition' => $ack['condition'], // 'good', 'damaged', 'missing'
+                        'received_qty' => $receivedQty,
+                        'condition' => $condition, // 'good', 'damaged', 'missing'
                         'notes' => $ack['notes'] ?? null,
+                        'photo_urls' => $photoUrls,
                         'acknowledged_at' => now()->toIso8601String(),
                         'acknowledged_by' => $userId,
                     ],
                 ]);
 
-                if ($ack['condition'] !== 'good') {
+                if ($condition !== 'good') {
                     $hasIssues = true;
                     $disputeItems[] = [
                         'delivery_schedule_id' => $itemSchedule->id,
                         'item_master_id' => $itemSchedule->product_item_id,
-                        'condition' => $ack['condition'],
-                        'received_qty' => $ack['received_qty'],
+                        'condition' => $condition,
+                        'received_qty' => $receivedQty,
                         'notes' => $ack['notes'] ?? null,
+                        'photo_urls' => $photoUrls,
                     ];
                 }
             }
@@ -372,13 +425,21 @@ final class CombinedDeliveryScheduleService implements ServiceContract
                         $formattedItems = [];
                         foreach ($itemAcknowledgments as $ack) {
                             $itemSchedule = DeliverySchedule::find($ack['item_id']);
+                            $photoUrls = array_values(array_filter(
+                                is_array($ack['photo_urls'] ?? null) ? $ack['photo_urls'] : [],
+                                static fn ($url): bool => is_string($url) && trim($url) !== ''
+                            ));
+                            if ($photoUrls === [] && ! empty($ack['photo_url']) && is_string($ack['photo_url'])) {
+                                $photoUrls = [trim($ack['photo_url'])];
+                            }
+
                             $formattedItems[] = [
                                 'item_master_id' => $itemSchedule?->product_item_id ?? 0,
                                 'expected_qty' => (float) ($itemSchedule?->qty_ordered ?? 0),
                                 'received_qty' => (float) $ack['received_qty'],
                                 'condition' => $ack['condition'],
                                 'notes' => $ack['notes'] ?? null,
-                                'photo_url' => $ack['photo_url'] ?? null,
+                                'photo_urls' => $photoUrls,
                             ];
                         }
 
@@ -406,8 +467,11 @@ final class CombinedDeliveryScheduleService implements ServiceContract
 
                 // Notify sales team after commit
                 DB::afterCommit(function () use ($schedule): void {
-                    User::permission('sales.order_review')
-                        ->each(fn (User $u) => $u->notify(DeliveryDisputeNotification::fromModel($schedule)));
+                    $recipients = User::permission('sales.order_review')->get()
+                        ->merge(User::permission('delivery.view')->get())
+                        ->unique('id');
+
+                    $recipients->each(fn (User $u) => $u->notify(DeliveryDisputeNotification::fromModel($schedule)));
                 });
             }
 

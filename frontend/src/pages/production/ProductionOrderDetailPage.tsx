@@ -10,12 +10,12 @@ import {
   useCompleteOrder,
   useCancelOrder,
   useVoidOrder,
-  useCloseOrder,
   useHoldOrder,
   useResumeOrder,
   useLogOutput,
   useStockCheck,
   useForceRelease,
+  useCreateOqcInspection,
   useUpdateProductionOrder,
   type StockCheckItem,
 } from '@/hooks/useProduction'
@@ -53,6 +53,22 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
       <dd className="text-sm text-neutral-900 dark:text-neutral-100 font-medium">{value ?? '—'}</dd>
     </div>
   )
+}
+
+function formatQty(value: number | string | null | undefined): string {
+  const numeric = typeof value === 'number' ? value : parseFloat(String(value ?? '0'))
+  if (!Number.isFinite(numeric)) return '0'
+
+  if (Number.isInteger(numeric)) {
+    return numeric.toLocaleString('en-PH')
+  }
+
+  const nearestInt = Math.round(numeric)
+  if (Math.abs(numeric - nearestInt) <= 0.001) {
+    return nearestInt.toLocaleString('en-PH')
+  }
+
+  return numeric.toLocaleString('en-PH', { minimumFractionDigits: 3, maximumFractionDigits: 4 })
 }
 
 export default function ProductionOrderDetailPage(): React.ReactElement {
@@ -110,7 +126,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
     onError: (err: unknown) => toast.error(firstErrorMessage(err, 'Failed to post cost to GL.')),
   })
 
-  const closeMut     = useCloseOrder(ulid ?? '')
+  const createOqcMut = useCreateOqcInspection(ulid ?? '')
   const holdMut      = useHoldOrder(ulid ?? '')
   const resumeMut    = useResumeOrder(ulid ?? '')
   const updateMut    = useUpdateProductionOrder(ulid ?? '')
@@ -121,7 +137,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
   const [editData, setEditData] = useState({ notes: '', target_start_date: '', target_end_date: '' })
   const [showAdvancedActions, setShowAdvancedActions] = useState(false)
 
-  const anyPending = releaseMut.isPending || startMut.isPending || completeMut.isPending || cancelMut.isPending || voidMut.isPending || closeMut.isPending || holdMut.isPending || resumeMut.isPending
+  const anyPending = releaseMut.isPending || startMut.isPending || completeMut.isPending || cancelMut.isPending || voidMut.isPending || holdMut.isPending || resumeMut.isPending
 
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false)
@@ -315,11 +331,13 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         ? 'Approve release, then release the work order.'
         : 'Release the work order to start production flow.'
       : order.status === 'released'
-        ? 'Start production when operators and materials are ready.'
+        ? order.mrq_pending
+          ? 'MRQ is still pending. Fulfill, reject, or cancel the MRQ before starting production.'
+          : 'Start production when operators and materials are ready.'
         : order.status === 'in_progress'
           ? 'Log output regularly, then complete once target is met.'
           : order.status === 'completed'
-            ? 'Create OQC inspection and close when final checks are done.'
+            ? 'Create OQC inspection. The work order auto-closes after OQC passes.'
             : order.status === 'on_hold'
               ? 'Resume production once the hold reason is resolved.'
               : 'No further workflow actions available.'
@@ -330,124 +348,22 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
       order.requires_release_approval &&
       !order.approved_for_release_at &&
       canRelease
-    const canShowStart = order.status === 'released' && canRelease
-    const canShowMarkComplete = order.status === 'in_progress' && canComplete && !showLogForm
-    const canShowClose = order.status === 'completed' && canComplete
+    const canShowStart = order.status === 'released' && canRelease && !order.mrq_pending
+    const canShowMarkComplete = order.status === 'in_progress' && canComplete && !showLogForm && qtyProduced >= qtyRequired
     const canShowLogOutput = order.status === 'in_progress' && canLogOutput && !showLogForm
-    const canShowCreateQcInspection = order.status === 'completed'
-    const canShowHold = ['released', 'in_progress'].includes(order.status) && canRelease && !showLogForm
+    const canShowCreateQcInspection = order.status === 'completed' && canComplete
+    const canShowHoldPrimary = order.status === 'released' && canRelease && !showLogForm
+    const canShowHoldAdvanced = order.status === 'in_progress' && canRelease && !showLogForm
 
     const canShowEdit = ['draft', 'released', 'in_progress', 'on_hold'].includes(order.status) && canCreate && !showEditForm && !showLogForm
     const canShowCancel = ['draft', 'released', 'in_progress'].includes(order.status) && canCreate
     const canShowVoid = order.status === 'in_progress' && qtyProduced === 0 && !showLogForm && canCreate
-    const hasAdvancedActions = canShowEdit || canShowCancel || canShowVoid
+    const hasAdvancedActions = canShowEdit || canShowCancel || canShowVoid || canShowHoldAdvanced
 
   const actionsPanel = (
     <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
       <h2 className="text-sm font-medium text-neutral-700 mb-4">Actions</h2>
       <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">Next step: {nextStepText}</p>
-
-      {showLogForm && (
-        <div className="bg-neutral-50 border border-neutral-200 rounded p-4 mb-4 space-y-3">
-          <h3 className="text-sm font-medium text-neutral-700">Log Production Output</h3>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-neutral-600 mb-1">Shift</label>
-              <select
-                value={logData.shift}
-                onChange={(e) => setLogData((d) => ({ ...d, shift: e.target.value as 'A' | 'B' | 'C' }))}
-                className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-              >
-                <option value="A">Shift A</option>
-                <option value="B">Shift B</option>
-                <option value="C">Shift C</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-neutral-600 mb-1">Date</label>
-              <input
-                type="date"
-                value={logData.log_date}
-                onChange={(e) => setLogData((d) => ({ ...d, log_date: e.target.value }))}
-                className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-neutral-600 mb-1">Operator *</label>
-              <select
-                value={logData.operator_id}
-                onChange={(e) => {
-                  setLogData((d) => ({ ...d, operator_id: e.target.value }))
-                  if (logErrors.operator_id) {
-                    setLogErrors(prev => ({ ...prev, operator_id: '' }))
-                  }
-                }}
-                className={`w-full text-sm border rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${logErrors.operator_id ? 'border-red-400' : 'border-neutral-300'}`}
-              >
-                <option value="">— Select Operator —</option>
-                {employees.map(emp => (
-                  <option key={emp.id} value={emp.id}>{emp.full_name}{emp.position?.title ? ` — ${emp.position.title}` : ''}</option>
-                ))}
-              </select>
-              {logErrors.operator_id && <p className="mt-1 text-xs text-red-600">{logErrors.operator_id}</p>}
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Produced *</label>
-              <input
-                type="number"
-                step="0.0001"
-                min="0.0001"
-                value={logData.qty_produced}
-                onChange={(e) => {
-                  setLogData((d) => ({ ...d, qty_produced: e.target.value }))
-                  if (logErrors.qty_produced) {
-                    setLogErrors(prev => ({ ...prev, qty_produced: '' }))
-                  }
-                }}
-                className={`w-full text-sm border rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${logErrors.qty_produced ? 'border-red-400' : 'border-neutral-300'}`}
-              />
-              {logErrors.qty_produced && <p className="mt-1 text-xs text-red-600">{logErrors.qty_produced}</p>}
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Rejected</label>
-              <input
-                type="number"
-                step="0.0001"
-                min="0"
-                value={logData.qty_rejected}
-                onChange={(e) => setLogData((d) => ({ ...d, qty_rejected: e.target.value }))}
-                className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-neutral-600 mb-1">Remarks</label>
-              <input
-                value={logData.remarks}
-                onChange={(e) => setLogData((d) => ({ ...d, remarks: e.target.value }))}
-                className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleLogOutput}
-              disabled={logMut.isPending}
-              className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Submit Log
-            </button>
-            <button
-              onClick={() => {
-                setShowLogForm(false)
-                setLogErrors({})
-              }}
-              className="px-4 py-2 border border-neutral-300 text-neutral-600 text-sm rounded hover:bg-neutral-50"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="flex flex-wrap gap-2">
 
@@ -500,27 +416,6 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
           </button>
         )}
 
-        {canShowClose && (
-          <ConfirmDialog
-            title="Close Work Order?"
-            description="This will close the work order. Closed orders are terminal and cannot be reopened."
-            confirmLabel="Close"
-            onConfirm={async () => {
-              try {
-                await closeMut.mutateAsync()
-                toast.success('Work order closed successfully.')
-              } catch (err) {
-                if (isHandledApiError(err)) return
-                toast.error(firstErrorMessage(err))
-              }
-            }}
-          >
-            <button disabled={closeMut.isPending} className="px-4 py-2 text-sm font-medium bg-green-700 hover:bg-green-800 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed">
-              Close Order
-            </button>
-          </ConfirmDialog>
-        )}
-
         {canShowLogOutput && (
           <button onClick={() => setShowLogForm(true)} className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded">
             Log Output
@@ -528,15 +423,29 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         )}
 
         {canShowCreateQcInspection && (
-          <Link
-            to={`/qc/inspections/new?po=${order.ulid}&stage=oqc`}
-            className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded inline-flex items-center gap-1.5"
+          <button
+            onClick={async () => {
+              try {
+                const inspection = await createOqcMut.mutateAsync()
+                toast.success(
+                  inspection.created_new
+                    ? 'OQC inspection auto-created.'
+                    : 'Open OQC inspection already exists. Redirecting...'
+                )
+                navigate(`/qc/inspections/${inspection.ulid}`)
+              } catch (err) {
+                if (isHandledApiError(err)) return
+                toast.error(firstErrorMessage(err))
+              }
+            }}
+            disabled={createOqcMut.isPending}
+            className="px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 rounded inline-flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create QC Inspection
-          </Link>
+            {createOqcMut.isPending ? 'Creating...' : 'Create QC Inspection'}
+          </button>
         )}
 
-        {canShowHold && (
+        {canShowHoldPrimary && (
           <button
             onClick={() => setShowHoldModal(true)}
             disabled={anyPending}
@@ -609,6 +518,16 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
                   </button>
                 </ConfirmDestructiveDialog>
               )}
+
+              {canShowHoldAdvanced && (
+                <button
+                  onClick={() => setShowHoldModal(true)}
+                  disabled={anyPending}
+                  className="px-3 py-1.5 text-xs font-medium border border-amber-300 text-amber-700 hover:bg-amber-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Hold
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -650,15 +569,15 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Qty Produced</p>
           <p className="mt-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-            {qtyProduced.toLocaleString('en-PH', { maximumFractionDigits: 4 })}
+            {formatQty(qtyProduced)}
           </p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">of {qtyRequired.toLocaleString('en-PH', { maximumFractionDigits: 4 })}</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">of {formatQty(qtyRequired)}</p>
         </div>
 
         <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Qty Remaining</p>
           <p className="mt-1 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-            {qtyRemaining.toLocaleString('en-PH', { maximumFractionDigits: 4 })}
+            {formatQty(qtyRemaining)}
           </p>
           <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Target end: {order.target_end_date}</p>
         </div>
@@ -678,10 +597,10 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
             <dl>
               <InfoRow label="Product" value={`${order.product_item?.item_code} — ${order.product_item?.name}`} />
               <InfoRow label="BOM Version" value={order.bom ? `v${order.bom.version}` : '—'} />
-              <InfoRow label="Qty Required" value={parseFloat(order.qty_required || '0').toLocaleString('en-PH', { maximumFractionDigits: 4 })} />
+              <InfoRow label="Qty Required" value={formatQty(order.qty_required)} />
               <InfoRow label="Qty Produced" value={
                 <div className="flex items-center gap-2">
-                  <span>{parseFloat(order.qty_produced || '0').toLocaleString('en-PH', { maximumFractionDigits: 4 })}</span>
+                  <span>{formatQty(order.qty_produced)}</span>
                   <div className="flex items-center gap-1">
                     <div className="h-2 w-24 bg-neutral-200 rounded-full overflow-hidden">
                       <div className="h-full bg-neutral-600 rounded-full" style={{ width: `${Math.min(100, order.progress_pct ?? 0)}%` }} />
@@ -788,7 +707,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
                           <div className="font-mono text-xs text-neutral-400">{comp.component_item?.item_code}</div>
                           <div className="text-sm text-neutral-800">{comp.component_item?.name}</div>
                         </td>
-                        <td className="px-3 py-2 tabular-nums">{parseFloat(comp.qty_per_unit).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
+                        <td className="px-3 py-2 tabular-nums">{formatQty(comp.qty_per_unit)}</td>
                         <td className="px-3 py-2 text-neutral-400">{comp.unit_of_measure}</td>
                         <td className="px-3 py-2 text-neutral-400">{comp.scrap_factor_pct}%</td>
                       </tr>
@@ -817,8 +736,8 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
                       <tr key={log.id}>
                         <td className="px-3 py-2 text-neutral-500 text-xs">{log.log_date}</td>
                         <td className="px-3 py-2 font-semibold">{log.shift}</td>
-                        <td className="px-3 py-2 tabular-nums text-neutral-900 font-semibold">{parseFloat(log.qty_produced).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
-                        <td className="px-3 py-2 tabular-nums text-red-600">{parseFloat(log.qty_rejected).toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
+                        <td className="px-3 py-2 tabular-nums text-neutral-900 font-semibold">{formatQty(log.qty_produced)}</td>
+                        <td className="px-3 py-2 tabular-nums text-red-600">{formatQty(log.qty_rejected)}</td>
                         <td className="px-3 py-2 text-neutral-500">{log.operator?.name ?? '—'}</td>
                         <td className="px-3 py-2 text-neutral-400 text-xs">{log.recorded_by?.name ?? '—'}</td>
                       </tr>
@@ -954,6 +873,115 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         </aside>
       </div>
 
+      {/* ── Log Output Modal ───────────────────────────────────────────────── */}
+      {showLogForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+            <div className="px-6 py-4 border-b border-neutral-200">
+              <h3 className="text-base font-semibold text-neutral-900">Log Production Output</h3>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">Shift</label>
+                  <select
+                    value={logData.shift}
+                    onChange={(e) => setLogData((d) => ({ ...d, shift: e.target.value as 'A' | 'B' | 'C' }))}
+                    className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                  >
+                    <option value="A">Shift A</option>
+                    <option value="B">Shift B</option>
+                    <option value="C">Shift C</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={logData.log_date}
+                    onChange={(e) => setLogData((d) => ({ ...d, log_date: e.target.value }))}
+                    className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">Operator *</label>
+                  <select
+                    value={logData.operator_id}
+                    onChange={(e) => {
+                      setLogData((d) => ({ ...d, operator_id: e.target.value }))
+                      if (logErrors.operator_id) {
+                        setLogErrors(prev => ({ ...prev, operator_id: '' }))
+                      }
+                    }}
+                    className={`w-full text-sm border rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${logErrors.operator_id ? 'border-red-400' : 'border-neutral-300'}`}
+                  >
+                    <option value="">— Select Operator —</option>
+                    {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.full_name}{emp.position?.title ? ` — ${emp.position.title}` : ''}</option>
+                    ))}
+                  </select>
+                  {logErrors.operator_id && <p className="mt-1 text-xs text-red-600">{logErrors.operator_id}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Produced *</label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    min="0.0001"
+                    value={logData.qty_produced}
+                    onChange={(e) => {
+                      setLogData((d) => ({ ...d, qty_produced: e.target.value }))
+                      if (logErrors.qty_produced) {
+                        setLogErrors(prev => ({ ...prev, qty_produced: '' }))
+                      }
+                    }}
+                    className={`w-full text-sm border rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400 ${logErrors.qty_produced ? 'border-red-400' : 'border-neutral-300'}`}
+                  />
+                  {logErrors.qty_produced && <p className="mt-1 text-xs text-red-600">{logErrors.qty_produced}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">Qty Rejected</label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    value={logData.qty_rejected}
+                    onChange={(e) => setLogData((d) => ({ ...d, qty_rejected: e.target.value }))}
+                    className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-600 mb-1">Remarks</label>
+                  <input
+                    value={logData.remarks}
+                    onChange={(e) => setLogData((d) => ({ ...d, remarks: e.target.value }))}
+                    className="w-full text-sm border border-neutral-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 px-6 py-4 border-t border-neutral-200 bg-neutral-50 rounded-b-lg">
+              <button
+                onClick={() => {
+                  setShowLogForm(false)
+                  setLogErrors({})
+                }}
+                className="px-4 py-2 border border-neutral-300 text-neutral-600 text-sm rounded hover:bg-neutral-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogOutput}
+                disabled={logMut.isPending}
+                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {logMut.isPending ? 'Submitting…' : 'Submit Log'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Hold Modal ──────────────────────────────────────────────────────── */}
       {showHoldModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -1023,8 +1051,8 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
                   {stockItems.map((item) => (
                     <tr key={item.component_item_id}>
                       <td className="py-2 text-neutral-800">{item.item_name}</td>
-                      <td className="py-2 text-right tabular-nums">{item.required_qty.toLocaleString('en-PH', { maximumFractionDigits: 4 })} {item.unit_of_measure}</td>
-                      <td className="py-2 text-right tabular-nums">{item.available_qty.toLocaleString('en-PH', { maximumFractionDigits: 4 })}</td>
+                      <td className="py-2 text-right tabular-nums">{formatQty(item.required_qty)} {item.unit_of_measure}</td>
+                      <td className="py-2 text-right tabular-nums">{formatQty(item.available_qty)}</td>
                       <td className="py-2 text-center">
                         {item.sufficient ? (
                           <CheckCircle className="w-4 h-4 text-emerald-500 mx-auto" />
@@ -1136,7 +1164,7 @@ export default function ProductionOrderDetailPage(): React.ReactElement {
         onClose={() => setShowCompleteConfirm(false)}
         onConfirm={executeComplete}
         title="Complete Work Order Short?"
-        description={`Only ${parseFloat(order.qty_produced).toLocaleString('en-PH')} of ${parseFloat(order.qty_required).toLocaleString('en-PH')} units produced (${completionPercentage}%). Complete the work order short?`}
+        description={`Only ${formatQty(order.qty_produced)} of ${formatQty(order.qty_required)} units produced (${completionPercentage}%). Complete the work order short?`}
         confirmLabel="Complete Short"
         loading={completeMut.isPending}
         variant="warning"

@@ -31,39 +31,6 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
     Route::post('boms/{bom}/rollup-cost', [BomController::class, 'rollupCost'])->middleware('throttle:api-action');
     Route::get('boms/{bom}/cost-compare', [BomController::class, 'costCompare']);
 
-    // ── Delivery Schedules ───────────────────────────────────────────────────
-    Route::get('delivery-schedules', [DeliveryScheduleController::class, 'index']);
-    Route::post('delivery-schedules', [DeliveryScheduleController::class, 'store']);
-    Route::get('delivery-schedules/{deliverySchedule}', [DeliveryScheduleController::class, 'show']);
-    Route::put('delivery-schedules/{deliverySchedule}', [DeliveryScheduleController::class, 'update']);
-    Route::post('delivery-schedules/{deliverySchedule}/fulfill', [DeliveryScheduleController::class, 'fulfillFromStock'])
-        ->middleware('throttle:api-action');
-
-    // ── Delivery Schedule Workflow Actions ─────────────────────────────────
-    Route::post('delivery-schedules/{deliverySchedule:ulid}/dispatch', [DeliveryScheduleController::class, 'dispatch'])
-        ->middleware('throttle:api-action');
-    Route::post('delivery-schedules/{deliverySchedule:ulid}/delivered', [DeliveryScheduleController::class, 'markDelivered'])
-        ->middleware('throttle:api-action');
-    Route::post('delivery-schedules/{deliverySchedule:ulid}/acknowledge', [DeliveryScheduleController::class, 'acknowledgeReceipt'])
-        ->middleware('can:respond,deliverySchedule')
-        ->middleware('throttle:api-action');
-    Route::post('delivery-schedules/{deliverySchedule:ulid}/notify-missing', [DeliveryScheduleController::class, 'notifyMissingItems'])
-        ->middleware('throttle:api-action');
-
-    // ── Combined Delivery Schedules (Multi-item delivery grouping) ────────────
-    Route::get('combined-delivery-schedules', [CombinedDeliveryScheduleController::class, 'index'])
-        ->middleware('can:viewAny,'.CombinedDeliverySchedule::class);
-    Route::get('combined-delivery-schedules/{schedule:ulid}', [CombinedDeliveryScheduleController::class, 'show'])
-        ->middleware('can:view,schedule');
-    Route::post('combined-delivery-schedules/{schedule:ulid}/dispatch', [CombinedDeliveryScheduleController::class, 'dispatch'])
-        ->middleware('can:update,schedule', 'throttle:api-action');
-    Route::post('combined-delivery-schedules/{schedule:ulid}/delivered', [CombinedDeliveryScheduleController::class, 'markDelivered'])
-        ->middleware('can:update,schedule', 'throttle:api-action');
-    Route::post('combined-delivery-schedules/{schedule:ulid}/notify-missing', [CombinedDeliveryScheduleController::class, 'notifyMissingItems'])
-        ->middleware('can:update,schedule', 'throttle:api-action');
-    Route::post('combined-delivery-schedules/{schedule:ulid}/acknowledge', [CombinedDeliveryScheduleController::class, 'acknowledgeReceipt'])
-        ->middleware('can:respond,schedule', 'throttle:api-action');
-
     // ── Production Orders ────────────────────────────────────────────────────
     Route::get('orders', [ProductionOrderController::class, 'index']);
     Route::get('orders-archived', [ProductionOrderController::class, 'archived']);
@@ -81,6 +48,7 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
         Route::patch('orders/{productionOrder}/approve-release', [ProductionOrderController::class, 'approveRelease']);
         Route::patch('orders/{productionOrder}/start', [ProductionOrderController::class, 'start']);
         Route::patch('orders/{productionOrder}/complete', [ProductionOrderController::class, 'complete']);
+        Route::post('orders/{productionOrder}/create-oqc-inspection', [ProductionOrderController::class, 'createOqcInspection']);
         Route::patch('orders/{productionOrder}/close', [ProductionOrderController::class, 'close']);
         Route::patch('orders/{productionOrder}/cancel', [ProductionOrderController::class, 'cancel']);
         Route::patch('orders/{productionOrder}/void', [ProductionOrderController::class, 'void']);
@@ -151,4 +119,41 @@ Route::middleware(['auth:sanctum', 'module_access:production'])->group(function 
         $service = app(\App\Domains\Production\Services\CostingService::class);
         return response()->json(['data' => $service->whereUsed($itemId)]);
     });
+});
+
+// Delivery schedules are shared with Sales/WH/Production users, so these
+// routes use the delivery module gate instead of production-only access.
+Route::middleware(['auth:sanctum', 'module_access:delivery'])->group(function (): void {
+    // ── Delivery Schedules ───────────────────────────────────────────────────
+    Route::get('delivery-schedules', [DeliveryScheduleController::class, 'index']);
+    Route::post('delivery-schedules', [DeliveryScheduleController::class, 'store']);
+    Route::get('delivery-schedules/{deliverySchedule}', [DeliveryScheduleController::class, 'show']);
+    Route::put('delivery-schedules/{deliverySchedule}', [DeliveryScheduleController::class, 'update']);
+    Route::post('delivery-schedules/{deliverySchedule}/fulfill', [DeliveryScheduleController::class, 'fulfillFromStock'])
+        ->middleware('throttle:api-action');
+
+    // ── Delivery Schedule Workflow Actions ─────────────────────────────────
+    Route::post('delivery-schedules/{deliverySchedule:ulid}/dispatch', [DeliveryScheduleController::class, 'dispatch'])
+        ->middleware('throttle:api-action');
+    Route::post('delivery-schedules/{deliverySchedule:ulid}/delivered', [DeliveryScheduleController::class, 'markDelivered'])
+        ->middleware('throttle:api-action');
+    Route::post('delivery-schedules/{deliverySchedule:ulid}/acknowledge', [DeliveryScheduleController::class, 'acknowledgeReceipt'])
+        ->middleware('can:respond,deliverySchedule')
+        ->middleware('throttle:api-action');
+    Route::post('delivery-schedules/{deliverySchedule:ulid}/notify-missing', [DeliveryScheduleController::class, 'notifyMissingItems'])
+        ->middleware('throttle:api-action');
+
+    // ── Combined Delivery Schedules (Multi-item delivery grouping) ────────────
+    Route::get('combined-delivery-schedules', [CombinedDeliveryScheduleController::class, 'index'])
+        ->middleware('can:viewAny,'.CombinedDeliverySchedule::class);
+    Route::get('combined-delivery-schedules/{schedule:ulid}', [CombinedDeliveryScheduleController::class, 'show'])
+        ->middleware('can:view,schedule');
+    Route::post('combined-delivery-schedules/{schedule:ulid}/dispatch', [CombinedDeliveryScheduleController::class, 'dispatch'])
+        ->middleware('can:update,schedule', 'throttle:api-action');
+    Route::post('combined-delivery-schedules/{schedule:ulid}/delivered', [CombinedDeliveryScheduleController::class, 'markDelivered'])
+        ->middleware('can:update,schedule', 'throttle:api-action');
+    Route::post('combined-delivery-schedules/{schedule:ulid}/notify-missing', [CombinedDeliveryScheduleController::class, 'notifyMissingItems'])
+        ->middleware('can:update,schedule', 'throttle:api-action');
+    Route::post('combined-delivery-schedules/{schedule:ulid}/acknowledge', [CombinedDeliveryScheduleController::class, 'acknowledgeReceipt'])
+        ->middleware('can:respond,schedule', 'throttle:api-action');
 });

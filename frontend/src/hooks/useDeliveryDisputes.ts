@@ -46,7 +46,7 @@ export interface Dispute {
   assigned_to: { id: number; name: string } | null
   resolved_by: { id: number; name: string } | null
   credit_note: { id: number; cn_reference: string; amount_centavos: number; status: string } | null
-  replacement_schedule: { id: number; ulid: string; cds_reference: string; status: string } | null
+  replacement_schedule: { id: number; ulid: string; ds_reference?: string; cds_reference?: string; status: string } | null
 }
 
 export function useDisputes(params?: Record<string, string | number>) {

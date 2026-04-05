@@ -8,7 +8,7 @@ interface AuthState {
   clearAuth: () => void
 
   // Permission / role helpers
-  hasPermission: (permission: string) => boolean
+  hasPermission: (permission?: string | null) => boolean
   hasRole: (role: string) => boolean
   hasAnyRole: (roles: string[]) => boolean
 
@@ -41,7 +41,7 @@ export const useAuthStore = create<AuthState>()(
 
     hasPermission: (permission) => {
       const user = get().user
-      if (!user) return false
+      if (!user || !permission || permission.trim() === '') return false
       // Super admin bypasses all permission checks
       if (user.roles.includes('super_admin')) return true
       // No wildcard for other roles — permissions are checked strictly against

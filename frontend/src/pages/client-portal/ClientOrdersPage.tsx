@@ -35,6 +35,8 @@ const STATUS_COLORS: Record<string, string> = {
   delivered: 'bg-green-100 text-green-700',
   fulfilled: 'bg-teal-100 text-teal-700',
   completed: 'bg-teal-100 text-teal-700',
+  receipt_acknowledged: 'bg-emerald-100 text-emerald-700',
+  issue_reported: 'bg-blue-100 text-blue-700',
   rejected: 'bg-red-100 text-red-700',
   cancelled: 'bg-neutral-100 text-neutral-500',
 }
@@ -46,14 +48,74 @@ const STATUS_LABELS: Record<string, string> = {
   client_responded: 'Awaiting Sales',
   vp_pending: 'Under Review',
   approved: 'Approved',
-  in_production: 'In Production',
+  in_production: 'In Process of Production',
   ready_for_delivery: 'Ready for Delivery',
   dispatched: 'Dispatched',
   delivered: 'Delivered',
   fulfilled: 'Fulfilled',
   completed: 'Fulfilled',
+  receipt_acknowledged: 'Receipt Acknowledged',
+  issue_reported: 'Issue Reported',
   rejected: 'Rejected',
   cancelled: 'Cancelled',
+}
+
+type DisplayStatusKey =
+  | ClientOrder['status']
+  | 'receipt_acknowledged'
+  | 'issue_reported'
+
+function getDisplayStatus(order: ClientOrder): { key: DisplayStatusKey; label: string; icon: JSX.Element | null } {
+  const deliveryScheduleRows = ((order.deliverySchedules ?? (order as { delivery_schedules?: unknown[] }).delivery_schedules) ?? []) as Array<Record<string, unknown>>
+  const deliverySchedules = deliveryScheduleRows
+    .map((row) => {
+      const schedule = (row.deliverySchedule as Record<string, unknown> | undefined)
+        ?? (row.delivery_schedule as Record<string, unknown> | undefined)
+      if (!schedule) return null
+      return schedule
+    })
+    .filter((schedule): schedule is Record<string, unknown> => schedule !== null)
+
+  const hasAnyAcknowledgment = deliverySchedules.some((schedule) => {
+    const hasStoredAck = Array.isArray(schedule.client_acknowledgment) && schedule.client_acknowledgment.length > 0
+    const summary = Array.isArray(schedule.item_status_summary)
+      ? (schedule.item_status_summary as Array<{ client_acknowledgment?: unknown; is_missing?: boolean }>)
+      : []
+    const actionableSummaries = summary.filter((item) => !item?.is_missing)
+    const hasSummaryAck = actionableSummaries.length > 0 && actionableSummaries.every((item) => Boolean(item?.client_acknowledgment))
+
+    return hasStoredAck || hasSummaryAck
+  })
+
+  const hasAnyDispute = deliverySchedules.some((schedule) => Boolean(schedule.has_dispute))
+
+  if (order.status === 'delivered' && hasAnyAcknowledgment && hasAnyDispute) {
+    return {
+      key: 'issue_reported',
+      label: STATUS_LABELS.issue_reported,
+      icon: <AlertTriangle className="h-3 w-3" />,
+    }
+  }
+
+  if (order.status === 'delivered' && hasAnyAcknowledgment) {
+    return {
+      key: 'receipt_acknowledged',
+      label: STATUS_LABELS.receipt_acknowledged,
+      icon: <CheckCircle className="h-3 w-3" />,
+    }
+  }
+
+  return {
+    key: order.status,
+    label: STATUS_LABELS[order.status],
+    icon:
+      order.status === 'pending' ? <Clock className="h-3 w-3" />
+      : order.status === 'negotiating' ? <MessageCircle className="h-3 w-3" />
+      : order.status === 'approved' ? <CheckCircle className="h-3 w-3" />
+      : order.status === 'rejected' ? <XCircle className="h-3 w-3" />
+      : order.status === 'cancelled' ? <XCircle className="h-3 w-3" />
+      : null,
+  }
 }
 
 interface CancelModalProps {
@@ -139,7 +201,7 @@ function formatCurrency(centavos: number) {
 export default function ClientOrdersPage(): JSX.Element {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const initialStatus = searchParams.get('status') ?? 'active'
+  const initialStatus = searchParams.get('status') ?? ''
   const [statusFilter, setStatusFilter] = useState<string>(initialStatus)
   const [searchQuery, setSearchQuery] = useState('')
   const [orderToCancel, setOrderToCancel] = useState<ClientOrder | null>(null)
@@ -151,7 +213,7 @@ export default function ClientOrdersPage(): JSX.Element {
 
   // Keep local filter state in sync with URL query (e.g. dashboard deep links).
   useEffect(() => {
-    const statusFromUrl = searchParams.get('status') ?? 'active'
+    const statusFromUrl = searchParams.get('status') ?? ''
     setStatusFilter(statusFromUrl)
   }, [searchParams])
 
@@ -235,18 +297,16 @@ export default function ClientOrdersPage(): JSX.Element {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="border border-neutral-200 rounded-lg px-4 py-2 focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100 outline-none bg-white text-sm"
         >
-          <option value="active">Active Orders</option>
           <option value="">All Statuses</option>
+          <option value="active">Active Orders</option>
           <option value="pending">Pending Review</option>
           <option value="negotiating">Under Negotiation</option>
           <option value="client_responded">Awaiting Sales</option>
-          <option value="approved">Approved</option>
-          <option value="in_production">In Production</option>
+          <option value="in_production">In Process of Production</option>
           <option value="ready_for_delivery">Ready for Delivery</option>
           <option value="dispatched">Dispatched</option>
           <option value="delivered">Delivered</option>
-          <option value="fulfilled">Fulfilled</option>
-          <option value="completed">Completed</option>
+          <option value="fulfilled">Fulfilled / Completed</option>
           <option value="rejected">Rejected</option>
           <option value="cancelled">Cancelled</option>
         </select>
@@ -295,6 +355,9 @@ export default function ClientOrdersPage(): JSX.Element {
             </thead>
             <tbody>
               {filteredOrders.map((order: ClientOrder, index: number) => (
+                (() => {
+                  const displayStatus = getDisplayStatus(order)
+                  return (
                 <tr
                   key={order.ulid}
                   onClick={() => navigate(`/client-portal/orders/${order.ulid}`)}
@@ -327,13 +390,9 @@ export default function ClientOrdersPage(): JSX.Element {
                     {formatCurrency(order.total_amount_centavos)}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium ${STATUS_COLORS[order.status]}`}>
-                      {order.status === 'pending' && <Clock className="h-3 w-3" />}
-                      {order.status === 'negotiating' && <MessageCircle className="h-3 w-3" />}
-                      {order.status === 'approved' && <CheckCircle className="h-3 w-3" />}
-                      {order.status === 'rejected' && <XCircle className="h-3 w-3" />}
-                      {order.status === 'cancelled' && <XCircle className="h-3 w-3" />}
-                      {STATUS_LABELS[order.status]}
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium ${STATUS_COLORS[displayStatus.key]}`}>
+                      {displayStatus.icon}
+                      {displayStatus.label}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -355,6 +414,8 @@ export default function ClientOrdersPage(): JSX.Element {
                     </div>
                   </td>
                 </tr>
+                  )
+                })()
               ))}
             </tbody>
           </table>

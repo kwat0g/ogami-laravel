@@ -42,6 +42,7 @@ export function useAcknowledgeReceipt(ulid: string) {
         received_qty: number
         condition: string
         notes?: string
+        photo_urls?: string[]
       }>
       general_notes?: string
     }) => {

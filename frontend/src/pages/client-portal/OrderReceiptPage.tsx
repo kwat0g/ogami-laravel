@@ -95,26 +95,72 @@ export default function OrderReceiptPage(): JSX.Element {
   }
 
   const handleSubmit = async () => {
-    // Validate all non-missing/delayed items have acknowledgment
-    const missingItems = actionableItemIds.filter(id => !acknowledgments[id])
+    // Build acknowledgments for every actionable item, falling back to default values
+    // so users only need to edit rows with issues.
+    const itemMap = new Map(
+      scheduleItems
+        .map((item) => [Number(item.id), item] as const)
+        .filter(([id]) => Number.isFinite(id))
+    )
 
-    if (missingItems.length > 0) {
-      toast.error('Please acknowledge all delivered items before submitting.')
+    const normalizedAcknowledgments = actionableItemIds.map((itemId) => {
+      const item = itemMap.get(itemId)
+      const qtyOrdered = parseFloat(String(item?.qty_ordered ?? '0'))
+      const ack = acknowledgments[itemId]
+
+      return {
+        item_id: itemId,
+        received_qty: ack?.received_qty ?? qtyOrdered,
+        condition: ack?.condition ?? 'good',
+        notes: ack?.notes ?? '',
+        photo_urls: ack?.photo_urls ?? [],
+      }
+    })
+
+    const invalidAcknowledgment = normalizedAcknowledgments.find((ack) => {
+      if (!Number.isFinite(ack.received_qty) || ack.received_qty < 0) {
+        return true
+      }
+
+      const item = itemMap.get(ack.item_id)
+      const qtyOrdered = parseFloat(String(item?.qty_ordered ?? '0'))
+
+      if (!Number.isFinite(qtyOrdered) || qtyOrdered < 0) {
+        return true
+      }
+
+      if (ack.received_qty > qtyOrdered) {
+        return true
+      }
+
+      if (ack.condition === 'missing' && ack.received_qty >= qtyOrdered) {
+        return true
+      }
+
+      if (ack.condition === 'good' && ack.received_qty !== qtyOrdered) {
+        return true
+      }
+
+      if (ack.condition === 'damaged' && ack.received_qty >= qtyOrdered) {
+        return true
+      }
+
+      if ((ack.condition === 'damaged' || ack.condition === 'missing') && (ack.photo_urls?.length ?? 0) < 1) {
+        return true
+      }
+
+      return false
+    })
+
+    if (invalidAcknowledgment) {
+      const invalidItem = itemMap.get(invalidAcknowledgment.item_id)
+      const invalidItemName = (invalidItem?.product_item as { name?: string } | undefined)?.name ?? 'one item'
+      toast.error(`Invalid acknowledgment for ${invalidItemName}. Good must be full qty, Damaged/Missing must reduce qty, and photo evidence is required for Damaged/Missing.`)
       return
     }
 
     const payload = {
-      item_acknowledgments: actionableItemIds.map((itemId) => {
-        const ack = acknowledgments[itemId] as AcknowledgmentForm
-
-        return {
-          item_id: itemId,
-          received_qty: ack.received_qty,
-          condition: ack.condition,
-          notes: ack.notes,
-          photo_urls: ack.photo_urls || [],
-        }
-      }),
+      item_acknowledgments: normalizedAcknowledgments,
       general_notes: generalNotes,
     }
 
@@ -228,7 +274,26 @@ export default function OrderReceiptPage(): JSX.Element {
                           <label className="block text-xs text-neutral-500 mb-1">Condition</label>
                           <select
                             value={ack?.condition ?? 'good'}
-                            onChange={(e) => handleAcknowledgmentChange(item.id, 'condition', e.target.value)}
+                            onChange={(e) => {
+                              const condition = e.target.value as AcknowledgmentForm['condition']
+                              const qtyOrdered = parseFloat(String(item.qty_ordered ?? '0'))
+                              handleAcknowledgmentChange(item.id, 'condition', condition)
+
+                              // Keep qty aligned with obvious condition choices to reduce user mistakes.
+                              if (condition === 'missing') {
+                                const currentQty = acknowledgments[item.id]?.received_qty
+                                if (currentQty === undefined || currentQty >= qtyOrdered) {
+                                  handleAcknowledgmentChange(item.id, 'received_qty', Math.max(0, qtyOrdered - 1))
+                                }
+                              } else if (condition === 'good') {
+                                handleAcknowledgmentChange(item.id, 'received_qty', qtyOrdered)
+                              } else if (condition === 'damaged') {
+                                const currentQty = acknowledgments[item.id]?.received_qty
+                                if (currentQty === undefined || currentQty >= qtyOrdered) {
+                                  handleAcknowledgmentChange(item.id, 'received_qty', Math.max(0, qtyOrdered - 1))
+                                }
+                              }
+                            }}
                             className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
                           >
                             <option value="good">Good - Perfect condition</option>
@@ -248,6 +313,12 @@ export default function OrderReceiptPage(): JSX.Element {
                         </div>
                       </div>
 
+                      {(ack?.condition === 'damaged' || ack?.condition === 'missing') && (
+                        <p className="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                          For {ack.condition === 'damaged' ? 'Damaged' : 'Missing'}, reduce Quantity Received to accepted items only and upload at least one photo evidence.
+                        </p>
+                      )}
+
                       {/* Photo upload -- shown for damaged/missing items */}
                       {ack?.condition && ack.condition !== 'good' && (
                         <div className="mt-3">
@@ -255,7 +326,7 @@ export default function OrderReceiptPage(): JSX.Element {
                             photos={ack.photo_urls || []}
                             onChange={(photos) => handleAcknowledgmentChange(item.id, 'photo_urls', photos)}
                             maxPhotos={3}
-                            label="Photo Evidence (optional)"
+                            label="Photo Evidence (required for damaged/missing)"
                           />
                         </div>
                       )}
