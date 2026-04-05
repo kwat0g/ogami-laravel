@@ -154,7 +154,7 @@ const SECTIONS: NavSection[] = [
       { label: 'Vendor Invoices', href: '/accounting/ap/invoices', permission: 'vendor_invoices.view', departments: ['ACCTG'] },
       // ── Accounts Receivable ─────────────────────────────────────────────────
       { divider: true, label: 'Accounts Receivable' },
-      { label: 'Customers', href: '/ar/customers', permission: 'customers.view|customers.manage' },
+      { label: 'Customers', href: '/ar/customers', permission: 'customers.view|customers.manage', departments: ['ACCTG', 'SALES'] },
       { label: 'Customer Invoices', href: '/ar/invoices', permission: 'customer_invoices.view', departments: ['ACCTG', 'SALES'] },
       // ── Banking ─────────────────────────────────────────────────────────────
       { divider: true, label: 'Banking' },
