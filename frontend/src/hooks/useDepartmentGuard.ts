@@ -1,22 +1,24 @@
 import { useAuthStore } from '@/stores/authStore'
 
 /**
- * Role hierarchy levels for reversed hierarchy access control.
+ * Role hierarchy levels for access control.
  * Higher number = higher access level (can see more).
- * 
- * Reversed hierarchy: Officer (highest) → Manager → Head → Staff (lowest)
- * In this model, access LESSENS as you go down the hierarchy.
- * Staff see the most items (operational), Officers see the fewest (oversight).
+ *
+ * Standard hierarchy: Manager (highest operational) → Officer → Head → Staff (lowest)
+ *
+ * NOTE: In the module permission system (ModulePermissionSeeder), the hierarchy
+ * within each module is: Manager > Officer > Head > Staff.
+ * Manager has the broadest permissions, Staff has self-service only.
  */
 export const ROLE_HIERARCHY: Record<string, number> = {
   'super_admin': 100,
   'admin': 90,
   'executive': 80,
   'vice_president': 70,
-  'officer': 60,      // Department head / C-level
-  'manager': 50,      // Department manager
-  'head': 40,         // Team lead
-  'staff': 30,        // Regular employee
+  'manager': 60,      // Department manager — broadest module access
+  'officer': 50,      // Department operations — broad but narrower than manager
+  'head': 40,         // Team lead / supervisor — first-level approvals
+  'staff': 30,        // Regular employee — self-service only
 }
 
 /**
@@ -61,7 +63,7 @@ export const MODULE_DEPARTMENTS: Record<string, string[]> = {
   'attendance': ['HR', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'ACCTG', 'IT'],
   'leaves':     ['HR', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'ACCTG', 'IT'],
   'overtime':   ['HR', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'ACCTG', 'IT'],
-  'loans':      ['HR', 'ACCTG'],
+  'loans':      ['HR', 'ACCTG', 'PURCH', 'PROD', 'PLANT', 'WH', 'QC', 'MAINT', 'SALES', 'IT'],
   'payroll':    ['HR', 'ACCTG'],
   'departments': ['HR', 'IT', 'EXEC'],
   'positions':  ['HR'],
@@ -78,8 +80,8 @@ export const MODULE_DEPARTMENTS: Record<string, string[]> = {
   'recurring_templates': ['ACCTG'],
   'general_ledger': ['ACCTG'],
   
-  // Payables (AP) - Accounting department only
-  'ap': ['ACCTG'],
+  // Payables (AP) - Accounting and Purchasing
+  'ap': ['ACCTG', 'PURCH'],
   'vendors': ['ACCTG', 'PURCH'], // Vendors shared between AP and Procurement
   'vendor_invoices': ['ACCTG'],
   'vendor_payments': ['ACCTG'],
@@ -111,9 +113,9 @@ export const MODULE_DEPARTMENTS: Record<string, string[]> = {
   'cost_centers': ['ACCTG'],
   'annual_budget': ['ACCTG'],
   
-  // Procurement - Purchasing department only
-  'procurement': ['PURCH'],
-  'purchase_requests': ['PURCH'],
+  // Procurement - Purchasing + departments that raise PRs or verify budget
+  'procurement': ['PURCH', 'PROD', 'PLANT', 'ACCTG', 'WH'],
+  'purchase_requests': ['PURCH', 'PROD', 'PLANT', 'ACCTG'],
   'purchase_orders': ['PURCH'],
   'goods_receipts': ['PURCH', 'WH'], // GR involves both Purchasing and Warehouse
   'rfqs': ['PURCH'],
@@ -138,6 +140,9 @@ export const MODULE_DEPARTMENTS: Record<string, string[]> = {
   'inspections': ['QC', 'PROD', 'WH'],
   'ncr': ['QC', 'PROD', 'WH'],
   'capa': ['QC', 'PROD'],
+  
+  // Approvals - Executive and VP
+  'approvals': ['EXEC'],
   'templates': ['QC'],
   
   // Maintenance - Maintenance and Production
@@ -156,8 +161,8 @@ export const MODULE_DEPARTMENTS: Record<string, string[]> = {
   'receipts': ['WH', 'SALES', 'PROD'],
   'vehicles': ['WH', 'MAINT'],
   
-  // ISO — QC dept manages ISO/IATF (no separate 'ISO' dept is seeded)
-  'iso': ['QC'],
+  // ISO — QC and ISO depts manage ISO/IATF
+  'iso': ['ISO', 'QC'],
   'documents': ['QC'],
   'audits': ['QC'],
   'audit_findings': ['QC'],

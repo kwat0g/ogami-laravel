@@ -183,7 +183,7 @@ class User extends Authenticatable
      */
     public function hasDepartmentAccess(int $departmentId): bool
     {
-        if ($this->hasAnyRole(['admin', 'executive'])) {
+        if ($this->hasAnyRole(['admin', 'super_admin', 'executive', 'vice_president'])) {
             return true;
         }
 

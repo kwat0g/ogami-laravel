@@ -153,7 +153,7 @@ final class DepartmentModuleService
     public static function userHasPermission(User $user, string $permission): bool
     {
         // Superadmin bypass
-        if ($user->hasRole('superadmin')) {
+        if ($user->hasRole('super_admin')) {
             return true;
         }
 
@@ -384,7 +384,7 @@ final class DepartmentModuleService
      */
     private static function getDepartmentProfilePermissions(string $role, Department $department): array
     {
-        $cacheKey = "dept_mod_perms:{$role}:{$department->id}";
+        $cacheKey = "dept_profile_perms:{$role}:{$department->id}";
 
         return Cache::remember(
             $cacheKey,

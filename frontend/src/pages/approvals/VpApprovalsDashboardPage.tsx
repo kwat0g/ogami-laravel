@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { firstErrorMessage, parseApiError } from '@/lib/errorHandler'
 import { ClipboardCheck, AlertTriangle, Search, X, Bell } from 'lucide-react'
+import { PERMISSIONS } from '@/lib/permissions'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useVpPurchaseRequests, useVpLoans, useVpMrqs, useVpPayrollRuns, useVpPendingCounts } from '@/hooks/useVpApprovals'
@@ -153,14 +154,14 @@ export default function VpApprovalsDashboardPage(): React.ReactElement {
   const { user, hasPermission } = useAuthStore()
   const _currentUserId = user?.id ?? null
 
-  const canLeaveApprove   = hasPermission('leaves.executive_approve') || hasPermission('leaves.ga_process') || hasPermission('leaves.vp_note')
-  const canOvertimeApprove = hasPermission('overtime.executive_approve')
-  const canPrApprove = hasPermission('procurement.purchase-request.view')
-  const canLoanApprove = hasPermission('loans.vp_approve')
-  const canMrqApprove = hasPermission('inventory.mrq.vp_approve')
-  const canPayrollApprove = hasPermission('payroll.vp_approve')
-  const canVpNote  = hasPermission('leaves.vp_note')
-  const canGaProcess = hasPermission('leaves.ga_process')
+  const canLeaveApprove   = hasPermission(PERMISSIONS.leaves.executive_approve) || hasPermission(PERMISSIONS.leaves.ga_process) || hasPermission(PERMISSIONS.leaves.vp_note)
+  const canOvertimeApprove = hasPermission(PERMISSIONS.overtime.executive_approve)
+  const canPrApprove = hasPermission(PERMISSIONS.procurement.purchase_request.view)
+  const canLoanApprove = hasPermission(PERMISSIONS.loans.vp_approve)
+  const canMrqApprove = hasPermission(PERMISSIONS.inventory.mrq.vp_approve)
+  const canPayrollApprove = hasPermission(PERMISSIONS.payroll.vp_approve)
+  const canVpNote  = hasPermission(PERMISSIONS.leaves.vp_note)
+  const canGaProcess = hasPermission(PERMISSIONS.leaves.ga_process)
 
   // ── Search + filters ──────────────────────────────────────────────────────────
   const [search, setSearch] = useState('')

@@ -36,7 +36,10 @@ export const PERMISSIONS = {
 
   // ── Attendance ───────────────────────────────────────────────────────────
   attendance: perms('attendance', [
-    'view_own', 'view_team', 'import_csv',
+    'view_own', 'view_team', 'time_clock',
+    'corrections.submit', 'corrections.review',
+    'work_locations.manage', 'work_locations.assign',
+    'import_csv',
     'view_anomalies', 'resolve_anomalies', 'manage_shifts',
     // legacy aliases
     'view', 'create', 'update', 'delete', 'export', 'lock', 'unlock',
@@ -59,7 +62,7 @@ export const PERMISSIONS = {
     'view', 'create', 'supervise', 'executive_approve',
   ]),
 
-  leave_balances: perms('leave_balances', ['view', 'adjust']),
+  leave_balances: perms('leave_balances', ['view', 'adjust', 'manage']),
 
   // ── Loans ────────────────────────────────────────────────────────────────
   loans: perms('loans', [
@@ -141,7 +144,7 @@ export const PERMISSIONS = {
   // ── Procurement ──────────────────────────────────────────────────────────
   procurement: {
     purchase_request: perms('procurement.purchase-request', [
-      'view', 'create', 'note', 'check', 'review', 'budget-check',
+      'view', 'create', 'create-dept', 'note', 'check', 'review', 'budget-check',
     ]),
     purchase_order: perms('procurement.purchase-order', [
       'view', 'create', 'manage',
@@ -158,6 +161,8 @@ export const PERMISSIONS = {
     stock: perms('inventory.stock', ['view']),
     adjustments: perms('inventory.adjustments', ['create']),
     mrq: perms('inventory.mrq', ['view', 'create', 'note', 'check', 'review', 'vp_approve', 'fulfill']),
+    physical_count: perms('inventory.physical_count', ['view', 'manage']),
+    transfers: perms('inventory.transfers', ['manage']),
   },
 
   // ── Production / PPC ─────────────────────────────────────────────────────
@@ -187,19 +192,26 @@ export const PERMISSIONS = {
     routes: perms('delivery.routes', ['view', 'manage']),
   },
 
+  // ── HR extras (Training & Competency) ─────────────────────────────────
+  hr_training: perms('hr.training', ['view', 'manage']),
+  hr_competency: perms('hr.competency', ['view', 'manage']),
+
   // ── ISO / IATF ───────────────────────────────────────────────────────────
   iso: perms('iso', ['view', 'manage', 'audit']),
 
   // ── CRM ──────────────────────────────────────────────────────────────────
   crm: {
     tickets: perms('crm.tickets', ['view', 'create', 'reply', 'manage', 'assign', 'close']),
+    leads: perms('crm.leads', ['view', 'manage', 'convert']),
+    opportunities: perms('crm.opportunities', ['view', 'manage']),
   },
 
   // ── Sales / Client Orders ─────────────────────────────────────────────────
   sales: {
     orders: perms('sales', ['order_review', 'order_approve', 'order_reject', 'order_negotiate', 'order_vp_approve']),
-    quotations: perms('sales.quotations', ['view', 'create', 'update', 'send', 'accept']),
-    sales_orders: perms('sales.orders', ['view', 'confirm', 'cancel']),
+    quotations: perms('sales.quotations', ['view', 'create', 'update', 'send', 'accept', 'manage']),
+    sales_orders: perms('sales.orders', ['view', 'confirm', 'cancel', 'manage']),
+    pricing: perms('sales.pricing', ['view']),
   },
 
   // ── VP Approvals ─────────────────────────────────────────────────────────
@@ -218,19 +230,34 @@ export const PERMISSIONS = {
   ]),
   // ── AP Extras ──────────────────────────────────────────────────────────
   ap: {
-    payment_batches: perms('ap.payment_batches', ['view', 'create', 'approve']),
+    payment_batches: perms('ap.payment_batches', ['view', 'create', 'manage', 'approve']),
   },
 
   // ── AR Extras ─────────────────────────────────────────────────────────
   ar: {
-    dunning: perms('ar.dunning', ['view', 'create', 'send']),
+    dunning: perms('ar.dunning', ['view', 'create', 'send', 'manage']),
   },
 
   // ── Budget ───────────────────────────────────────────────────────────
-  budget: perms('budget', ['view', 'manage', 'approve']),
+  budget: perms('budget', ['view', 'manage', 'approve', 'review', 'forecast']),
 
   // ── Fixed Assets ─────────────────────────────────────────────────────
-  fixed_assets: perms('fixed_assets', ['view', 'manage', 'dispose']),} as const
+  fixed_assets: perms('fixed_assets', ['view', 'manage', 'dispose', 'transfer']),
+
+  // ── Recruitment ──────────────────────────────────────────────────────
+  recruitment: {
+    requisitions: perms('recruitment.requisitions', ['view', 'create', 'edit', 'submit', 'approve', 'reject', 'cancel']),
+    postings: perms('recruitment.postings', ['view', 'create', 'publish', 'close']),
+    applications: perms('recruitment.applications', ['view', 'create', 'delete', 'review', 'shortlist', 'reject']),
+    interviews: perms('recruitment.interviews', ['view', 'schedule', 'evaluate']),
+    offers: perms('recruitment.offers', ['view', 'create', 'send']),
+    preemployment: perms('recruitment.preemployment', ['view', 'verify']),
+    hiring: perms('recruitment.hiring', ['execute', 'approve']),
+    reports: perms('recruitment.reports', ['view']),
+    candidates: perms('recruitment.candidates', ['view', 'manage']),
+  },
+
+} as const
 
 export type PermissionString =
   typeof PERMISSIONS[keyof typeof PERMISSIONS][keyof typeof PERMISSIONS[keyof typeof PERMISSIONS]]

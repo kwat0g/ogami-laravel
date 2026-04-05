@@ -76,7 +76,7 @@ export const useAuthStore = create<AuthState>()(
       return roles.some(r => userRoles.includes(r))
     },
 
-    // Reversed Hierarchy: Officer (highest) → Manager → Head → Staff (lowest)
+    // Standard Hierarchy: Manager (broadest) → Officer → Head → Staff (self-service)
     // Each level has LESS access than the one above
     
     isOfficer: () => {
