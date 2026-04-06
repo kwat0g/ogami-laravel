@@ -71,6 +71,17 @@ final class PurchaseRequestController extends Controller
         $validated = $request->validated();
         $actor = auth()->user();
 
+        // Auto-resolve department for dept-scoped users (head/manager/officer).
+        // If the user belongs to exactly one department, always use that department
+        // regardless of what the frontend sent. This prevents 403s from stale form state.
+        if ($actor->hasAnyRole(['head', 'manager', 'officer'])
+            && ! $actor->hasAnyRole(['super_admin', 'admin', 'executive', 'vice_president'])) {
+            $primaryDept = $actor->primaryDepartment;
+            if ($primaryDept) {
+                $validated['department_id'] = $primaryDept->id;
+            }
+        }
+
         // Check general create permission
         $this->authorize('create', PurchaseRequest::class);
 
