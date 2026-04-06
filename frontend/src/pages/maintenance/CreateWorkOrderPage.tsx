@@ -52,7 +52,7 @@ export default function CreateWorkOrderPage(): React.ReactElement {
   const fe = (k: string) => (touched.has(k) ? ve[k] : undefined)
   const hasErrors = Object.keys(ve).length > 0
 
-  const [_showConfirm, setShowConfirm] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -211,9 +211,9 @@ export default function CreateWorkOrderPage(): React.ReactElement {
         description="This will create a new work order and notify the assigned technician."
         confirmLabel="Create"
         onConfirm={doSubmit}
-      >
-        <span className="hidden" />
-      </ConfirmDialog>
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
+      />
     </div>
   )
 }
