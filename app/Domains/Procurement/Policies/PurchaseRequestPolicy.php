@@ -88,6 +88,14 @@ final class PurchaseRequestPolicy
             return true;
         }
 
+        // Fallback: any head/manager with PR view access can create for their own department
+        // This covers cases where the module permission system hasn't resolved create-dept
+        if ($user->hasPermissionTo('procurement.purchase-request.view')
+            && $user->hasAnyRole(['head', 'manager'])
+            && $user->departments()->exists()) {
+            return true;
+        }
+
         return false;
     }
 
@@ -109,8 +117,9 @@ final class PurchaseRequestPolicy
         }
 
         // Department-scoped heads/managers can only create for their own department(s)
-        if ($user->hasPermissionTo('procurement.purchase-request.create-dept')
-            && $user->hasAnyRole(['head', 'manager'])) {
+        if ($user->hasAnyRole(['head', 'manager'])
+            && ($user->hasPermissionTo('procurement.purchase-request.create-dept')
+                || $user->hasPermissionTo('procurement.purchase-request.view'))) {
             // Check primary department
             $primaryDept = $user->relationLoaded('primaryDepartment')
                 ? $user->getRelation('primaryDepartment')
