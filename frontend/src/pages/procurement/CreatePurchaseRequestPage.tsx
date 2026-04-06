@@ -76,9 +76,8 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
 
   const checkBudget = useCheckBudgetAvailability()
   const { data: deptData } = useDepartments()
-  const { data: authData } = useAuth()
+  const { user: currentUser } = useAuth()
   const departments = deptData?.data ?? []
-  const currentUser = authData?.user
   const isDeptScoped = currentUser?.roles?.some((r: string) => ['head', 'manager', 'officer'].includes(r))
     && !currentUser?.roles?.some((r: string) => ['super_admin', 'admin', 'executive', 'vice_president'].includes(r))
   const userDeptId = currentUser?.primary_department_id
@@ -109,6 +108,13 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
       ],
     },
   })
+
+  // Auto-set department for dept-scoped users when auth data loads
+  useEffect(() => {
+    if (!isEditMode && isDeptScoped && userDeptId) {
+      setValue('department_id', userDeptId)
+    }
+  }, [isEditMode, isDeptScoped, userDeptId, setValue])
 
   // Populate form when editing an existing returned PR
   useEffect(() => {
