@@ -717,8 +717,12 @@ class RolePermissionSeeder extends Seeder
             // Banking
             'bank_accounts.view', 'bank_accounts.create', 'bank_accounts.update', 'bank_accounts.delete',
             'bank_reconciliations.view', 'bank_reconciliations.create', 'bank_reconciliations.certify',
-            // Payroll view (for dashboard)
+            // Payroll — Accounting Officer handles Step 8a (disburse + bank file)
             'payroll.view_runs', 'payroll.view_own_payslip', 'payroll.download_own_payslip',
+            'payroll.acctg_approve', 'payroll.acctg_reject',
+            'payroll.disburse', 'payroll.download_bank_file',
+            'payroll.publish', 'payroll.view_deduction_trace',
+            'payroll.download_register', 'payroll.gov_reports',
             // Loans view
             'loans.view_department',
             // Budget view
