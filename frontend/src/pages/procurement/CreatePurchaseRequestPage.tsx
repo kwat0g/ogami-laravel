@@ -81,7 +81,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
   const currentUser = authData?.user
   const isDeptScoped = currentUser?.roles?.some((r: string) => ['head', 'manager', 'officer'].includes(r))
     && !currentUser?.roles?.some((r: string) => ['super_admin', 'admin', 'executive', 'vice_president'].includes(r))
-  const userDeptId = currentUser?.department_id
+  const userDeptId = currentUser?.primary_department_id
 
   const {
     register,
