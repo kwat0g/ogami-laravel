@@ -171,7 +171,7 @@ class RecruitmentSeeder extends Seeder
                     'application_date' => now()->subDays(rand(1, 15))->toDateString(),
                     'source' => $candidate->source,
                     'status' => $appStatus,
-                    'cover_letter' => ($appIndex % 3 !== 0) ? 'I am writing to express my strong interest in this position. With my relevant experience and skills, I believe I would be a valuable addition to your team.' : null,
+                    'cover_letter' => (($ci * 3 + $pi) % 3 !== 0) ? 'I am writing to express my strong interest in this position. With my relevant experience and skills, I believe I would be a valuable addition to your team.' : null,
                     'reviewed_by' => in_array($appStatus, ['under_review', 'shortlisted', 'rejected']) ? $hrUser->id : null,
                     'reviewed_at' => in_array($appStatus, ['under_review', 'shortlisted', 'rejected']) ? now()->subDays(rand(1, 5)) : null,
                     'rejection_reason' => $appStatus === 'rejected' ? 'Does not meet minimum qualifications.' : null,
