@@ -79,7 +79,8 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
   const { data: authData } = useAuth()
   const departments = deptData?.data ?? []
   const currentUser = authData?.user
-  const isDeptHead = currentUser?.roles?.includes('head')
+  const isDeptScoped = currentUser?.roles?.some((r: string) => ['head', 'manager', 'officer'].includes(r))
+    && !currentUser?.roles?.some((r: string) => ['super_admin', 'admin', 'executive', 'vice_president'].includes(r))
   const userDeptId = currentUser?.department_id
 
   const {
@@ -96,7 +97,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
     defaultValues: {
       urgency: 'normal',
       vendor_id: 0,
-      department_id: isDeptHead && userDeptId ? userDeptId : 0,
+      department_id: isDeptScoped && userDeptId ? userDeptId : 0,
       items: [
         {
           vendor_item_id: 0,
@@ -448,7 +449,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                     render={({ field }) => (
                       <select
                         {...field}
-                        disabled={isDeptHead}
+                        disabled={isDeptScoped}
                         onChange={(e) => field.onChange(Number(e.target.value))}
                         className="w-full text-sm border border-neutral-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-400 disabled:bg-neutral-100 disabled:text-neutral-500"
                       >
@@ -464,7 +465,7 @@ export default function CreatePurchaseRequestPage(): React.ReactElement {
                   {errors.department_id && (
                     <p className="text-xs text-red-600 mt-1">{errors.department_id.message}</p>
                   )}
-                  {isDeptHead && (
+                  {isDeptScoped && (
                     <p className="text-xs text-neutral-500 mt-1">
                       Department heads can only create PRs for their own department
                     </p>
