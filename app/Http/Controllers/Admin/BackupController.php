@@ -134,8 +134,8 @@ final class BackupController extends Controller
         }
 
         // Verify the archive with 7z (supports AES-256 used by spatie).
-        // unzip 6.x cannot handle AES-256 encrypted zips (PK compat v5.1).
-        if ($newest !== null) {
+        // Skip verification if 7z is not installed.
+        if ($newest !== null && $this->is7zAvailable()) {
             $archivePassword = config('backup.backup.password');
             $testPassArg = ($archivePassword !== null && $archivePassword !== '')
                 ? '-p'.(string) $archivePassword
@@ -247,30 +247,46 @@ final class BackupController extends Controller
         File::ensureDirectoryExists($extractDir);
 
         $archivePassword = config('backup.backup.password');
-        $passwordArg = ($archivePassword !== null && $archivePassword !== '')
-            ? '-p'.(string) $archivePassword
-            : null;
+        $extracted = false;
 
-        // Use 7z for extraction: unlike unzip 6.x it supports AES-256 (PK compat v5.1)
-        // which is what PHP's ZipArchive uses when BACKUP_ARCHIVE_PASSWORD is set.
-        $unzipCmd = array_values(array_filter(['7z', 'x', $passwordArg, "-o{$extractDir}", $archivePath]));
-        $unzip = Process::timeout(120)->run($unzipCmd);
+        // Strategy 1: Use 7z if available (supports AES-256 encrypted zips)
+        if ($this->is7zAvailable()) {
+            $passwordArg = ($archivePassword !== null && $archivePassword !== '')
+                ? '-p'.(string) $archivePassword
+                : null;
+            $unzipCmd = array_values(array_filter(['7z', 'x', $passwordArg, "-o{$extractDir}", $archivePath]));
+            $unzip = Process::timeout(120)->run($unzipCmd);
 
-        // Retry without password in case this particular archive was created without encryption.
-        if ($unzip->failed() && $passwordArg !== null) {
-            File::deleteDirectory($extractDir);
-            File::ensureDirectoryExists($extractDir);
-            $unzip = Process::timeout(120)->run(['7z', 'x', "-o{$extractDir}", $archivePath]);
+            if ($unzip->failed() && $passwordArg !== null) {
+                File::deleteDirectory($extractDir);
+                File::ensureDirectoryExists($extractDir);
+                $unzip = Process::timeout(120)->run(['7z', 'x', "-o{$extractDir}", $archivePath]);
+            }
+            $extracted = $unzip->successful();
         }
 
-        if ($unzip->failed()) {
+        // Strategy 2: Fallback to PHP ZipArchive (no AES-256 support but works for standard zips)
+        if (! $extracted) {
+            $zip = new \ZipArchive();
+            $openFlags = \ZipArchive::RDONLY;
+            $opened = $zip->open($archivePath, $openFlags);
+
+            if ($opened === true) {
+                if ($archivePassword !== null && $archivePassword !== '') {
+                    $zip->setPassword((string) $archivePassword);
+                }
+                $extracted = $zip->extractTo($extractDir);
+                $zip->close();
+            }
+        }
+
+        if (! $extracted) {
             File::deleteDirectory($extractDir);
 
             return response()->json([
                 'success' => false,
                 'error_code' => 'EXTRACT_FAILED',
-                'message' => 'Failed to extract backup archive.',
-                'detail' => substr($unzip->output(), -1000),
+                'message' => 'Failed to extract backup archive. Ensure the archive is not corrupted.',
             ], 500);
         }
 
@@ -581,5 +597,13 @@ final class BackupController extends Controller
         }
 
         return $bytes.' B';
+    }
+
+    /** Check whether the 7z binary is available on this system. */
+    private function is7zAvailable(): bool
+    {
+        $result = Process::timeout(5)->run('which 7z');
+
+        return $result->successful() && trim($result->output()) !== '';
     }
 }
