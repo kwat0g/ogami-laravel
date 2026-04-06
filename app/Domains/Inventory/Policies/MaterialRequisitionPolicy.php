@@ -38,33 +38,22 @@ final class MaterialRequisitionPolicy
         return $user->can('inventory.mrq.create') && $mrq->status === 'draft';
     }
 
-    public function note(User $user, MaterialRequisition $mrq): bool
-    {
-        return false;
-    }
-
-    public function check(User $user, MaterialRequisition $mrq): bool
-    {
-        return false;
-    }
-
+    /**
+     * Warehouse Manager review is the single approval gate.
+     * SoD: approver must not be the submitter.
+     */
     public function review(User $user, MaterialRequisition $mrq): bool
     {
-        return $this->isWarehouseManager($user)
+        return $user->can('inventory.mrq.review')
             && $mrq->status === 'submitted'
-            && $user->id !== $mrq->submitted_by_id;
-    }
-
-    public function vpApprove(User $user, MaterialRequisition $mrq): bool
-    {
-        return false;
+            && (int) $user->id !== (int) $mrq->submitted_by_id;
     }
 
     public function reject(User $user, MaterialRequisition $mrq): bool
     {
-        return $this->isWarehouseManager($user)
+        return $user->can('inventory.mrq.review')
             && $mrq->status === 'submitted'
-            && $user->id !== $mrq->submitted_by_id;
+            && (int) $user->id !== (int) $mrq->submitted_by_id;
     }
 
     public function cancel(User $user, MaterialRequisition $mrq): bool

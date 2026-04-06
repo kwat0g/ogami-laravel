@@ -8,20 +8,16 @@ use App\Domains\Inventory\Models\MaterialRequisition;
 use App\Shared\Exceptions\InvalidStateTransitionException;
 
 /**
- * Material Requisition state machine — C1 FIX.
+ * Material Requisition state machine — simplified 2-step approval.
  *
- * Formalizes the 7-stage approval workflow that was previously enforced
- * only via ad-hoc assertStatus() checks in the service layer.
+ * Shortened workflow: Requester submits → Warehouse Manager approves → Warehouse fulfills.
  *
  * States:
  *   draft      → Created, items specified
- *   submitted  → Submitted for approval chain
- *   noted      → Dept Head has noted
- *   checked    → Manager has checked
- *   reviewed   → Officer has reviewed
- *   approved   → VP has approved — ready for warehouse fulfillment
+ *   submitted  → Submitted for Warehouse Manager approval
+ *   approved   → Warehouse Manager approved — ready for fulfillment
  *   fulfilled  → Warehouse has issued stock for all items
- *   rejected   → Rejected at any approval stage
+ *   rejected   → Rejected by Warehouse Manager
  *   cancelled  → Cancelled by requester (draft/submitted only)
  */
 final class MaterialRequisitionStateMachine
@@ -29,10 +25,7 @@ final class MaterialRequisitionStateMachine
     /** @var array<string, list<string>> */
     private const TRANSITIONS = [
         'draft'     => ['submitted', 'cancelled'],
-        'submitted' => ['noted', 'rejected', 'cancelled'],
-        'noted'     => ['checked', 'rejected'],
-        'checked'   => ['reviewed', 'rejected'],
-        'reviewed'  => ['approved', 'rejected'],
+        'submitted' => ['approved', 'rejected', 'cancelled'],
         'approved'  => ['fulfilled', 'cancelled'],
         'fulfilled' => [],       // terminal
         'rejected'  => ['draft'], // can be returned to draft for revision

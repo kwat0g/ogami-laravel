@@ -28,7 +28,7 @@ const statusBadge: Record<MaterialRequisitionStatus, string> = {
 }
 
 const ALL_STATUSES: MaterialRequisitionStatus[] = [
-  'draft', 'submitted', 'noted', 'checked', 'reviewed', 'approved', 'rejected', 'cancelled', 'fulfilled',
+  'draft', 'submitted', 'approved', 'rejected', 'cancelled', 'fulfilled',
 ]
 
 export default function MaterialRequisitionListPage(): React.ReactElement {
