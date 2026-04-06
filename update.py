@@ -220,6 +220,15 @@ def update() -> None:
         timeout=30,
     )
 
+    # ── R1b. Install system dependencies if missing ────────────────────────────
+    banner("R1b — Install system packages (7z)")
+    vps.run(
+        "apt-get update -qq && "
+        "apt-get install -y -qq p7zip-full 2>&1 | tail -3",
+        timeout=120,
+    )
+    vps.run("7z --help 2>&1 | head -3 || echo '7z not available'")
+
     # ── R2. Composer install ─────────────────────────────────────────────────
     banner("R2 — Composer install")
     vps.run(
