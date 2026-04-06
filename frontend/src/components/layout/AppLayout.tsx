@@ -196,7 +196,7 @@ const SECTIONS: NavSection[] = [
       // NOTE: ACCTG users access PRs via Finance Approvals > Budget Verification
       { divider: true, label: 'Procurement' },
       { label: 'Purchase Requests', href: '/procurement/purchase-requests', permission: 'procurement.purchase-request.view' },
-      { label: 'Purchase Orders', href: '/procurement/purchase-orders', permission: 'procurement.purchase-order.view' },
+      { label: 'Purchase Orders', href: '/procurement/purchase-orders', permission: 'procurement.purchase-order.view', departments: ['PURCH'] },
       { label: 'Goods Receipts', href: '/procurement/goods-receipts', permission: 'procurement.goods-receipt.view' },
       // ── Inventory ────────────────────────────────────────────────────────────
       { divider: true, label: 'Inventory' },

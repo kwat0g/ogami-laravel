@@ -487,9 +487,9 @@ class ModulePermissionSeeder extends Seeder
                 'inventory.stock.view', 'inventory.adjustments.create',
                 'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.check', 'inventory.mrq.review', 'inventory.mrq.fulfill',
                 'delivery.view', 'delivery.manage',
-                // Procurement: Warehouse Manager confirms GRs and views POs
+                // Procurement: Warehouse Manager creates PRs and confirms GRs
+                'procurement.purchase-request.view', 'procurement.purchase-request.create',
                 'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
-                'procurement.purchase-order.view',
             ],
             'officer' => [
                 // Self service
@@ -508,9 +508,9 @@ class ModulePermissionSeeder extends Seeder
                 'inventory.stock.view', 'inventory.adjustments.create',
                 'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.fulfill',
                 'delivery.view',
-                // Procurement: officer can view and create GRs
+                // Procurement: officer can view PRs and create/view GRs
+                'procurement.purchase-request.view', 'procurement.purchase-request.create',
                 'procurement.goods-receipt.view', 'procurement.goods-receipt.create',
-                'procurement.purchase-order.view',
             ],
             'head' => [
                 // Self service
@@ -533,8 +533,7 @@ class ModulePermissionSeeder extends Seeder
                 'production.orders.view',
                 // Procurement: WH Head confirms Goods Receipts + can raise own dept PRs
                 'procurement.goods-receipt.view', 'procurement.goods-receipt.confirm',
-                'procurement.purchase-order.view',
-                'procurement.purchase-request.view', 'procurement.purchase-request.create-dept',
+                'procurement.purchase-request.view', 'procurement.purchase-request.create', 'procurement.purchase-request.create-dept',
             ],
             'staff' => [
                 // Self service
