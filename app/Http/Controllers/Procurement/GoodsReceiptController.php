@@ -132,9 +132,25 @@ final class GoodsReceiptController extends Controller
      */
     public function submitForQc(GoodsReceipt $goodsReceipt): GoodsReceiptResource
     {
+        $user = auth()->user();
+
+        \Illuminate\Support\Facades\Log::info('[GR] submitForQc attempt', [
+            'gr_ulid' => $goodsReceipt->ulid,
+            'gr_status' => $goodsReceipt->status,
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'has_confirm_perm' => $user->hasPermissionTo('procurement.goods-receipt.confirm'),
+            'roles' => $user->getRoleNames()->toArray(),
+        ]);
+
         $this->authorize('submitForQc', $goodsReceipt);
 
-        $gr = $this->service->submitForQc($goodsReceipt->load('items'), auth()->user());
+        $gr = $this->service->submitForQc($goodsReceipt->load('items'), $user);
+
+        \Illuminate\Support\Facades\Log::info('[GR] submitForQc success', [
+            'gr_ulid' => $gr->ulid,
+            'new_status' => $gr->status,
+        ]);
 
         return new GoodsReceiptResource($gr->load(['purchaseOrder', 'receivedBy', 'items']));
     }
