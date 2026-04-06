@@ -221,7 +221,7 @@ const SECTIONS: NavSection[] = [
       { divider: true, label: 'Production' },
       { label: 'Production Orders', href: '/production/orders', permission: 'production.orders.view' },
       { label: 'Bill of Materials', href: '/production/boms', permission: 'production.bom.view' },
-      { label: 'Cost Analysis', href: '/production/cost-analysis', permission: 'production.orders.view' },
+
       // ── Quality Control ─────────────────────────────────────────────────────
       { divider: true, label: 'Quality Control' },
       { label: 'Inspections', href: '/qc/inspections', permission: 'qc.inspections.view' },
