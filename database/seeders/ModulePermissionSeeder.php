@@ -487,8 +487,8 @@ class ModulePermissionSeeder extends Seeder
                 'inventory.stock.view', 'inventory.adjustments.create',
                 'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.check', 'inventory.mrq.review', 'inventory.mrq.fulfill',
                 'delivery.view', 'delivery.manage',
-                // Procurement: Warehouse Manager creates PRs and confirms GRs
-                'procurement.purchase-request.view', 'procurement.purchase-request.create',
+                // Procurement: Warehouse Manager creates PRs (dept-scoped) and confirms GRs
+                'procurement.purchase-request.view', 'procurement.purchase-request.create-dept',
                 'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
                 'vendors.view', // needed to populate vendor dropdown when creating PRs
             ],
@@ -509,8 +509,8 @@ class ModulePermissionSeeder extends Seeder
                 'inventory.stock.view', 'inventory.adjustments.create',
                 'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.fulfill',
                 'delivery.view',
-                // Procurement: officer can view PRs and create/view GRs
-                'procurement.purchase-request.view', 'procurement.purchase-request.create',
+                // Procurement: officer can view PRs (dept-scoped) and create/view GRs
+                'procurement.purchase-request.view', 'procurement.purchase-request.create-dept',
                 'procurement.goods-receipt.view', 'procurement.goods-receipt.create',
                 'vendors.view',
             ],
