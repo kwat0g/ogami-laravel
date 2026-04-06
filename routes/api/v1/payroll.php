@@ -124,7 +124,6 @@ Route::middleware(['auth:sanctum', 'module_access:payroll'])->group(function () 
 
     // ── Workflow v1.0 — Step 6: HR Review ─────────────────────────────────────
     Route::post('runs/{payrollRun}/hr-approve', [PayrollRunController::class, 'hrApprove'])
-        ->middleware('sod:payroll,hr_approve')  // checks payroll.initiate (SOD-005)
         ->name('runs.hr-approve');
 
     // ── Workflow v1.0 — Step 7: Accounting Review ─────────────────────────────

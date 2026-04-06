@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Briefcase, MapPin, Send } from 'lucide-react'
+import { isAxiosError } from 'axios'
 import { toast } from 'sonner'
 import { usePublicRecruitmentPostings, useSubmitPublicApplication } from '@/hooks/usePublicRecruitment'
 
@@ -67,8 +68,12 @@ export default function RecruitPage() {
       toast.success('Application submitted successfully.')
       setForm(INITIAL_FORM)
       setSelectedPostingUlid('')
-    } catch {
-      toast.error('Unable to submit your application. Please review your details and try again.')
+    } catch (error) {
+      const message = isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message
+        : undefined
+
+      toast.error(message ?? 'Unable to submit your application. Please review your details and try again.')
     }
   }
 

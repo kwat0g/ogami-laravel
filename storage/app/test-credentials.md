@@ -1,6 +1,6 @@
 # Ogami ERP - Test Account Credentials
 
-Generated: 2026-04-06 06:14:50
+Generated: 2026-04-06 11:38:40
 
 ## Login URL
 http://localhost:5173/login
@@ -82,4 +82,3 @@ http://localhost:5173/login
 If an account is reseeded and not explicitly listed, the fallback password is:
 
 DemoUser@1234!
-    

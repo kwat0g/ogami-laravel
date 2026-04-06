@@ -444,11 +444,16 @@ export default function PayrollRunDetailPage() {
   const runId = id ?? null
   const navigate = useNavigate()
   const { hasPermission } = useAuthStore()
+  const primaryDepartmentCode = useAuthStore((s) => s.user?.primary_department_code ?? null)
 
   const canInitiateWorkflow =
     hasPermission(PERMISSIONS.payroll.initiate) ||
     hasPermission(PERMISSIONS.payroll.hr_approve) ||
     hasPermission(PERMISSIONS.hr.full_access)
+
+  const canAccountingApprove =
+    hasPermission(PERMISSIONS.payroll.acctg_approve) ||
+    (hasPermission(PERMISSIONS.payroll.approve) && primaryDepartmentCode === 'ACCTG')
 
   const [activeTab, setActiveTab] = useState<Tab>('payslips')
   const [detailPage, setDetailPage] = useState(1)
@@ -506,10 +511,14 @@ export default function PayrollRunDetailPage() {
         return hasPermission(PERMISSIONS.payroll.view_runs) ? `/payroll/runs/${runId}/review` : undefined
       case 'SUBMITTED':
         // HR Manager sees hr-review, Accounting sees detail page (read-only)
-        return hasPermission(PERMISSIONS.payroll.hr_approve) ? `/payroll/runs/${runId}/hr-review` : undefined
+        return (hasPermission(PERMISSIONS.payroll.hr_approve)
+          || hasPermission(PERMISSIONS.payroll.initiate)
+          || hasPermission(PERMISSIONS.hr.full_access))
+          ? `/payroll/runs/${runId}/hr-review`
+          : undefined
       case 'HR_APPROVED':
         // Accounting Manager sees acctg-review, others see detail page
-        return hasPermission(PERMISSIONS.payroll.acctg_approve)
+        return canAccountingApprove
           ? `/payroll/runs/${runId}/acctg-review`
           : undefined
       case 'ACCTG_APPROVED':
@@ -676,7 +685,7 @@ export default function PayrollRunDetailPage() {
             )}
 
             {/* Accounting Manager Approval — after HR has approved */}
-            {run.status === 'HR_APPROVED' && hasPermission(PERMISSIONS.payroll.acctg_approve) && (
+            {run.status === 'HR_APPROVED' && canAccountingApprove && (
               <AcctgApprovalButtons runId={runId!} initiatedById={run.initiated_by_id} />
             )}
 

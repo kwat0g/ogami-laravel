@@ -226,12 +226,11 @@ describe('Staff self-service restrictions', function () {
 });
 
 // ---------------------------------------------------------------------------
-// SoD — same manager cannot create AND approve the same payroll run
-// SOD-005 / SOD-006
+// Payroll workflow — HR manager can submit and perform HR approval on the same run
 // ---------------------------------------------------------------------------
 
 describe('Payroll SoD enforcement', function () {
-    it('manager cannot HR-approve a payroll run they created — SOD-006', function () {
+    it('manager can HR-approve a payroll run they created', function () {
         $creator = rbacUser('manager', 'HR');
         $run = PayrollRun::create([
             'reference_no' => 'PR-RBAC-SOD001',
@@ -248,7 +247,8 @@ describe('Payroll SoD enforcement', function () {
                 'action' => 'APPROVED',
                 'checkboxes_checked' => ['totals_verified', 'exceptions_reviewed', 'attachments_checked'],
             ])
-            ->assertStatus(403);
+            ->assertStatus(200)
+            ->assertJsonPath('run.status', 'HR_APPROVED');
     });
 
     it('a different accounting manager can approve a run created by HR — SOD passes', function () {

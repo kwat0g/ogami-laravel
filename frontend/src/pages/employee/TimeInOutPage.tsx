@@ -39,6 +39,8 @@ export default function TimeInOutPage() {
   const timeOutMutation = useTimeOut()
 
 
+  const [showOverride, setShowOverride] = useState<'in' | 'out' | null>(null)
+  const [overrideReason, setOverrideReason] = useState('')
   const [liveDuration, setLiveDuration] = useState('')
 
   // Month filter for history table
@@ -244,11 +246,11 @@ export default function TimeInOutPage() {
             {!hasTimedIn && (
               <button
                 onClick={() => {
-                   if (geo.error || geo.status !== 'granted') {
-                     toast.error('Location is mandatory to clock in.')
-                     return
-                   }
-                   else handleTimeIn()
+                  if (geo.error || geo.status !== 'granted') {
+                    toast.error('Location is mandatory to clock in.')
+                    return
+                  }
+                  else handleTimeIn()
                 }}
                 disabled={timeInMutation.isPending}
                 className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 dark:disabled:bg-emerald-800 text-white font-semibold text-sm rounded transition-colors flex items-center gap-2"
@@ -260,11 +262,11 @@ export default function TimeInOutPage() {
             {hasTimedIn && !hasTimedOut && (
               <button
                 onClick={() => {
-                   if (geo.error || geo.status !== 'granted') {
-                     toast.error('Location is mandatory to clock out.')
-                     return
-                   }
-                   else handleTimeOut()
+                  if (geo.error || geo.status !== 'granted') {
+                    toast.error('Location is mandatory to clock out.')
+                    return
+                  }
+                  else handleTimeOut()
                 }}
                 disabled={timeOutMutation.isPending}
                 className="px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 dark:disabled:bg-red-800 text-white font-semibold text-sm rounded transition-colors flex items-center gap-2"

@@ -222,8 +222,13 @@ class User extends Authenticatable
         }
 
         // Step 3: For users WITH department assignments, use RBAC v2 module permissions.
+        // Explicit direct permissions are treated as controlled user-level overrides.
         if ($this->departments()->exists()) {
-            return DepartmentModuleService::userHasPermission($this, $permName);
+            if (DepartmentModuleService::userHasPermission($this, $permName)) {
+                return true;
+            }
+
+            return $this->hasDirectPermission($permission);
         }
 
         // Step 4: For users without departments, fall back to Spatie's check.
@@ -253,6 +258,7 @@ class User extends Authenticatable
         // RBAC v2: Use DepartmentModuleService for department-assigned users
         if ($this->departments()->exists()) {
             $deptPerms = DepartmentModuleService::getUserPermissions($this);
+            $directPerms = $this->permissions->pluck('name')->all();
 
             // If department-scoped permissions are empty, fall back to Spatie role permissions
             if (empty($deptPerms)) {
@@ -262,7 +268,10 @@ class User extends Authenticatable
                     ->values();
             }
 
-            return collect($deptPerms);
+            return collect($deptPerms)
+                ->merge($directPerms)
+                ->unique()
+                ->values();
         }
 
         // Fallback to Spatie permissions for users without departments

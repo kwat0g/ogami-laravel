@@ -317,14 +317,14 @@ export function useArchivePayrollRun(runId: string) {
 // Add / remove adjustments
 // ---------------------------------------------------------------------------
 
-export function usePayrollAdjustments(runId: string) {
+export function usePayrollAdjustments(runId: string, enabled = true) {
   return useQuery({
     queryKey: ['payroll-adjustments', runId],
     queryFn: async () => {
       const res = await api.get<{ data: PayrollAdjustment[] }>(`/payroll/runs/${runId}/adjustments`)
       return res.data
     },
-    enabled: !!runId,
+    enabled: !!runId && enabled,
   })
 }
 

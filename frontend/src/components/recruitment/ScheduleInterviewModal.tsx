@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useInterviewerOptions, useScheduleInterview } from '@/hooks/useRecruitment'
 import { toast } from 'sonner'
+import { isAxiosError } from 'axios'
 
 interface ScheduleInterviewModalProps {
   applicationId: number
@@ -20,6 +21,7 @@ export default function ScheduleInterviewModal({
   const [form, setForm] = useState({
     type: 'hr_screening',
     scheduled_at: '',
+    location: 'In Site',
     interviewer_id: '',
     notes: '',
   })
@@ -33,11 +35,19 @@ export default function ScheduleInterviewModal({
       return
     }
 
+    const scheduledAt = new Date(form.scheduled_at)
+    if (Number.isNaN(scheduledAt.getTime())) {
+      toast.error('Please provide a valid date and time')
+      return
+    }
+
     schedule.mutate(
       {
         application_id: applicationId,
         type: form.type,
-        scheduled_at: form.scheduled_at,
+        // Send ISO-8601 with timezone to preserve exact intended local schedule.
+        scheduled_at: scheduledAt.toISOString(),
+        location: form.location.trim() || 'In Site',
         interviewer_id: interviewerId,
         notes: form.notes || undefined,
       },
@@ -47,7 +57,12 @@ export default function ScheduleInterviewModal({
           onSuccess()
           onClose()
         },
-        onError: () => {
+        onError: (error) => {
+          const message = isAxiosError<{ message?: string }>(error)
+            ? error.response?.data?.message
+            : undefined
+
+          toast.error(message ?? 'Unable to schedule interview. Please try again.')
         },
       },
     )
@@ -88,6 +103,17 @@ export default function ScheduleInterviewModal({
               value={form.scheduled_at}
               onChange={(e) => setForm({ ...form, scheduled_at: e.target.value })}
               className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-neutral-500 uppercase">Location</label>
+            <input
+              type="text"
+              value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-600 dark:bg-neutral-700"
+              placeholder="In Site"
             />
           </div>
 

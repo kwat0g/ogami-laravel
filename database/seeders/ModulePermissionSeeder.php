@@ -73,6 +73,7 @@ class ModulePermissionSeeder extends Seeder
                 'payroll.manage_pay_periods', 'payroll.initiate', 'payroll.pre_run_validate',
                 'payroll.compute', 'payroll.review_breakdown', 'payroll.flag_employee',
                 'payroll.submit_for_hr', 'payroll.hr_approve', 'payroll.hr_return', 'payroll.publish',
+                'payroll.disburse', 'payroll.download_bank_file',
                 'payroll.view_deduction_trace', 'payroll.download_register', 'payroll.gov_reports',
                 'reports.bir_2316', 'reports.bir_alphalist', 'reports.bir_1601c',
                 'reports.sss_sbr2', 'reports.philhealth_rf1', 'reports.pagibig_mc',
@@ -206,6 +207,7 @@ class ModulePermissionSeeder extends Seeder
                 'payroll.acctg_approve', 'payroll.acctg_reject', 'payroll.disburse',
                 'payroll.download_bank_file', 'payroll.post', 'payroll.publish',
                 'payroll.review_breakdown', 'payroll.download_register',
+                'payroll.view_deduction_trace', 'payroll.gov_reports',
                 'loans.accounting_approve',
                 // Fixed assets
                 'fixed_assets.view', 'fixed_assets.manage', 'fixed_assets.depreciate',

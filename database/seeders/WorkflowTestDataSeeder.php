@@ -53,8 +53,8 @@ class WorkflowTestDataSeeder extends Seeder
         // 3. PURCHASE REQUESTS - Cross-department workflow testing
         $this->seedPurchaseRequests($users, $departments);
 
-        // 4. PAYROLL RUN - For end-to-end payroll testing
-        $this->seedPayrollRuns($users);
+        // 4. PAYROLL RUN - Skipped: user will demo payroll creation manually
+        // $this->seedPayrollRuns($users);
 
         // 5. JOURNAL ENTRIES - Accounting workflow
         $this->seedJournalEntries($users);
@@ -65,7 +65,10 @@ class WorkflowTestDataSeeder extends Seeder
         // 7. MATERIAL REQUISITIONS - Inventory workflow
         $this->seedMaterialRequisitions($users, $departments);
 
-        // 8. AUTOMATION TEST DATA
+        // 8. BOM COMPONENTS - Link raw materials to BOMs
+        $this->seedBomComponents();
+
+        // 9. AUTOMATION TEST DATA
         $this->seedAutomationTestData();
 
         $this->command->info('✓ Workflow test data seeded successfully!');
@@ -89,8 +92,8 @@ class WorkflowTestDataSeeder extends Seeder
 
         $staff = $users->get('prod.staff@ogamierp.local');
         $head = $users->get('production.head@ogamierp.local');
-        $manager = $users->get('plant.manager@ogamierp.local');
-        $gaOfficer = $users->get('ga.officer@ogamierp.local');
+        $manager = $users->get('prod.manager@ogamierp.local');
+        $gaOfficer = $users->get('hr.officer@ogamierp.local');
         $vp = $users->get('vp@ogamierp.local');
 
         if (! $staff || ! $head || ! $manager || ! $gaOfficer || ! $vp) {
@@ -113,6 +116,7 @@ class WorkflowTestDataSeeder extends Seeder
             'employee_id' => $employee->id,
             'leave_type_id' => $vacationType->id,
             'submitted_by' => $staff->id,
+            'requester_type' => 'staff',
             'date_from' => '2026-04-01',
             'date_to' => '2026-04-02',
             'total_days' => 2,
@@ -126,6 +130,7 @@ class WorkflowTestDataSeeder extends Seeder
             'employee_id' => $employee->id,
             'leave_type_id' => $vacationType->id,
             'submitted_by' => $staff->id,
+            'requester_type' => 'staff',
             'date_from' => '2026-04-05',
             'date_to' => '2026-04-07',
             'total_days' => 3,
@@ -139,6 +144,7 @@ class WorkflowTestDataSeeder extends Seeder
             'employee_id' => $employee->id,
             'leave_type_id' => $vacationType->id,
             'submitted_by' => $staff->id,
+            'requester_type' => 'staff',
             'date_from' => '2026-04-10',
             'date_to' => '2026-04-11',
             'total_days' => 2,
@@ -152,6 +158,7 @@ class WorkflowTestDataSeeder extends Seeder
             'employee_id' => $employee->id,
             'leave_type_id' => $vacationType->id,
             'submitted_by' => $staff->id,
+            'requester_type' => 'staff',
             'date_from' => '2026-04-15',
             'date_to' => '2026-04-16',
             'total_days' => 2,
@@ -165,6 +172,7 @@ class WorkflowTestDataSeeder extends Seeder
             'employee_id' => $employee->id,
             'leave_type_id' => $vacationType->id,
             'submitted_by' => $staff->id,
+            'requester_type' => 'staff',
             'date_from' => '2026-04-20',
             'date_to' => '2026-04-21',
             'total_days' => 2,
@@ -178,6 +186,7 @@ class WorkflowTestDataSeeder extends Seeder
             'employee_id' => $employee->id,
             'leave_type_id' => $vacationType->id,
             'submitted_by' => $staff->id,
+            'requester_type' => 'staff',
             'date_from' => '2026-03-01',
             'date_to' => '2026-03-02',
             'total_days' => 2,
@@ -191,6 +200,7 @@ class WorkflowTestDataSeeder extends Seeder
             'employee_id' => $employee->id,
             'leave_type_id' => $vacationType->id,
             'submitted_by' => $staff->id,
+            'requester_type' => 'staff',
             'date_from' => '2026-05-01',
             'date_to' => '2026-05-05',
             'total_days' => 5,
@@ -206,6 +216,7 @@ class WorkflowTestDataSeeder extends Seeder
                 'employee_id' => $headEmployee->id,
                 'leave_type_id' => $vacationType->id,
                 'submitted_by' => $head->id,
+                'requester_type' => 'head_officer',
                 'date_from' => '2026-04-25',
                 'date_to' => '2026-04-26',
                 'total_days' => 2,
@@ -227,7 +238,7 @@ class WorkflowTestDataSeeder extends Seeder
 
         $staff = $users->get('prod.staff@ogamierp.local');
         $head = $users->get('production.head@ogamierp.local');
-        $manager = $users->get('plant.manager@ogamierp.local');
+        $manager = $users->get('prod.manager@ogamierp.local');
         $officer = $users->get('acctg.officer@ogamierp.local');
         $vp = $users->get('vp@ogamierp.local');
 
@@ -358,7 +369,7 @@ class WorkflowTestDataSeeder extends Seeder
 
         $prodHead = $users->get('production.head@ogamierp.local');
         $purchasingOfficer = $users->get('purchasing.officer@ogamierp.local');
-        $plantMgr = $users->get('plant.manager@ogamierp.local');
+        $plantMgr = $users->get('prod.manager@ogamierp.local');
         $vp = $users->get('vp@ogamierp.local');
 
         if (! $prodHead) {
@@ -402,9 +413,9 @@ class WorkflowTestDataSeeder extends Seeder
             'pr_reference' => 'PR-WF-002',
             'department_id' => $prodDept?->id ?? 1,
             'requested_by_id' => $prodHead->id,
-            'justification' => 'Safety equipment - SUBMITTED. OSHA compliance.',
+            'justification' => 'Safety equipment - PENDING REVIEW. OSHA compliance.',
             'urgency' => 'urgent',
-            'status' => 'submitted',
+            'status' => 'pending_review',
             'submitted_by_id' => $prodHead->id,
             'submitted_at' => now()->subDays(1),
         ]);
@@ -432,9 +443,9 @@ class WorkflowTestDataSeeder extends Seeder
             'pr_reference' => 'PR-WF-003',
             'department_id' => $prodDept?->id ?? 1,
             'requested_by_id' => $prodHead->id,
-            'justification' => 'Machine spare parts - NOTED. Preventive maintenance.',
+            'justification' => 'Machine spare parts - PENDING REVIEW. Preventive maintenance.',
             'urgency' => 'normal',
-            'status' => 'noted',
+            'status' => 'pending_review',
             'submitted_by_id' => $prodHead->id,
             'submitted_at' => now()->subDays(3),
             'noted_by_id' => $prodHead->id,
@@ -446,9 +457,9 @@ class WorkflowTestDataSeeder extends Seeder
             'pr_reference' => 'PR-WF-004',
             'department_id' => $prodDept?->id ?? 1,
             'requested_by_id' => $prodHead->id,
-            'justification' => 'Office supplies for production - CHECKED. Administrative needs.',
+            'justification' => 'Office supplies for production - REVIEWED. Administrative needs.',
             'urgency' => 'normal',
-            'status' => 'checked',
+            'status' => 'reviewed',
             'submitted_by_id' => $prodHead->id,
             'submitted_at' => now()->subDays(5),
             'noted_by_id' => $prodHead->id,
@@ -480,9 +491,9 @@ class WorkflowTestDataSeeder extends Seeder
             'pr_reference' => 'PR-WF-006',
             'department_id' => $prodDept?->id ?? 1,
             'requested_by_id' => $prodHead->id,
-            'justification' => 'New CNC Machine - BUDGET CHECKED. Capacity expansion.',
+            'justification' => 'New CNC Machine - BUDGET VERIFIED. Capacity expansion.',
             'urgency' => 'normal',
-            'status' => 'budget_checked',
+            'status' => 'budget_verified',
             'submitted_by_id' => $prodHead->id,
             'submitted_at' => now()->subDays(10),
             'noted_by_id' => $prodHead->id,
@@ -491,7 +502,7 @@ class WorkflowTestDataSeeder extends Seeder
             'checked_at' => now()->subDays(7),
             'reviewed_by_id' => $plantMgr?->id,
             'reviewed_at' => now()->subDays(5),
-            'budget_checked_by_id' => $plantMgr?->id,
+            'budget_checked_by_id' => $purchasingOfficer?->id,
             'budget_checked_at' => now()->subDays(3),
         ]);
 
@@ -511,7 +522,7 @@ class WorkflowTestDataSeeder extends Seeder
             'checked_at' => now()->subDays(12),
             'reviewed_by_id' => $plantMgr?->id,
             'reviewed_at' => now()->subDays(10),
-            'budget_checked_by_id' => $plantMgr?->id,
+            'budget_checked_by_id' => $purchasingOfficer?->id,
             'budget_checked_at' => now()->subDays(8),
             'vp_approved_by_id' => $vp?->id,
             'vp_approved_at' => now()->subDays(5),
@@ -525,7 +536,7 @@ class WorkflowTestDataSeeder extends Seeder
                 'requested_by_id' => $vp->id,
                 'justification' => 'VP own request - SoD TEST (VP cannot approve own). Testing.',
                 'urgency' => 'normal',
-                'status' => 'submitted',
+                'status' => 'pending_review',
                 'submitted_by_id' => $vp->id,
                 'submitted_at' => now(),
             ]);
@@ -684,8 +695,8 @@ class WorkflowTestDataSeeder extends Seeder
         }
 
         // Get or create COA accounts
-        $cashAccount = ChartOfAccount::where('code', '1100')->first();
-        $expenseAccount = ChartOfAccount::where('code', '5100')->first();
+        $cashAccount = ChartOfAccount::where('code', '1001')->first();
+        $expenseAccount = ChartOfAccount::where('code', '5001')->first();
 
         if (! $cashAccount || ! $expenseAccount) {
             $this->command->warn('    Chart of accounts not properly seeded');
@@ -694,7 +705,7 @@ class WorkflowTestDataSeeder extends Seeder
         }
 
         // Get fiscal period
-        $fiscalPeriod = FiscalPeriod::where('is_active', true)->first();
+        $fiscalPeriod = FiscalPeriod::where('status', 'open')->first() ?? FiscalPeriod::first();
         if (! $fiscalPeriod) {
             $this->command->warn('    No active fiscal period found');
 
@@ -820,7 +831,7 @@ class WorkflowTestDataSeeder extends Seeder
         }
 
         // Get fiscal period
-        $fiscalPeriod = FiscalPeriod::where('is_active', true)->first();
+        $fiscalPeriod = FiscalPeriod::where('status', 'open')->first() ?? FiscalPeriod::first();
         if (! $fiscalPeriod) {
             $this->command->warn('    No active fiscal period found');
 
@@ -1076,14 +1087,17 @@ class WorkflowTestDataSeeder extends Seeder
     {
         $this->command->info('  Cleaning up existing workflow test data...');
 
-        // Delete in order (respecting foreign keys)
-        DB::table('journal_entry_lines')
-            ->whereIn('journal_entry_id', function ($query) {
-                $query->select('id')->from('journal_entries')
-                    ->where('je_number', 'like', 'JE-WF-%');
-            })->delete();
-
-        DB::table('journal_entries')->where('je_number', 'like', 'JE-WF-%')->delete();
+        // JE cleanup: posted entries are protected by a trigger, so wrap in try-catch
+        try {
+            DB::table('journal_entry_lines')
+                ->whereIn('journal_entry_id', function ($query) {
+                    $query->select('id')->from('journal_entries')
+                        ->where('je_number', 'like', 'JE-WF-%');
+                })->delete();
+            DB::table('journal_entries')->where('je_number', 'like', 'JE-WF-%')->delete();
+        } catch (\Throwable $e) {
+            // Posted JEs are immutable — skip cleanup for those
+        }
         DB::table('vendor_invoices')->where('invoice_number', 'like', 'INV-WF-%')->delete();
         DB::table('purchase_request_items')
             ->whereIn('purchase_request_id', function ($query) {
@@ -1101,5 +1115,128 @@ class WorkflowTestDataSeeder extends Seeder
         DB::table('material_requisitions')->where('mr_reference', 'like', 'MR-WF-%')->delete();
 
         $this->command->info('  ✓ Cleanup complete');
+    }
+
+    /**
+     * Seed BOM Components — link raw materials to each BOM.
+     */
+    private function seedBomComponents(): void
+    {
+        $this->command->info('  Creating BOM components...');
+
+        $boms = DB::table('bill_of_materials')->get();
+        $items = DB::table('item_masters')->pluck('id', 'item_code');
+
+        if ($boms->isEmpty() || $items->isEmpty()) {
+            $this->command->warn('    BOMs or items not seeded, skipping');
+            return;
+        }
+
+        // Clean existing
+        DB::table('bom_components')->truncate();
+
+        $components = [];
+        $now = now();
+
+        foreach ($boms as $bom) {
+            $productItem = DB::table('item_masters')->where('id', $bom->product_item_id)->first();
+            if (! $productItem) continue;
+
+            // BOM #1: Plastic Component A → PE Resin + Masterbatch Black + Carton Box
+            if ($productItem->item_code === 'FG-PLASTIC-001') {
+                $components[] = [
+                    'bom_id' => $bom->id,
+                    'component_item_id' => $items->get('RM-PE-001'),   // PE Resin
+                    'qty_per_unit' => 2.50,
+                    'unit_of_measure' => 'kg',
+                    'scrap_factor_pct' => 3.00,
+                ];
+                $components[] = [
+                    'bom_id' => $bom->id,
+                    'component_item_id' => $items->get('RM-MB-001'),   // Masterbatch Black
+                    'qty_per_unit' => 0.10,
+                    'unit_of_measure' => 'kg',
+                    'scrap_factor_pct' => 1.00,
+                ];
+                $components[] = [
+                    'bom_id' => $bom->id,
+                    'component_item_id' => $items->get('PKG-BOX-S'),   // Carton Box
+                    'qty_per_unit' => 1.00,
+                    'unit_of_measure' => 'pcs',
+                    'scrap_factor_pct' => 0.50,
+                ];
+            }
+
+            // BOM #2: Metal Bracket B → PP Resin + Masterbatch White + Carton Box
+            if ($productItem->item_code === 'FG-METAL-002') {
+                $components[] = [
+                    'bom_id' => $bom->id,
+                    'component_item_id' => $items->get('RM-PP-001'),   // PP Resin
+                    'qty_per_unit' => 1.80,
+                    'unit_of_measure' => 'kg',
+                    'scrap_factor_pct' => 2.50,
+                ];
+                $components[] = [
+                    'bom_id' => $bom->id,
+                    'component_item_id' => $items->get('RM-MB-002'),   // Masterbatch White
+                    'qty_per_unit' => 0.08,
+                    'unit_of_measure' => 'kg',
+                    'scrap_factor_pct' => 1.00,
+                ];
+                $components[] = [
+                    'bom_id' => $bom->id,
+                    'component_item_id' => $items->get('PKG-BOX-S'),   // Carton Box
+                    'qty_per_unit' => 1.00,
+                    'unit_of_measure' => 'pcs',
+                    'scrap_factor_pct' => 0.50,
+                ];
+            }
+
+            // BOM #3: Assembly Unit C → uses Plastic Component A + Metal Bracket B (sub-assembly) + PE Resin + Hydraulic Oil
+            if ($productItem->item_code === 'FG-ASSY-003') {
+                // Sub-assembly: finished goods used as components
+                if ($items->has('FG-PLASTIC-001')) {
+                    $components[] = [
+                        'bom_id' => $bom->id,
+                        'component_item_id' => $items->get('FG-PLASTIC-001'),
+                        'qty_per_unit' => 2.00,
+                        'unit_of_measure' => 'pcs',
+                        'scrap_factor_pct' => 1.00,
+                    ];
+                }
+                if ($items->has('FG-METAL-002')) {
+                    $components[] = [
+                        'bom_id' => $bom->id,
+                        'component_item_id' => $items->get('FG-METAL-002'),
+                        'qty_per_unit' => 1.00,
+                        'unit_of_measure' => 'pcs',
+                        'scrap_factor_pct' => 0.50,
+                    ];
+                }
+                $components[] = [
+                    'bom_id' => $bom->id,
+                    'component_item_id' => $items->get('RM-PE-001'),   // PE Resin (adhesive)
+                    'qty_per_unit' => 0.30,
+                    'unit_of_measure' => 'kg',
+                    'scrap_factor_pct' => 5.00,
+                ];
+                $components[] = [
+                    'bom_id' => $bom->id,
+                    'component_item_id' => $items->get('CON-OIL-01'),  // Hydraulic Oil
+                    'qty_per_unit' => 0.05,
+                    'unit_of_measure' => 'L',
+                    'scrap_factor_pct' => 2.00,
+                ];
+            }
+        }
+
+        // Filter out any null component_item_ids
+        $components = array_filter($components, fn($c) => $c['component_item_id'] !== null);
+
+        if (! empty($components)) {
+            DB::table('bom_components')->insert($components);
+        }
+
+        $this->command->info('    ✓ ' . count($components) . ' BOM components created');
     }
 }

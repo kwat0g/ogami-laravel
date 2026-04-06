@@ -50,6 +50,10 @@ final class JobPostingService implements ServiceContract
             'salaryGrade',
         ])
             ->published()
+            ->where(function ($q) {
+                $q->whereNull('closes_at')
+                    ->orWhere('closes_at', '>', now());
+            })
             ->orderByDesc('published_at')
             ->paginate($perPage);
     }

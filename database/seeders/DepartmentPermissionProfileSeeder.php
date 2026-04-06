@@ -150,6 +150,8 @@ class DepartmentPermissionProfileSeeder extends Seeder
                     'payroll.submit_for_hr',
                     'payroll.hr_approve',
                     'payroll.hr_return',
+                    'payroll.disburse',
+                    'payroll.download_bank_file',
                     'payroll.publish',
                     'payroll.view_deduction_trace',
                     'payroll.download_register',
@@ -165,6 +167,175 @@ class DepartmentPermissionProfileSeeder extends Seeder
                     'reports.sss_sbr2',
                     'reports.philhealth_rf1',
                     'reports.pagibig_mc',
+                ],
+            ],
+
+            // ═══════════════════════════════════════════════════════════════
+            // ACCTG MANAGER — common + full Accounting/Payroll-ACCTG permissions
+            // ═══════════════════════════════════════════════════════════════
+            [
+                'dept_code' => 'ACCTG',
+                'role' => 'manager',
+                'profile_label' => 'Accounting Manager',
+                'permissions' => [
+                    // ── Self-service ─────────────────────────────────────
+                    'self.view_profile',
+                    'self.submit_profile_update',
+                    'self.view_attendance',
+
+                    // ── Own payslips ─────────────────────────────────────
+                    'payroll.view_own_payslip',
+                    'payroll.download_own_payslip',
+
+                    // ── Own leaves ───────────────────────────────────────
+                    'leaves.view_own',
+                    'leaves.file_own',
+                    'leaves.cancel',
+
+                    // ── Own loans ────────────────────────────────────────
+                    'loans.view_own',
+                    'loans.apply',
+
+                    // ── Own attendance ───────────────────────────────────
+                    'attendance.view_own',
+
+                    // ── Team management (shared across all managers) ─────
+                    'employees.view',
+                    'employees.view_team',
+                    'employees.view_full_record',
+                    'employees.view_masked_gov_ids',
+                    'employees.upload_documents',
+                    'employees.download_documents',
+                    'attendance.view_team',
+                    'attendance.view_anomalies',
+                    'overtime.view',
+                    'overtime.submit',
+                    'overtime.approve',
+                    'overtime.reject',
+                    'leaves.view_team',
+                    'leaves.file_on_behalf',
+                    'leaves.approve',
+                    'leaves.reject',
+                    'loans.view_department',
+                    'payroll.view_runs',
+
+                    // ── Legacy aliases ───────────────────────────────────
+                    'payslips.view',
+                    'payslips.download',
+                    'leaves.view',
+                    'leaves.create',
+                    'leave_balances.view',
+                    'loans.view',
+                    'attendance.view',
+                    'attendance.create',
+                    'attendance.update',
+                    'attendance.export',
+                    'overtime.create',
+                    'overtime.update',
+                    'payroll.view',
+
+                    // ── ACCTG-specific: GL & Journal Entries ─────────────
+                    'journal_entries.view',
+                    'journal_entries.create',
+                    'journal_entries.update',
+                    'journal_entries.submit',
+                    'journal_entries.post',
+                    'journal_entries.reverse',
+                    'journal_entries.export',
+
+                    // ── ACCTG-specific: Chart of Accounts ────────────────
+                    'chart_of_accounts.view',
+                    'chart_of_accounts.manage',
+
+                    // ── ACCTG-specific: Fiscal Periods ───────────────────
+                    'fiscal_periods.view',
+                    'fiscal_periods.manage',
+
+                    // ── ACCTG-specific: AP — Vendors ──────────────────────
+                    'vendors.view',
+                    'vendors.manage',
+                    'vendors.archive',
+                    'vendors.accredit',
+                    'vendors.suspend',
+                    'vendor_invoices.view',
+                    'vendor_invoices.create',
+                    'vendor_invoices.update',
+                    'vendor_invoices.submit',
+                    'vendor_invoices.approve',
+                    'vendor_invoices.reject',
+                    'vendor_invoices.record_payment',
+                    'vendor_invoices.cancel',
+                    'vendor_invoices.export',
+                    'vendor_payments.view',
+                    'vendor_payments.create',
+                    'bir_2307.generate',
+
+                    // ── ACCTG-specific: AR — Customers ───────────────────
+                    'customers.view',
+                    'customers.manage',
+                    'customers.archive',
+                    'customer_invoices.view',
+                    'customer_invoices.create',
+                    'customer_invoices.update',
+                    'customer_invoices.approve',
+                    'customer_invoices.cancel',
+                    'customer_invoices.override_credit',
+                    'customer_invoices.receive_payment',
+                    'customer_invoices.write_off',
+                    'customer_invoices.apply_payment',
+                    'customer_invoices.export',
+
+                    // ── ACCTG-specific: Banking ───────────────────────────
+                    'bank_accounts.view',
+                    'bank_accounts.create',
+                    'bank_accounts.update',
+                    'bank_accounts.delete',
+                    'bank_reconciliations.view',
+                    'bank_reconciliations.create',
+                    'bank_reconciliations.certify',
+
+                    // ── ACCTG-specific: Financial Reports ────────────────
+                    'reports.financial_statements',
+                    'reports.gl',
+                    'reports.trial_balance',
+                    'reports.ap_aging',
+                    'reports.ar_aging',
+                    'reports.vat',
+                    'reports.bank_reconciliation',
+
+                    // ── ACCTG-specific: Payroll accounting workflow ───────
+                    'payroll.acctg_approve',
+                    'payroll.acctg_reject',
+                    'payroll.disburse',
+                    'payroll.download_bank_file',
+                    'payroll.post',
+                    'payroll.publish',
+                    'payroll.view_deduction_trace',
+                    'payroll.download_register',
+                    'payroll.gov_reports',
+                    'payroll.approve',
+
+                    // ── ACCTG-specific: BIR & Gov Reports ────────────────
+                    'reports.bir_2316',
+                    'reports.bir_alphalist',
+                    'reports.bir_1601c',
+                    'reports.sss_sbr2',
+                    'reports.philhealth_rf1',
+                    'reports.pagibig_mc',
+
+                    // ── ACCTG-specific: Loan accounting approval ──────────
+                    'loans.accounting_approve',
+
+                    // ── ACCTG-specific: Budget ────────────────────────────
+                    'budget.view',
+                    'budget.manage',
+                    'budget.approve',
+
+                    // ── ACCTG-specific: Fixed Assets ─────────────────────
+                    'fixed_assets.view',
+                    'fixed_assets.manage',
+                    'fixed_assets.dispose',
+                    'fixed_assets.transfer',
                 ],
             ],
 

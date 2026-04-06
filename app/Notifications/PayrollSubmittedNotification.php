@@ -59,7 +59,7 @@ final class PayrollSubmittedNotification extends Notification implements ShouldQ
                     ? Carbon::parse($this->payDate)->toFormattedDateString()
                     : 'TBD',
             ),
-            'action_url' => "/payroll/runs/{$this->payrollRunUlid}",
+            'action_url' => "/payroll/runs/{$this->payrollRunUlid}/acctg-review",
             'payroll_run_id' => $this->payrollRunId,
         ];
     }

@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Domains\HR\Models\Employee;
 use App\Models\User;
+use Spatie\Permission\Models\Permission;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -95,6 +96,21 @@ class ComprehensiveTestAccountsSeeder extends Seeder
 
     private const FALLBACK_PASSWORD = 'DemoUser@1234!';
 
+    /**
+     * Explicit demo-account permission overrides for critical walkthrough flows.
+     *
+     * @var array<string, array<int, string>>
+     */
+    private const EXPLICIT_DEMO_PERMISSIONS = [
+        'demo.acctg@ogamierp.local' => [
+            'payroll.view_runs',
+            'payroll.view',
+            'payroll.acctg_approve',
+            'payroll.acctg_reject',
+            'payroll.approve',
+        ],
+    ];
+
     public function run(): void
     {
         $essentialUserIds = $this->ensureEssentialEmployeeAccounts();
@@ -147,6 +163,18 @@ class ComprehensiveTestAccountsSeeder extends Seeder
             $this->credentialMap[$account['email']] = $account['password'];
 
             $user->syncRoles([$account['role']]);
+
+            $explicitPermissions = self::EXPLICIT_DEMO_PERMISSIONS[$account['email']] ?? [];
+            if ($explicitPermissions !== []) {
+                $assignable = Permission::query()
+                    ->whereIn('name', $explicitPermissions)
+                    ->pluck('name')
+                    ->all();
+
+                if ($assignable !== []) {
+                    $user->givePermissionTo($assignable);
+                }
+            }
 
             if ($employee->user_id !== $user->id) {
                 $employee->user_id = $user->id;

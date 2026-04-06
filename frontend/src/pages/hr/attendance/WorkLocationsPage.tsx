@@ -23,7 +23,7 @@ import { useQueryClient } from '@tanstack/react-query'
 
 export default function WorkLocationsPage() {
   const { hasPermission } = useAuthStore()
-  const canManage = hasPermission(PERMISSIONS.attendance.work_locations_manage)
+  const canManage = hasPermission(PERMISSIONS.attendance['work_locations.manage'])
   const { data: locationsData, isLoading, refetch } = useWorkLocations()
   const { data: geofenceSettings } = useGeofenceSettings()
   const toggleGeofence = useToggleGeofence()
@@ -180,11 +180,10 @@ export default function WorkLocationsPage() {
             <button
               onClick={handleToggleGeofence}
               disabled={toggleGeofence.isPending}
-              className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors ${
-                geofenceSettings?.enabled
+              className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded transition-colors ${geofenceSettings?.enabled
                   ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'
                   : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100'
-              }`}
+                }`}
             >
               {geofenceSettings?.enabled ? <Shield className="w-4 h-4" /> : <ShieldOff className="w-4 h-4" />}
               {geofenceSettings?.enabled ? 'Geofence: ON' : 'Geofence: OFF'}
@@ -261,7 +260,7 @@ export default function WorkLocationsPage() {
                         setForm((prev) => ({ ...prev, address: data.display_name.substring(0, 200) }))
                       }
                     })
-                    .catch(() => {})
+                    .catch(() => { })
                 }}
               />
 

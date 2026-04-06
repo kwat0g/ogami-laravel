@@ -103,6 +103,14 @@ class DatabaseSeeder extends Seeder
             // Safe to re-run independently: php artisan db:seed --class=ManualTestingSeeder
             ManualTestingSeeder::class,
 
+            // ── Workflow test data (all approval chains) ─────────────────────
+            // Leave, loan, PR, payroll, JE, vendor invoice, MRQ at every stage
+            WorkflowTestDataSeeder::class,
+
+            // ── Recruitment pipeline ─────────────────────────────────────────
+            // Candidates → Requisitions → Postings → Applications → Interviews → Offers → Hirings
+            RecruitmentSeeder::class,
+
         ]);
 
         if ($output !== null && $previousVerbosity !== null) {

@@ -8,7 +8,7 @@ import { useUiStore } from '@/stores/uiStore'
  *
  * Data sources (both used simultaneously):
  *   1. Reverb WebSocket — instant signal via uiStore.systemRestoreInProgress
- *   2. Polling /api/v1/system/restore-status every 2 s — fallback when Reverb is
+ *   2. Adaptive polling /api/v1/system/restore-status — fallback when Reverb is
  *      down (dev) and to detect the two-phase cache value:
  *        { in_progress: true,  completed: false } → restore is running
  *        { in_progress: true,  completed: true  } → restore done, 15 s window
@@ -19,8 +19,7 @@ import { useUiStore } from '@/stores/uiStore'
  *   done    phase   → show "Restore Complete" overlay + redirect to /login after 3 s
  *
  * The 15-second 'done' window in the cache (set by BackupController after the
- * restore) guarantees every 2-second poll catches the flag at least once, even
- * for fast restores that finish in under one poll cycle.
+ * restore) helps ensure the poller catches completion even if timing is tight.
  */
 function SystemRestoreOverlay() {
   const wsFlag = useUiStore((s) => s.systemRestoreInProgress)
@@ -29,6 +28,7 @@ function SystemRestoreOverlay() {
   const seenRestoring           = useRef(false)
   const redirectScheduled       = useRef(false)
   const visibleSince            = useRef<number | null>(null)
+  const inFlight                = useRef(false)
 
   // Instant overlay when Reverb broadcasts SystemRestoreStarting
   useEffect(() => {
@@ -40,7 +40,7 @@ function SystemRestoreOverlay() {
     }
   }, [wsFlag])
 
-  // Polling fallback — 2 s interval, works without Reverb
+  // Polling fallback with adaptive interval + 429 backoff.
   useEffect(() => {
     // Schedule the "done" redirect exactly once; guards re-entry.
     const scheduleRedirect = () => {
@@ -61,10 +61,26 @@ function SystemRestoreOverlay() {
       }, 3_000)
     }
 
-    const check = async () => {
+    const check = async (): Promise<number> => {
+      if (document.hidden) {
+        return 15_000
+      }
+
+      if (inFlight.current) {
+        return 5_000
+      }
+
+      inFlight.current = true
+
       try {
-        const res = await fetch('/api/v1/system/restore-status')
-        if (!res.ok) return
+        const res = await fetch('/api/v1/system/restore-status', { cache: 'no-store' })
+
+        if (res.status === 429) {
+          return 30_000
+        }
+
+        if (!res.ok) return 10_000
+
         const { in_progress, completed } = (await res.json()) as {
           in_progress: boolean
           completed: boolean
@@ -79,11 +95,13 @@ function SystemRestoreOverlay() {
           useUiStore.getState().setSystemRestore(true)
           setDone(false)
           setVisible(true)
+          return 2_000
         } else if (in_progress && completed) {
           // Restore done; 15 s window still open — transition to success overlay
           seenRestoring.current = true
           useUiStore.getState().setSystemRestore(true)
           scheduleRedirect()
+          return 10_000
         } else if (!in_progress && seenRestoring.current) {
           // Fallback: TTL expired before the 'done' phase was caught.
           // Dismiss the overlay and redirect if not already on login.
@@ -94,8 +112,14 @@ function SystemRestoreOverlay() {
             // Already on /login (race: redirect happened before done phase) — just dismiss.
             setVisible(false)
           }
+          return 10_000
         }
-      } catch { /* network hiccup — retry on next tick */ }
+      } catch {
+        // network hiccup — retry with a softer interval
+        return 10_000
+      } finally {
+        inFlight.current = false
+      }
 
       // Safety net: if the overlay has been showing for >3 min and we still
       // can't get a clean status (server outage / stale state), force-dismiss.
@@ -104,11 +128,27 @@ function SystemRestoreOverlay() {
         visibleSince.current = null
         setVisible(false)
       }
+
+      return 10_000
     }
 
-    void check()
-    const id = setInterval(() => { void check() }, 2_000)
-    return () => clearInterval(id)
+    let cancelled = false
+    let timeoutId: number | null = null
+
+    const run = async () => {
+      const delay = await check()
+      if (cancelled) return
+      timeoutId = window.setTimeout(() => { void run() }, delay)
+    }
+
+    void run()
+
+    return () => {
+      cancelled = true
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId)
+      }
+    }
   }, []) // dependencies intentionally empty — all logic uses refs
 
   if (!visible) return null

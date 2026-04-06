@@ -15,6 +15,7 @@ use App\Shared\Contracts\ServiceContract;
 use App\Shared\Exceptions\DomainException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 final class InterviewService implements ServiceContract
@@ -102,16 +103,21 @@ final class InterviewService implements ServiceContract
             ->exists();
 
         if ($hasPendingInterview) {
-            throw new DomainException(
-                'Cannot schedule a new interview while another interview is still scheduled or in progress.',
-                'INTERVIEW_ALREADY_PENDING',
-                422,
-                ['application_id' => $application->id],
-            );
+            $pendingInterview = $application->interviews()
+                ->whereIn('status', [InterviewStatus::Scheduled->value, InterviewStatus::InProgress->value])
+                ->latest('scheduled_at')
+                ->first();
+
+            if ($pendingInterview instanceof InterviewSchedule) {
+                $this->sendInterviewEmail($pendingInterview, 'INTERVIEW_EMAIL_SEND_FAILED');
+
+                return $pendingInterview;
+            }
         }
 
         $interview = DB::transaction(function () use ($application, $data): InterviewSchedule {
             $round = $data['round'] ?? ($application->interviews()->max('round') ?? 0) + 1;
+            $location = $this->normalizeLocation($data['location'] ?? null);
 
             return InterviewSchedule::create([
                 'application_id' => $application->id,
@@ -119,7 +125,7 @@ final class InterviewService implements ServiceContract
                 'type' => $data['type'],
                 'scheduled_at' => $data['scheduled_at'],
                 'duration_minutes' => $data['duration_minutes'] ?? 60,
-                'location' => $data['location'] ?? null,
+                'location' => $location,
                 'interviewer_id' => $data['interviewer_id'] ?? null,
                 'interviewer_department_id' => $data['interviewer_department_id'] ?? null,
                 'status' => InterviewStatus::Scheduled->value,
@@ -129,7 +135,7 @@ final class InterviewService implements ServiceContract
 
         $candidateEmail = $application->candidate?->email;
         if ($candidateEmail !== null && $candidateEmail !== '') {
-            Mail::to($candidateEmail)->queue(InterviewScheduledMail::fromModel($interview));
+            $this->sendInterviewEmail($interview, 'INTERVIEW_EMAIL_SEND_FAILED');
         }
 
         return $interview;
@@ -146,11 +152,15 @@ final class InterviewService implements ServiceContract
             );
         }
 
-        return DB::transaction(function () use ($interview, $data): InterviewSchedule {
+        $updatedInterview = DB::transaction(function () use ($interview, $data): InterviewSchedule {
+            $nextLocation = array_key_exists('location', $data)
+                ? $this->normalizeLocation($data['location'])
+                : $this->normalizeLocation($interview->location);
+
             $interview->update([
                 'scheduled_at' => $data['scheduled_at'] ?? $interview->scheduled_at,
                 'duration_minutes' => $data['duration_minutes'] ?? $interview->duration_minutes,
-                'location' => $data['location'] ?? $interview->location,
+                'location' => $nextLocation,
                 'interviewer_id' => $data['interviewer_id'] ?? $interview->interviewer_id,
                 'interviewer_department_id' => $data['interviewer_department_id'] ?? $interview->interviewer_department_id,
                 'notes' => $data['notes'] ?? $interview->notes,
@@ -158,6 +168,54 @@ final class InterviewService implements ServiceContract
 
             return $interview->fresh();
         });
+
+        $candidateEmail = $updatedInterview->application?->candidate?->email;
+        if ($candidateEmail !== null && $candidateEmail !== '') {
+            $this->sendInterviewEmail($updatedInterview, 'INTERVIEW_EMAIL_SEND_FAILED');
+        }
+
+        return $updatedInterview;
+    }
+
+    private function normalizeLocation(mixed $location): string
+    {
+        if (! is_string($location)) {
+            return 'In Site';
+        }
+
+        $trimmed = trim($location);
+
+        return $trimmed !== '' ? $trimmed : 'In Site';
+    }
+
+    private function sendInterviewEmail(InterviewSchedule $interview, string $errorCode): void
+    {
+        $candidateEmail = $interview->application?->candidate?->email;
+        if (! is_string($candidateEmail) || trim($candidateEmail) === '') {
+            Log::warning('Interview email skipped — no candidate email', [
+                'interview_id' => $interview->id,
+            ]);
+
+            return;
+        }
+
+        try {
+            Mail::to($candidateEmail)->send(InterviewScheduledMail::fromModel($interview));
+
+            Log::info('Interview email sent successfully', [
+                'interview_id' => $interview->id,
+                'candidate_email' => $candidateEmail,
+            ]);
+        } catch (\Throwable $e) {
+            // Log the failure but don't throw — the interview record is already
+            // persisted, so a mail-delivery issue shouldn't break the response.
+            Log::error('Interview email delivery failed', [
+                'interview_id' => $interview->id,
+                'candidate_email' => $candidateEmail,
+                'error' => $e->getMessage(),
+            ]);
+            report($e);
+        }
     }
 
     public function start(InterviewSchedule $interview, User $actor): InterviewSchedule

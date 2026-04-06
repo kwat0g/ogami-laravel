@@ -360,7 +360,8 @@ export default function PayrollRunReviewPage() {
     try {
       await submitForHr.mutateAsync()
       toast.success('Run submitted for HR Manager approval.')
-      navigate(`/payroll/runs/${runId}/hr-review`)
+      // Redirect to run detail because submitters may not have hr_approve permission.
+      navigate(`/payroll/runs/${runId}`)
     } catch (err) {
       toast.error(firstErrorMessage(err))
     }

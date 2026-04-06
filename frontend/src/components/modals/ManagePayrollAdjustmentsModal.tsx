@@ -9,6 +9,8 @@ import {
   useDeleteAdjustment,
 } from '@/hooks/usePayroll'
 import { useEmployees } from '@/hooks/useHr'
+import { useAuthStore } from '@/stores/authStore'
+import { PERMISSIONS } from '@/lib/permissions'
 import CurrencyAmount from '@/components/ui/CurrencyAmount'
 import SkeletonLoader from '@/components/ui/SkeletonLoader'
 import { toast } from 'sonner'
@@ -35,9 +37,20 @@ export default function ManagePayrollAdjustmentsModal({
   onClose: () => void
 }) {
   const [isAdding, setIsAdding] = useState(false)
+  const hasPermission = useAuthStore((s) => s.hasPermission)
+
+  const canQueryAdjustments =
+    hasPermission(PERMISSIONS.payroll.initiate) ||
+    hasPermission(PERMISSIONS.payroll.compute) ||
+    hasPermission(PERMISSIONS.payroll.hr_approve) ||
+    hasPermission(PERMISSIONS.payroll.acctg_approve) ||
+    hasPermission(PERMISSIONS.payroll.approve)
 
   // Remote data
-  const { data: adjustmentsData, isLoading: isLoadingAdjustments } = usePayrollAdjustments(runId)
+  const { data: adjustmentsData, isLoading: isLoadingAdjustments } = usePayrollAdjustments(
+    runId,
+    isOpen && canQueryAdjustments,
+  )
   const { data: employeesData, isLoading: isLoadingEmployees } = useEmployees({ per_page: 500, active_only: true })
   
   const createMutation = useCreateAdjustment(runId)

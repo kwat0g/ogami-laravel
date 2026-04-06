@@ -6,13 +6,12 @@ namespace App\Mail\Recruitment;
 
 use App\Domains\HR\Recruitment\Models\InterviewSchedule;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-final class InterviewScheduledMail extends Mailable implements ShouldQueue
+final class InterviewScheduledMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -26,7 +25,6 @@ final class InterviewScheduledMail extends Mailable implements ShouldQueue
         public readonly int $round,
         public readonly ?string $interviewerName,
     ) {
-        $this->queue = 'notifications';
     }
 
     public static function fromModel(InterviewSchedule $interview): self

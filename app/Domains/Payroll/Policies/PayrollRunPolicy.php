@@ -175,13 +175,24 @@ final class PayrollRunPolicy
      */
     public function hrApprove(User $user, PayrollRun $run): bool
     {
-        return $user->hasAnyPermission(['payroll.hr_approve', 'payroll.approve']);
+        return $user->hasAnyPermission([
+            'payroll.hr_approve',
+            'payroll.approve',
+            'payroll.initiate',
+            'hr.full_access',
+        ]);
     }
 
     /** Step 6: return run to initiator with notes */
     public function hrReturn(User $user, PayrollRun $run): bool
     {
-        return $user->hasAnyPermission(['payroll.hr_return', 'payroll.approve']);
+        return $user->hasAnyPermission([
+            'payroll.hr_return',
+            'payroll.approve',
+            'payroll.hr_approve',
+            'payroll.initiate',
+            'hr.full_access',
+        ]);
     }
 
     /**
@@ -190,9 +201,18 @@ final class PayrollRunPolicy
      */
     public function accountingApprove(User $user, PayrollRun $run): bool
     {
-        // STRICT SoD: Only explicitly authorized accounting approvers can perform this step.
-        // We do NOT allow generic 'payroll.approve' (which HR Manager has) to leak into this step.
-        if (! $user->hasPermissionTo('payroll.acctg_approve')) {
+        // Prefer explicit accounting permission.
+        $hasExplicitAccountingPermission = $user->hasPermissionTo('payroll.acctg_approve');
+
+        // Backward-compatible fallback for legacy accounting manager accounts
+        // still carrying payroll.approve instead of payroll.acctg_approve.
+        $hasLegacyAccountingPermission = $user->hasPermissionTo('payroll.approve')
+            && (
+                $user->primaryDepartment?->code === 'ACCTG'
+                || $user->departments()->where('departments.code', 'ACCTG')->exists()
+            );
+
+        if (! $hasExplicitAccountingPermission && ! $hasLegacyAccountingPermission) {
             return false;
         }
 
