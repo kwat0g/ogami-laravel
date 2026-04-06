@@ -814,10 +814,11 @@ class RolePermissionSeeder extends Seeder
             'inventory.items.view', 'inventory.stock.view', 'inventory.locations.view',
             'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.note',
             'inventory.adjustments.create',
-            // Procurement (for Purchasing Head, Production Head)
+            // Procurement (for Purchasing Head, Production Head, Warehouse Head)
             'procurement.purchase-request.view', 'procurement.purchase-request.create',
             'procurement.purchase-request.create-dept',  // Dept heads create for own dept only
-            'procurement.purchase-order.view', 'procurement.goods-receipt.view',
+            'procurement.purchase-order.view',
+            'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
             // Production (for Production Head, Plant Head)
             'production.bom.view', 'production.delivery-schedule.view', 'production.orders.view',
             'production.orders.create', 'production.orders.release',
