@@ -78,9 +78,6 @@ export default function InspectionListPage(): React.ReactElement {
               ]}
               filename="inspections"
             />
-            <Link to="/qc/templates" className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
-              Templates
-            </Link>
             <Link to="/qc/defect-rate" className="inline-flex items-center gap-2 bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-medium px-3 py-2 rounded transition-colors">
               Defect Rate
             </Link>
