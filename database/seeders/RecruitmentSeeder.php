@@ -74,13 +74,24 @@ class RecruitmentSeeder extends Seeder
             ['Gabriela', 'Flores'],
         ];
 
+        $addresses = [
+            '123 Rizal St, Makati City', '456 EDSA, Quezon City', '789 Ayala Ave, BGC Taguig',
+            '101 Shaw Blvd, Mandaluyong', '202 Ortigas Center, Pasig', '303 Roxas Blvd, Manila',
+            '404 Katipunan Ave, QC', '505 C5 Road, Taguig', '606 España Blvd, Sampaloc',
+            '707 Commonwealth Ave, QC',
+        ];
+        $phones = [
+            '09171234567', '09281234568', '09351234569', '09171234570', '09281234571',
+            '09351234572', '09171234573', '09281234574', '09351234575', '09171234576',
+        ];
+
         foreach ($names as $i => [$first, $last]) {
             $candidates->push(Candidate::create([
                 'first_name' => $first,
                 'last_name' => $last,
                 'email' => strtolower($first) . '.' . strtolower($last) . '@example.com',
-                'phone' => '09' . fake()->numerify('#########'),
-                'address' => fake()->address(),
+                'phone' => $phones[$i],
+                'address' => $addresses[$i],
                 'source' => $sources[$i % count($sources)],
             ]));
         }
@@ -100,7 +111,7 @@ class RecruitmentSeeder extends Seeder
                 'requested_by' => $hrUser->id,
                 'approved_by' => $approverUser->id,
                 'employment_type' => 'regular',
-                'headcount' => fake()->numberBetween(1, 3),
+                'headcount' => ($i % 3) + 1,
                 'reason' => 'Business expansion requires additional ' . $pos->title . ' for ' . $dept->name . ' department.',
                 'salary_grade_id' => ! empty($salaryGradeIds)
                     ? $salaryGradeIds[$i % count($salaryGradeIds)]
@@ -160,7 +171,7 @@ class RecruitmentSeeder extends Seeder
                     'application_date' => now()->subDays(rand(1, 15))->toDateString(),
                     'source' => $candidate->source,
                     'status' => $appStatus,
-                    'cover_letter' => fake()->optional(0.6)->paragraphs(2, true),
+                    'cover_letter' => ($appIndex % 3 !== 0) ? 'I am writing to express my strong interest in this position. With my relevant experience and skills, I believe I would be a valuable addition to your team.' : null,
                     'reviewed_by' => in_array($appStatus, ['under_review', 'shortlisted', 'rejected']) ? $hrUser->id : null,
                     'reviewed_at' => in_array($appStatus, ['under_review', 'shortlisted', 'rejected']) ? now()->subDays(rand(1, 5)) : null,
                     'rejection_reason' => $appStatus === 'rejected' ? 'Does not meet minimum qualifications.' : null,
