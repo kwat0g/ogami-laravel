@@ -314,6 +314,9 @@ class ModulePermissionSeeder extends Seeder
                 'delivery.view', 'delivery.manage',
                 // ISO
                 'iso.view', 'iso.manage', 'iso.audit',
+                // Procurement: Production Manager can create PRs for own department
+                'procurement.purchase-request.view', 'procurement.purchase-request.create-dept',
+                'vendors.view',
             ],
             'officer' => [
                 // Self service
