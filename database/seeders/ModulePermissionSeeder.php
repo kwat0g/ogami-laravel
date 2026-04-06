@@ -487,6 +487,9 @@ class ModulePermissionSeeder extends Seeder
                 'inventory.stock.view', 'inventory.adjustments.create',
                 'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.check', 'inventory.mrq.review', 'inventory.mrq.fulfill',
                 'delivery.view', 'delivery.manage',
+                // Procurement: Warehouse Manager confirms GRs and views POs
+                'procurement.goods-receipt.view', 'procurement.goods-receipt.create', 'procurement.goods-receipt.confirm',
+                'procurement.purchase-order.view',
             ],
             'officer' => [
                 // Self service
@@ -505,6 +508,9 @@ class ModulePermissionSeeder extends Seeder
                 'inventory.stock.view', 'inventory.adjustments.create',
                 'inventory.mrq.view', 'inventory.mrq.create', 'inventory.mrq.fulfill',
                 'delivery.view',
+                // Procurement: officer can view and create GRs
+                'procurement.goods-receipt.view', 'procurement.goods-receipt.create',
+                'procurement.purchase-order.view',
             ],
             'head' => [
                 // Self service
